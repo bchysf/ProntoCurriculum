@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProntoCurriculum</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#0B1D3A;--navy2:#132848;--gold:#C9A84C;--gold2:#F0C96A;--white:#FAFAF8;--gray50:#F4F3F0;--gray100:#E8E6E0;--gray300:#B8B4AB;--gray500:#7A756A;--gray700:#3D3930;--success:#1A6B45;--danger:#8B1A1A;
+  --radius:8px;--radius-lg:14px;--shadow:0 2px 20px rgba(11,29,58,0.12);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--navy);min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+nav{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:36px;height:36px;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--navy);font-size:18px}
+.logo-text{font-family:'Playfair Display',serif;color:var(--white);font-size:18px;font-weight:600}
+.logo-text span{color:var(--gold)}
+.nav-actions{display:flex;gap:12px;align-items:center}
+.btn{padding:9px 20px;border-radius:var(--radius);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:all .2s}
+.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:var(--white)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:600}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-navy{background:var(--navy);color:var(--white);border:1.5px solid var(--navy)}
+.btn-navy:hover{background:var(--navy2)}
+.btn-sm{padding:7px 16px;font-size:13px}
+.btn-lg{padding:14px 32px;font-size:16px;font-weight:600}
+.btn-ghost{background:transparent;color:var(--gray500);border:1.5px solid var(--gray100)}
+.btn-ghost:hover{border-color:var(--gray300);color:var(--navy)}
+.btn-danger{background:#FEE8E8;color:var(--danger);border:1.5px solid #F5C0C0}
+.btn-success{background:#E6F4ED;color:var(--success);border:1.5px solid #B3DFC6;font-weight:600}
+
+/* PAGES */
+.page{display:none;min-height:calc(100vh - 64px)}
+.page.active{display:block}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,#1A3A6B 100%);padding:80px 2rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:100px;padding:6px 16px;font-size:13px;color:var(--gold);margin-bottom:24px}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,64px);color:var(--white);line-height:1.1;margin-bottom:20px;max-width:800px;margin-left:auto;margin-right:auto}
+.hero h1 em{color:var(--gold);font-style:normal}
+.hero p{font-size:18px;color:rgba(255,255,255,0.7);max-width:560px;margin:0 auto 40px;line-height:1.6}
+.hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.trust-row{display:flex;align-items:center;justify-content:center;gap:32px;margin-top:48px;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.5);font-size:13px}
+.trust-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* HOW IT WORKS */
+.section{padding:72px 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:12px}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,40px);color:var(--navy);margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--gray500);max-width:540px;line-height:1.6}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;margin-top:48px}
+.step-card{background:var(--white);border:1px solid var(--gray100);border-radius:var(--radius-lg);padding:28px 24px;position:relative;transition:border-color .2s,box-shadow .2s}
+.step-card:hover{border-color:var(--gold);box-shadow:var(--shadow)}
+.step-num{width:42px;height:42px;border-radius:50%;background:var(--navy);color:var(--gold);font-family:'Playfair Display',serif;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.step-card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.step-card p{font-size:14px;color:var(--gray500);line-height:1.5}
+
+/* TEMPLATES */
+.templates-section{background:var(--gray50);padding:72px 2rem}
+.templates-inner{max-width:1100px;margin:0 auto}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:40px}
+.template-card{background:var(--white);border:2px solid var(--gray100);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.template-card:hover{border-color:var(--navy);transform:translateY(-3px);box-shadow:var(--shadow)}
+.template-card.selected{border-color:var(--gold)}
+.template-preview{height:280px;display:flex;flex-direction:column;padding:16px;gap:6px;background:var(--white);position:relative}
+.t-header{height:40px;background:var(--navy);border-radius:4px;display:flex;align-items:center;padding:0 10px;gap:6px}
+.t-dot{width:26px;height:5px;border-radius:2px;background:var(--gold)}
+.t-dot-sm{width:14px;height:5px;border-radius:2px;background:rgba(255,255,255,0.3)}
+.t-line{height:5px;border-radius:2px;background:var(--gray100)}
+.t-line-dark{height:5px;border-radius:2px;background:var(--navy);opacity:0.15}
+.t-section{height:7px;border-radius:2px;background:var(--gold);width:40%;margin-top:4px}
+.t-block{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.template-name{padding:12px 16px;font-weight:600;font-size:14px;border-top:1px solid var(--gray100);display:flex;justify-content:space-between;align-items:center}
+.badge{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.badge-gold{background:rgba(201,168,76,0.15);color:#8B6914}
+.badge-green{background:#E6F4ED;color:var(--success)}
+.badge-navy{background:var(--gray50);color:var(--navy);font-size:11px}
+
+/* PRICING */
+.pricing-section{padding:72px 2rem;background:var(--white)}
+.pricing-inner{max-width:1000px;margin:0 auto}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:48px}
+.pricing-card{border:1.5px solid var(--gray100);border-radius:var(--radius-lg);padding:32px;position:relative;transition:all .2s}
+.pricing-card:hover{box-shadow:var(--shadow)}
+.pricing-card.featured{border-color:var(--gold);background:var(--navy);color:var(--white)}
+.pricing-card.featured .price-sub{color:rgba(255,255,255,0.5)}
+.pricing-card.featured .feature-item{color:rgba(255,255,255,0.85)}
+.pricing-card.featured .plan-name{color:var(--gold)}
+.pricing-card.featured .divider{border-color:rgba(255,255,255,0.1)}
+.plan-name{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--gray500);margin-bottom:16px}
+.price{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+.price-amount{font-family:'Playfair Display',serif;font-size:48px;font-weight:700}
+.price-currency{font-size:22px;font-weight:600;margin-bottom:6px}
+.price-sub{font-size:13px;color:var(--gray500);margin-bottom:20px}
+.divider{border:none;border-top:1px solid var(--gray100);margin:20px 0}
+.feature-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--gray700);margin-bottom:12px}
+.check{width:18px;height:18px;border-radius:50%;background:#E6F4ED;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:var(--success)}
+.check-gold{background:rgba(201,168,76,0.2);color:#8B6914}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);padding:4px 20px;border-radius:100px;font-size:12px;font-weight:700;white-space:nowrap}
+.coming-soon-badge{position:absolute;top:16px;right:16px;background:var(--gray50);color:var(--gray500);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600}
+
+/* BUILDER */
+.builder{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 64px);gap:0}
+.builder-sidebar{background:var(--white);border-right:1px solid var(--gray100);overflow-y:auto;max-height:calc(100vh - 64px);position:sticky;top:64px}
+.sidebar-top{padding:20px;border-bottom:1px solid var(--gray100)}
+.sidebar-progress{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.progress-bar{flex:1;height:4px;background:var(--gray100);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .4s}
+.progress-label{font-size:12px;color:var(--gray500);white-space:nowrap}
+.sections-nav{padding:16px 12px}
+.section-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);cursor:pointer;transition:all .2s;margin-bottom:2px;font-size:14px;color:var(--gray700)}
+.section-nav-item:hover{background:var(--gray50)}
+.section-nav-item.active{background:rgba(201,168,76,0.12);color:var(--navy);font-weight:500}
+.section-nav-item.done .snav-dot{background:var(--success);color:var(--white)}
+.snav-dot{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--gray100);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;color:var(--gray500)}
+.snav-dot.active{border-color:var(--gold);color:var(--gold)}
+.builder-main{background:var(--gray50);overflow-y:auto;max-height:calc(100vh - 64px)}
+.builder-header{background:var(--white);border-bottom:1px solid var(--gray100);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.builder-header h2{font-size:18px;font-weight:600}
+.builder-content{padding:32px;max-width:680px;margin:0 auto}
+
+/* FORM ELEMENTS */
+.form-section{background:var(--white);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px;border:1px solid var(--gray100)}
+.form-section h3{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.form-section .subtitle{font-size:13px;color:var(--gray500);margin-bottom:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.form-group label{font-size:13px;font-weight:500;color:var(--gray700)}
+.form-group input,.form-group textarea,.form-group select{padding:10px 14px;border:1.5px solid var(--gray100);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--navy);background:var(--white);transition:border-color .2s;outline:none}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--gold)}
+.form-group textarea{resize:vertical;min-height:90px;line-height:1.5}
+.form-hint{font-size:12px;color:var(--gray500);margin-top:4px}
+
+/* EXPERIENCE BLOCK */
+.exp-block{background:var(--gray50);border:1px solid var(--gray100);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative}
+.exp-block-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.exp-block-title{font-size:14px;font-weight:600}
+
+/* AI BUTTON */
+.ai-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);background:rgba(11,29,58,0.06);border:1.5px solid var(--gray100);color:var(--navy);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.ai-btn:hover{background:rgba(11,29,58,0.1);border-color:var(--navy)}
+.ai-btn svg{width:14px;height:14px}
+.ai-loading{opacity:0.6;pointer-events:none}
+
+/* UPLOAD IMPORT */
+.import-zone{border:2px dashed var(--gray100);border-radius:var(--radius-lg);padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:24px}
+.import-zone:hover{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.import-zone h4{font-size:15px;font-weight:600;margin-bottom:6px}
+.import-zone p{font-size:13px;color:var(--gray500)}
+.import-or{display:flex;align-items:center;gap:16px;margin:16px 0;color:var(--gray300);font-size:13px}
+.import-or::before,.import-or::after{content:'';flex:1;height:1px;background:var(--gray100)}
+
+/* CV PREVIEW */
+.cv-preview-panel{background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray100);overflow:hidden;min-height:600px}
+.cv-preview-toolbar{padding:12px 20px;border-bottom:1px solid var(--gray100);display:flex;align-items:center;justify-content:space-between;background:var(--gray50)}
+.cv-doc{padding:48px 40px;font-family:'DM Sans',sans-serif;max-width:595px;margin:0 auto;min-height:842px;position:relative}
+.cv-doc.template-modern .cv-header{background:var(--navy);color:var(--white);padding:32px 40px;margin:-48px -40px 32px;border-bottom:4px solid var(--gold)}
+.cv-doc.template-modern .cv-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700}
+.cv-doc.template-modern .cv-title{font-size:14px;opacity:0.7;margin-top:4px}
+.cv-doc.template-modern .cv-contact{display:flex;gap:20px;margin-top:12px;font-size:12px;opacity:0.7;flex-wrap:wrap}
+.cv-doc.template-modern .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);border-bottom:1px solid var(--gray100);padding-bottom:6px;margin:24px 0 12px}
+.cv-doc.template-modern .exp-item{margin-bottom:16px}
+.cv-doc.template-modern .exp-title{font-size:14px;font-weight:600}
+.cv-doc.template-modern .exp-meta{font-size:12px;color:var(--gray500);margin-bottom:6px}
+.cv-doc.template-modern .exp-desc{font-size:12px;color:var(--gray700);line-height:1.6}
+.cv-doc.template-minimal .cv-header{border-bottom:2px solid var(--navy);padding-bottom:20px;margin-bottom:24px}
+.cv-doc.template-minimal .cv-name{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--navy)}
+.cv-doc.template-minimal .cv-title{font-size:14px;color:var(--gray500);margin-top:4px}
+.cv-doc.template-minimal .cv-contact{display:flex;gap:20px;margin-top:8px;font-size:12px;color:var(--gray500);flex-wrap:wrap}
+.cv-doc.template-minimal .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--navy);margin:20px 0 10px}
+.cv-doc.template-minimal .exp-item{margin-bottom:14px;padding-left:16px;border-left:2px solid var(--gold)}
+.cv-doc.template-minimal .exp-title{font-size:14px;font-weight:600}
+.cv-doc.template-minimal .exp-meta{font-size:12px;color:var(--gray500);margin-bottom:4px}
+.cv-doc.template-minimal .exp-desc{font-size:12px;color:var(--gray700);line-height:1.6}
+.watermark{position:absolute;bottom:20px;right:24px;font-size:11px;color:var(--gray300);font-weight:500;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+.watermark-logo{width:16px;height:16px;background:var(--gold);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:8px;color:var(--navy)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-box{background:var(--white);border-radius:var(--radius-lg);max-width:480px;width:100%;padding:36px;position:relative}
+.modal-box.wide{max-width:640px}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--gray50);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px;color:var(--gray500);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--gray100)}
+.modal-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:8px}
+.modal-sub{font-size:14px;color:var(--gray500);margin-bottom:28px;line-height:1.5}
+.tier-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.tier-card{border:2px solid var(--gray100);border-radius:var(--radius);padding:16px 20px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center}
+.tier-card:hover{border-color:var(--navy)}
+.tier-card.selected{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.tier-card-info h4{font-size:15px;font-weight:600}
+.tier-card-info p{font-size:13px;color:var(--gray500);margin-top:2px}
+.tier-price{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--navy)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--gray50);border-radius:var(--radius);padding:4px;margin-bottom:24px}
+.tab{flex:1;padding:9px;text-align:center;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gray500);transition:all .2s}
+.tab.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+
+/* SPLIT VIEW */
+.split-view{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:calc(100vh - 64px)}
+.split-left{background:var(--gray50);overflow-y:auto;max-height:calc(100vh - 64px);padding:32px}
+.split-right{background:var(--white);overflow-y:auto;max-height:calc(100vh - 64px);border-left:1px solid var(--gray100);padding:32px}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.fade-in{animation:fadeIn .35s ease}
+.pulsing{animation:pulse 1.5s infinite}
+.ai-chip{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#0B1D3A,#1A3A6B);color:var(--gold);font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;letter-spacing:0.5px}
+
+/* SKILL TAGS */
+.skills-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.skill-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--gray50);border:1px solid var(--gray100);border-radius:100px;font-size:13px;cursor:default}
+.skill-tag button{background:none;border:none;cursor:pointer;color:var(--gray500);font-size:14px;line-height:1;padding:0}
+.skill-tag button:hover{color:var(--danger)}
+.skill-input-row{display:flex;gap:8px;margin-top:8px}
+.skill-input-row input{flex:1}
+
+/* RESPONSIVE */
+@media(max-width:768px){.builder{grid-template-columns:1fr}.builder-sidebar{display:none}.form-row{grid-template-columns:1fr}}
+
+/* ATS METER */
+.ats-meter{background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray100);padding:16px 20px;margin-bottom:20px}
+.ats-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ats-header span{font-size:13px;font-weight:600}
+.ats-score{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--success)}
+.ats-bar{height:6px;background:var(--gray100);border-radius:3px;overflow:hidden}
+.ats-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--success));transition:width .8s}
+.ats-tips{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.ats-tip{font-size:12px;color:var(--gray700);display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#" onclick="showPage('home')">
+    <div class="logo-icon">P</div>
+    <span class="logo-text">Pronto<span>Curriculum</span></span>
+  </a>
+  <div class="nav-actions">
+    <button class="btn btn-outline" onclick="showModal('signup')">Accedi</button>
+    <button class="btn btn-gold" onclick="showPage('builder-step1')">Crea il tuo CV →</button>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-badge">
+      <div class="trust-dot"></div>
+      Ottimizzato per sistemi ATS italiani ed europei
+    </div>
+    <h1>Il curriculum che<br><em>apre le porte</em></h1>
+    <p>Crea un CV professionale in minuti grazie all'AI. Scegli il template, rispondi alle domande, scarica il risultato.</p>
+    <div class="hero-cta">
+      <button class="btn btn-gold btn-lg" onclick="showPage('builder-step1')">Inizia gratis →</button>
+      <button class="btn btn-outline btn-lg" onclick="showPage('builder-step1')">Vedi i template</button>
+    </div>
+    <div class="trust-row">
+      <div class="trust-item"><div class="trust-dot"></div>Nessuna registrazione richiesta</div>
+      <div class="trust-item"><div class="trust-dot"></div>ATS Score incluso</div>
+      <div class="trust-item"><div class="trust-dot"></div>Formato europeo & italiano</div>
+      <div class="trust-item"><div class="trust-dot"></div>AI integrata</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Come funziona</div>
+    <div class="section-title">Pronto in 4 passi</div>
+    <p class="section-sub">Niente da installare, niente da imparare. Il nostro assistente AI ti guida in ogni fase.</p>
+    <div class="steps-grid">
+      <div class="step-card"><div class="step-num">1</div><h3>Scegli il template</h3><p>4 modelli professionali ottimizzati ATS per il mercato italiano ed europeo</p></div>
+      <div class="step-card"><div class="step-num">2</div><h3>Inserisci le informazioni</h3><p>Rispondi alle domande guidate o importa da LinkedIn / curriculum precedente</p></div>
+      <div class="step-card"><div class="step-num">3</div><h3>L'AI ottimizza tutto</h3><p>Rigenera testi, ottimizza per parole chiave ATS, suggerisce miglioramenti</p></div>
+      <div class="step-card"><div class="step-num">4</div><h3>Scarica o condividi</h3><p>PDF professionale pronto. Versione gratuita con filigrana, Pro senza</p></div>
+    </div>
+  </div>
+
+  <div class="templates-section">
+    <div class="templates-inner">
+      <div class="section-label">Template</div>
+      <div class="section-title">4 modelli professionali</div>
+      <div class="template-grid">
+        <div class="template-card" onclick="selectTemplate('modern')">
+          <div class="template-preview">
+            <div class="t-header"><div class="t-dot"></div><div class="t-dot-sm"></div></div>
+            <div style="height:6px"></div>
+            <div class="t-line" style="width:80%"></div>
+            <div class="t-line" style="width:55%"></div>
+            <div style="height:6px"></div>
+            <div class="t-section"></div>
+            <div class="t-block"><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%"></div><div class="t-line" style="width:85%"></div></div>
+            <div style="height:4px"></div>
+            <div class="t-section"></div>
+            <div class="t-block"><div class="t-line" style="width:95%"></div><div class="t-line" style="width:80%"></div></div>
+          </div>
+          <div class="template-name">Moderno <span class="badge badge-gold">🏆 Più scelto</span></div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('minimal')">
+          <div class="template-preview">
+            <div style="height:10px;border-bottom:3px solid var(--navy);padding-bottom:10px;margin-bottom:10px">
+              <div class="t-line-dark" style="width:60%;height:8px;opacity:0.4;background:var(--navy)"></div>
+            </div>
+            <div style="height:6px"></div>
+            <div class="t-section" style="background:var(--navy);height:4px;opacity:0.5"></div>
+            <div class="t-block"><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%"></div><div class="t-line" style="width:85%"></div></div>
+            <div style="height:4px"></div>
+            <div class="t-section" style="background:var(--navy);height:4px;opacity:0.5"></div>
+            <div class="t-block"><div class="t-line" style="width:95%"></div><div class="t-line" style="width:80%"></div></div>
+          </div>
+          <div class="template-name">Minimal <span class="badge badge-navy">ATS Friendly</span></div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('executive')">
+          <div class="template-preview" style="background:var(--gray50)">
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;height:100%">
+              <div style="background:var(--navy);border-radius:4px;padding:8px"><div style="width:30px;height:30px;border-radius:50%;background:var(--gold);margin:0 auto 8px"></div><div class="t-line" style="background:rgba(255,255,255,0.2)"></div><div class="t-line" style="background:rgba(255,255,255,0.1);margin-top:4px"></div><div class="t-line" style="background:rgba(255,255,255,0.1);margin-top:4px"></div></div>
+              <div style="padding:8px 4px"><div class="t-section" style="height:6px;margin:0 0 8px"></div><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%;margin-top:4px"></div><div class="t-section" style="height:6px;margin:8px 0"></div><div class="t-line" style="width:95%"></div></div>
+            </div>
+          </div>
+          <div class="template-name">Executive <span class="badge badge-navy">Con foto</span></div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('europass')">
+          <div class="template-preview">
+            <div style="border:2px solid #003399;border-radius:4px;padding:10px;height:100%;display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><div class="t-line" style="width:50%;background:#003399;height:6px;opacity:0.4"></div><div style="font-size:8px;color:#003399;font-weight:bold">EU</div></div>
+              <div class="t-line" style="width:70%"></div>
+              <div style="height:4px"></div>
+              <div class="t-line" style="width:40%;background:#003399;height:4px;opacity:0.3"></div>
+              <div class="t-line" style="width:90%"></div>
+              <div class="t-line" style="width:80%"></div>
+              <div class="t-line" style="width:40%;background:#003399;height:4px;opacity:0.3;margin-top:4px"></div>
+              <div class="t-line" style="width:90%"></div>
+            </div>
+          </div>
+          <div class="template-name">Europass <span class="badge badge-green">Europeo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pricing-section">
+    <div class="pricing-inner">
+      <div style="text-align:center;margin-bottom:0">
+        <div class="section-label" style="text-align:center">Prezzi</div>
+        <div class="section-title" style="text-align:center">Semplice e trasparente</div>
+        <p class="section-sub" style="margin:0 auto">Inizia gratis, aggiorna quando sei pronto.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="plan-name">Gratuito</div>
+          <div class="price"><span class="price-currency">€</span><span class="price-amount">0</span></div>
+          <div class="price-sub">Per sempre</div>
+          <hr class="divider">
+          <div class="feature-item"><div class="check">✓</div>1 curriculum con filigrana</div>
+          <div class="feature-item"><div class="check">✓</div>Tutti i template</div>
+          <div class="feature-item"><div class="check">✓</div>AI di base</div>
+          <div class="feature-item"><div class="check">✓</div>ATS Score</div>
+          <button class="btn btn-ghost" style="width:100%;margin-top:20px" onclick="showPage('builder-step1')">Inizia gratis</button>
+        </div>
+        <div class="pricing-card featured" style="position:relative">
+          <div class="popular-badge">⚡ Più popolare</div>
+          <div class="plan-name">Standard</div>
+          <div class="price"><span class="price-currency" style="color:var(--white)">€</span><span class="price-amount" style="color:var(--white)">25</span></div>
+          <div class="price-sub">/mese · CV illimitati</div>
+          <hr class="divider">
+          <div class="feature-item"><div class="check check-gold">✓</div>CV illimitati senza filigrana</div>
+          <div class="feature-item"><div class="check check-gold">✓</div>AI avanzata + rigenerazione</div>
+          <div class="feature-item"><div class="check check-gold">✓</div>Cover letter AI inclusa</div>
+          <div class="feature-item"><div class="check check-gold">✓</div>Import LinkedIn / PDF</div>
+          <div class="feature-item"><div class="check check-gold">✓</div>Analisi ATS avanzata</div>
+          <button class="btn btn-gold" style="width:100%;margin-top:20px" onclick="showModal('pricing')">Inizia ora</button>
+        </div>
+        <div class="pricing-card" style="position:relative">
+          <div class="coming-soon-badge">Presto</div>
+          <div class="plan-name">Pro</div>
+          <div class="price"><span class="price-currency">€</span><span class="price-amount">50</span></div>
+          <div class="price-sub">/mese · Tutto incluso</div>
+          <hr class="divider">
+          <div class="feature-item"><div class="check">✓</div>Tutto di Standard</div>
+          <div class="feature-item"><div class="check">✓</div>CV tailored per offerta di lavoro</div>
+          <div class="feature-item"><div class="check">✓</div>Offerte da Indeed, Areajob, JobRapido</div>
+          <div class="feature-item"><div class="check">✓</div>Match CV ↔ posizione</div>
+          <div class="feature-item"><div class="check">✓</div>Offerte internazionali</div>
+          <button class="btn btn-ghost" style="width:100%;margin-top:20px" disabled>Lista d'attesa →</button>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:32px">
+        <p style="font-size:13px;color:var(--gray500)">Hai solo 1 CV da fare? <a href="#" onclick="showModal('pricing')" style="color:var(--navy);font-weight:600">Acquista singolo per 10€ →</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BUILDER STEP 1: TEMPLATE -->
+<div class="page" id="page-builder-step1">
+  <div class="builder-header">
+    <div>
+      <h2>Scegli il template</h2>
+      <p style="font-size:13px;color:var(--gray500);margin-top:2px">Tutti i template sono ottimizzati ATS per il mercato italiano</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="ai-chip">✦ AI Inclusa</span>
+      <button class="btn btn-ghost btn-sm" onclick="showModal('import')">⬆ Importa CV / LinkedIn</button>
+    </div>
+  </div>
+  <div style="padding:32px;max-width:900px;margin:0 auto">
+    <div class="template-grid">
+      <div class="template-card" id="tmpl-modern" onclick="selectTemplateAndGo('modern')">
+        <div class="template-preview">
+          <div class="t-header"><div class="t-dot"></div><div class="t-dot-sm"></div></div>
+          <div style="height:6px"></div>
+          <div class="t-line" style="width:80%"></div><div class="t-line" style="width:55%"></div>
+          <div style="height:6px"></div>
+          <div class="t-section"></div>
+          <div class="t-block"><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%"></div><div class="t-line" style="width:85%"></div></div>
+          <div style="height:4px"></div>
+          <div class="t-section"></div>
+          <div class="t-block"><div class="t-line" style="width:95%"></div><div class="t-line" style="width:80%"></div></div>
+        </div>
+        <div class="template-name">Moderno <span class="badge badge-gold">🏆 Più scelto</span></div>
+      </div>
+      <div class="template-card" id="tmpl-minimal" onclick="selectTemplateAndGo('minimal')">
+        <div class="template-preview">
+          <div style="height:10px;border-bottom:3px solid var(--navy);padding-bottom:10px;margin-bottom:10px">
+            <div style="width:60%;height:8px;background:var(--navy);opacity:0.4;border-radius:2px"></div>
+          </div>
+          <div class="t-section" style="background:var(--navy);height:4px;opacity:0.5"></div>
+          <div class="t-block"><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%"></div></div>
+          <div style="height:4px"></div>
+          <div class="t-section" style="background:var(--navy);height:4px;opacity:0.5"></div>
+          <div class="t-block"><div class="t-line" style="width:95%"></div><div class="t-line" style="width:80%"></div></div>
+        </div>
+        <div class="template-name">Minimal <span class="badge badge-navy">ATS Friendly</span></div>
+      </div>
+      <div class="template-card" id="tmpl-executive" onclick="selectTemplateAndGo('executive')">
+        <div class="template-preview" style="background:var(--gray50)">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;height:100%">
+            <div style="background:var(--navy);border-radius:4px;padding:8px"><div style="width:30px;height:30px;border-radius:50%;background:var(--gold);margin:0 auto 8px"></div><div class="t-line" style="background:rgba(255,255,255,0.2)"></div><div class="t-line" style="background:rgba(255,255,255,0.1);margin-top:4px"></div></div>
+            <div style="padding:8px 4px"><div class="t-section" style="height:6px;margin:0 0 8px"></div><div class="t-line" style="width:90%"></div><div class="t-line" style="width:75%;margin-top:4px"></div></div>
+          </div>
+        </div>
+        <div class="template-name">Executive <span class="badge badge-navy">Con foto</span></div>
+      </div>
+      <div class="template-card" id="tmpl-europass" onclick="selectTemplateAndGo('europass')">
+        <div class="template-preview">
+          <div style="border:2px solid #003399;border-radius:4px;padding:10px;height:100%;display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="width:50%;height:6px;background:#003399;opacity:0.4;border-radius:2px"></div><div style="font-size:8px;color:#003399;font-weight:bold">EU</div></div>
+            <div class="t-line" style="width:70%"></div>
+            <div style="height:4px"></div>
+            <div style="width:40%;height:4px;background:#003399;opacity:0.3;border-radius:2px"></div>
+            <div class="t-line" style="width:90%"></div>
+            <div class="t-line" style="width:80%"></div>
+          </div>
+        </div>
+        <div class="template-name">Europass <span class="badge badge-green">Europeo</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BUILDER STEP 2: FORM + PREVIEW -->
+<div class="page" id="page-builder-step2">
+  <div class="split-view">
+    <!-- LEFT: FORM -->
+    <div class="split-left">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Costruisci il tuo CV</h2>
+          <p style="font-size:13px;color:var(--gray500);margin-top:2px">I dati vengono aggiornati in tempo reale nell'anteprima</p>
+        </div>
+        <span class="ai-chip">✦ AI Attiva</span>
+      </div>
+
+      <!-- SECTION TABS -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(0,this)">Personali</div>
+        <div class="tab" onclick="switchTab(1,this)">Esperienze</div>
+        <div class="tab" onclick="switchTab(2,this)">Formazione</div>
+        <div class="tab" onclick="switchTab(3,this)">Competenze</div>
+      </div>
+
+      <!-- TAB 0: DATI PERSONALI -->
+      <div class="tab-panel fade-in" id="tab-0">
+        <div class="form-section">
+          <h3>📋 Dati personali</h3>
+          <div class="subtitle">Informazioni di contatto e profilo professionale</div>
+          <div class="form-row">
+            <div class="form-group"><label>Nome *</label><input type="text" id="fn" placeholder="Mario" oninput="updatePreview()" value="Mario"></div>
+            <div class="form-group"><label>Cognome *</label><input type="text" id="ln" placeholder="Rossi" oninput="updatePreview()" value="Rossi"></div>
+          </div>
+          <div class="form-group"><label>Titolo professionale</label><input type="text" id="title" placeholder="es. Senior Software Engineer" oninput="updatePreview()" value="Senior Software Engineer"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Email *</label><input type="email" id="email" placeholder="mario.rossi@email.com" oninput="updatePreview()" value="mario.rossi@email.com"></div>
+            <div class="form-group"><label>Telefono</label><input type="tel" id="phone" placeholder="+39 333 1234567" oninput="updatePreview()" value="+39 333 1234567"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Città</label><input type="text" id="city" placeholder="Milano" oninput="updatePreview()" value="Milano"></div>
+            <div class="form-group"><label>LinkedIn</label><input type="text" id="linkedin" placeholder="linkedin.com/in/mariorossi" oninput="updatePreview()"></div>
+          </div>
+          <div class="form-group">
+            <label>Profilo / Sommario professionale</label>
+            <textarea id="summary" rows="4" placeholder="Breve descrizione professionale..." oninput="updatePreview()">Ingegnere del software con 8 anni di esperienza nello sviluppo di applicazioni web scalabili. Specializzato in architetture cloud e metodologie Agile. Appassionato di tecnologie emergenti e risoluzione di problemi complessi.</textarea>
+            <div class="form-hint">L'AI ottimizzerà questo testo per i sistemi ATS</div>
+          </div>
+          <button class="ai-btn" onclick="regenerateSummary()" id="ai-summary-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+            Ottimizza con AI per ATS
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: ESPERIENZE -->
+      <div class="tab-panel fade-in" id="tab-1" style="display:none">
+        <div class="form-section">
+          <h3>💼 Esperienze lavorative</h3>
+          <div class="subtitle">Aggiungi le tue esperienze più recenti per prime</div>
+          <div id="experiences-container">
+            <div class="exp-block">
+              <div class="exp-block-header">
+                <span class="exp-block-title">Esperienza 1</span>
+                <div style="display:flex;gap:8px">
+                  <button class="ai-btn" onclick="regenerateDesc(0)" style="padding:5px 10px;font-size:12px">✦ Ottimizza</button>
+                </div>
+              </div>
+              <div class="form-group"><label>Nome azienda *</label><input type="text" class="exp-company" placeholder="es. Google Italia" oninput="updatePreview()" value="Tech Solutions Srl"></div>
+              <div class="form-row">
+                <div class="form-group"><label>Ruolo *</label><input type="text" class="exp-role" placeholder="es. Software Engineer" oninput="updatePreview()" value="Lead Developer"></div>
+                <div class="form-group"><label>Città</label><input type="text" class="exp-city" placeholder="es. Milano" oninput="updatePreview()" value="Milano"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Da</label><input type="text" class="exp-from" placeholder="Gen 2020" oninput="updatePreview()" value="Mar 2020"></div>
+                <div class="form-group"><label>A</label><input type="text" class="exp-to" placeholder="Attuale" oninput="updatePreview()" value="Presente"></div>
+              </div>
+              <div class="form-group">
+                <label>Descrizione attività e risultati</label>
+                <textarea class="exp-desc" rows="4" oninput="updatePreview()" placeholder="Descrivi le tue responsabilità e i risultati ottenuti...">Ho guidato un team di 5 sviluppatori nella progettazione e implementazione di microservizi cloud-native. Ho ridotto i tempi di deployment del 40% attraverso l'automazione CI/CD e migliorato le performance del sistema del 60%.</textarea>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="addExperience()" style="width:100%;margin-top:8px">+ Aggiungi esperienza</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: FORMAZIONE -->
+      <div class="tab-panel fade-in" id="tab-2" style="display:none">
+        <div class="form-section">
+          <h3>🎓 Formazione</h3>
+          <div class="subtitle">Titoli di studio e certificazioni</div>
+          <div class="exp-block">
+            <div class="exp-block-header"><span class="exp-block-title">Titolo di studio</span></div>
+            <div class="form-group"><label>Istituto / Università *</label><input type="text" id="edu-inst" placeholder="es. Politecnico di Milano" oninput="updatePreview()" value="Università degli Studi di Milano"></div>
+            <div class="form-row">
+              <div class="form-group"><label>Titolo conseguito *</label><input type="text" id="edu-degree" placeholder="es. Laurea Magistrale in Informatica" oninput="updatePreview()" value="Laurea Magistrale in Ingegneria Informatica"></div>
+              <div class="form-group"><label>Voto / Lode</label><input type="text" id="edu-grade" placeholder="es. 110/110 con lode" oninput="updatePreview()" value="110/110 con lode"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Anno inizio</label><input type="text" id="edu-from" placeholder="2014" oninput="updatePreview()" value="2014"></div>
+              <div class="form-group"><label>Anno fine</label><input type="text" id="edu-to" placeholder="2016" oninput="updatePreview()" value="2016"></div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px">+ Aggiungi titolo</button>
+        </div>
+      </div>
+
+      <!-- TAB 3: COMPETENZE -->
+      <div class="tab-panel fade-in" id="tab-3" style="display:none">
+        <div class="form-section">
+          <h3>⚡ Competenze</h3>
+          <div class="subtitle">Aggiungi le tue competenze tecniche e trasversali</div>
+          <div class="form-group">
+            <label>Competenze tecniche</label>
+            <div class="skills-container" id="tech-skills">
+              <div class="skill-tag">JavaScript <button onclick="removeSkill(this)">×</button></div>
+              <div class="skill-tag">Python <button onclick="removeSkill(this)">×</button></div>
+              <div class="skill-tag">React <button onclick="removeSkill(this)">×</button></div>
+              <div class="skill-tag">Node.js <button onclick="removeSkill(this)">×</button></div>
+              <div class="skill-tag">AWS <button onclick="removeSkill(this)">×</button></div>
+              <div class="skill-tag">Docker <button onclick="removeSkill(this)">×</button></div>
+            </div>
+            <div class="skill-input-row">
+              <input type="text" id="new-skill" placeholder="Aggiungi competenza..." onkeypress="addSkillOnEnter(event)">
+              <button class="btn btn-ghost btn-sm" onclick="addSkill()">Aggiungi</button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:16px">
+            <label>Lingue</label>
+            <div class="exp-block">
+              <div class="form-row">
+                <div class="form-group" style="margin-bottom:0"><label>Lingua</label><input type="text" placeholder="es. Inglese" value="Inglese" oninput="updatePreview()"></div>
+                <div class="form-group" style="margin-bottom:0"><label>Livello</label>
+                  <select oninput="updatePreview()"><option>C2 - Madrelingua</option><option selected>C1 - Avanzato</option><option>B2 - Intermedio superiore</option><option>B1 - Intermedio</option><option>A2 - Base</option></select>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px">+ Aggiungi lingua</button>
+          </div>
+          <div style="margin-top:20px">
+            <button class="ai-btn" onclick="suggestSkills()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+              Suggerisci competenze per il mio ruolo
+            </button>
+          </div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-gold btn-lg" style="width:100%" onclick="goToPreview()">Vedi anteprima finale →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="split-right">
+      <div style="margin-bottom:20px">
+        <div class="ats-meter">
+          <div class="ats-header">
+            <span>🎯 ATS Score</span>
+            <span class="ats-score" id="ats-score">87/100</span>
+          </div>
+          <div class="ats-bar"><div class="ats-fill" id="ats-fill" style="width:87%"></div></div>
+          <div class="ats-tips">
+            <div class="ats-tip">✅ Formato leggibile dai sistemi ATS</div>
+            <div class="ats-tip">✅ Parole chiave rilevanti presenti</div>
+            <div class="ats-tip" style="color:var(--gold)">⚠️ Aggiungi più risultati quantitativi</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="font-size:13px;font-weight:600">Anteprima CV</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="changeTemplate()">🎨 Cambia</button>
+          <button class="btn btn-gold btn-sm" onclick="downloadCV()">⬇ Scarica PDF</button>
+        </div>
+      </div>
+      <div class="cv-preview-panel">
+        <div class="cv-doc template-modern" id="cv-preview">
+          <div class="cv-header">
+            <div class="cv-name" id="prev-name">Mario Rossi</div>
+            <div class="cv-title" id="prev-title">Senior Software Engineer</div>
+            <div class="cv-contact">
+              <span id="prev-email">mario.rossi@email.com</span>
+              <span id="prev-phone">+39 333 1234567</span>
+              <span id="prev-city">Milano</span>
+            </div>
+          </div>
+          <div class="section-title">Profilo professionale</div>
+          <div class="exp-desc" id="prev-summary">Ingegnere del software con 8 anni di esperienza nello sviluppo di applicazioni web scalabili. Specializzato in architetture cloud e metodologie Agile.</div>
+          <div class="section-title">Esperienze lavorative</div>
+          <div class="exp-item">
+            <div class="exp-title">Lead Developer</div>
+            <div class="exp-meta">Tech Solutions Srl · Milano · Mar 2020 – Presente</div>
+            <div class="exp-desc">Ho guidato un team di 5 sviluppatori nella progettazione e implementazione di microservizi cloud-native. Ho ridotto i tempi di deployment del 40% attraverso l'automazione CI/CD e migliorato le performance del sistema del 60%.</div>
+          </div>
+          <div class="section-title">Formazione</div>
+          <div class="exp-item">
+            <div class="exp-title">Laurea Magistrale in Ingegneria Informatica</div>
+            <div class="exp-meta">Università degli Studi di Milano · 2014 – 2016 · 110/110 con lode</div>
+          </div>
+          <div class="section-title">Competenze</div>
+          <div class="exp-desc">JavaScript · Python · React · Node.js · AWS · Docker</div>
+          <div class="section-title">Lingue</div>
+          <div class="exp-desc">Italiano (madrelingua) · Inglese (C1 avanzato)</div>
+          <div class="watermark"><div class="watermark-logo">P</div>ProntoCurriculum.it</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-signup" style="display:none">
+  <div class="modal-box fade-in">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">Il tuo CV è pronto! 🎉</div>
+    <div class="modal-sub">Crea un account gratuito per scaricare il tuo curriculum e salvare i tuoi progressi.</div>
+    <div class="form-group"><label>Email</label><input type="email" placeholder="mario.rossi@email.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" placeholder="Minimo 8 caratteri"></div>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:12px" onclick="showModal('pricing')">Crea account gratuito →</button>
+    <button class="btn btn-ghost" style="width:100%;font-size:13px" onclick="downloadFree()">⬇ Scarica gratis con filigrana</button>
+    <p style="text-align:center;font-size:12px;color:var(--gray500);margin-top:16px">Hai già un account? <a href="#" style="color:var(--navy)">Accedi</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-pricing" style="display:none">
+  <div class="modal-box fade-in">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">Scegli il tuo piano</div>
+    <div class="modal-sub">Sblocca il tuo CV professionale senza filigrana.</div>
+    <div class="tier-cards">
+      <div class="tier-card selected" onclick="selectTier(this)">
+        <div class="tier-card-info">
+          <h4>⚡ Piano Mensile</h4>
+          <p>CV illimitati · Cover letter · ATS avanzato</p>
+        </div>
+        <div class="tier-price">€25<span style="font-size:14px;font-weight:400">/mese</span></div>
+      </div>
+      <div class="tier-card" onclick="selectTier(this)">
+        <div class="tier-card-info">
+          <h4>📄 Singolo CV</h4>
+          <p>Acquisto una tantum, nessun abbonamento</p>
+        </div>
+        <div class="tier-price">€10</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:12px" onclick="showSuccess()">Procedi al pagamento →</button>
+    <button class="btn btn-ghost" style="width:100%;font-size:13px" onclick="downloadFree()">⬇ Continua gratis con filigrana</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-import" style="display:none">
+  <div class="modal-box wide fade-in">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">Importa il tuo profilo</div>
+    <div class="modal-sub">Risparmia tempo importando le tue informazioni da LinkedIn o da un CV esistente.</div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchImportTab('linkedin',this)">LinkedIn</div>
+      <div class="tab" onclick="switchImportTab('pdf',this)">PDF / Word</div>
+      <div class="tab" onclick="switchImportTab('manual',this)">Manuale</div>
+    </div>
+    <div id="import-linkedin">
+      <div class="form-group"><label>URL profilo LinkedIn</label><input type="url" placeholder="https://linkedin.com/in/tuo-profilo"></div>
+      <p style="font-size:13px;color:var(--gray500);margin-bottom:16px;line-height:1.5">Oppure scarica il tuo PDF da LinkedIn (Profilo → Altro → Salva come PDF) e caricalo qui sotto</p>
+      <div class="import-zone" onclick="simulateImport()">
+        <div style="font-size:32px;margin-bottom:8px">🔗</div>
+        <h4>Carica il tuo PDF LinkedIn</h4>
+        <p>Trascina il file qui o clicca per selezionarlo</p>
+      </div>
+    </div>
+    <div id="import-pdf" style="display:none">
+      <div class="import-zone" onclick="simulateImport()">
+        <div style="font-size:32px;margin-bottom:8px">📄</div>
+        <h4>Carica il tuo CV esistente</h4>
+        <p>PDF o Word (.docx) · L'AI estrarrà le informazioni automaticamente</p>
+      </div>
+    </div>
+    <div id="import-manual" style="display:none">
+      <div class="form-group"><label>Incolla qui il testo del tuo CV</label><textarea rows="8" placeholder="Incolla il contenuto del tuo CV..."></textarea></div>
+      <button class="btn btn-gold" style="width:100%" onclick="simulateImport()">✦ Analizza con AI →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-success" style="display:none">
+  <div class="modal-box fade-in" style="text-align:center">
+    <div style="font-size:56px;margin-bottom:16px">🎉</div>
+    <div class="modal-title">CV scaricato!</div>
+    <div class="modal-sub">Il tuo curriculum professionale è pronto. Buona fortuna con la ricerca lavoro!</div>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:12px" onclick="closeModal()">Visualizza il tuo account →</button>
+    <p style="font-size:12px;color:var(--gray500)">Hai scaricato 1 CV su ∞ illimitati del tuo piano</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ai-loading" style="display:none">
+  <div class="modal-box fade-in" style="text-align:center;max-width:340px">
+    <div style="font-size:40px;margin-bottom:16px" class="pulsing">✦</div>
+    <div class="modal-title" style="font-size:20px">AI al lavoro...</div>
+    <p style="font-size:14px;color:var(--gray500)" id="ai-loading-text">Ottimizzando il profilo per i sistemi ATS...</p>
+    <div style="margin-top:20px;height:4px;background:var(--gray100);border-radius:2px;overflow:hidden">
+      <div style="height:100%;background:var(--gold);border-radius:2px;animation:progress 2s ease forwards" id="ai-progress"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes progress{from{width:0}to{width:100%}}
+</style>
+
+<script>
+let selectedTemplate = 'modern';
+let currentTab = 0;
+let expCount = 1;
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if(pg) { pg.classList.add('active'); window.scrollTo(0,0); }
+}
+
+function showModal(id) {
+  closeModal();
+  const m = document.getElementById('modal-' + id);
+  if(m) m.style.display = 'flex';
+}
+
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+}
+
+function showSuccess() {
+  closeModal();
+  setTimeout(() => showModal('success'), 100);
+}
+
+function selectTemplate(name) {
+  selectedTemplate = name;
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+}
+
+function selectTemplateAndGo(name) {
+  selectedTemplate = name;
+  document.querySelectorAll('[id^="tmpl-"]').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('tmpl-' + name);
+  if(el) el.classList.add('selected');
+  setTimeout(() => {
+    showPage('builder-step2');
+    const cv = document.getElementById('cv-preview');
+    cv.className = 'cv-doc template-' + name;
+    if(name === 'minimal') cv.className = 'cv-doc template-minimal';
+    if(name === 'executive' || name === 'europass') cv.className = 'cv-doc template-modern';
+  }, 150);
+}
+
+function switchTab(idx, el) {
+  currentTab = idx;
+  document.querySelectorAll('.tab-panel').forEach((p,i) => p.style.display = i === idx ? 'block' : 'none');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function updatePreview() {
+  const fn = document.getElementById('fn')?.value || '';
+  const ln = document.getElementById('ln')?.value || '';
+  const t = document.getElementById('title')?.value || '';
+  const em = document.getElementById('email')?.value || '';
+  const ph = document.getElementById('phone')?.value || '';
+  const ct = document.getElementById('city')?.value || '';
+  const sm = document.getElementById('summary')?.value || '';
+  const setT = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  setT('prev-name', [fn, ln].filter(Boolean).join(' ') || 'Il tuo nome');
+  setT('prev-title', t || 'Titolo professionale');
+  setT('prev-email', em || '');
+  setT('prev-phone', ph || '');
+  setT('prev-city', ct || '');
+  setT('prev-summary', sm || '');
+  const companies = document.querySelectorAll('.exp-company');
+  const roles = document.querySelectorAll('.exp-role');
+  const cities = document.querySelectorAll('.exp-city');
+  const froms = document.querySelectorAll('.exp-from');
+  const tos = document.querySelectorAll('.exp-to');
+  const descs = document.querySelectorAll('.exp-desc');
+  const expContainer = document.querySelector('#cv-preview .exp-item');
+  if(expContainer && companies.length > 0) {
+    expContainer.querySelector('.exp-title').textContent = roles[0]?.value || '';
+    expContainer.querySelector('.exp-meta').textContent = [companies[0]?.value, cities[0]?.value, froms[0]?.value + ' – ' + tos[0]?.value].filter(Boolean).join(' · ');
+    expContainer.querySelector('.exp-desc').textContent = descs[0]?.value || '';
+  }
+}
+
+function regenerateSummary() {
+  const btn = document.getElementById('ai-summary-btn');
+  btn.classList.add('ai-loading');
+  btn.textContent = '✦ Ottimizzazione in corso...';
+  showAILoading('Ottimizzando il profilo per i sistemi ATS...');
+  const samples = [
+    'Ingegnere del software senior con oltre 8 anni di esperienza comprovata nello sviluppo di applicazioni enterprise ad alta scalabilità. Expertise in architetture cloud-native, DevOps e leadership di team tecnici. Track record di miglioramenti misurabili: riduzione dei tempi di deployment del 40%, incremento delle performance del 60%. Metodologie Agile e orientamento ai risultati.',
+    'Professionista IT con 8+ anni di esperienza nella progettazione e implementazione di soluzioni software complesse. Specializzato in sviluppo full-stack, integrazione di sistemi cloud e gestione di team cross-funzionali. Capacità dimostrata di trasformare requisiti di business in architetture tecniche robuste ed efficienti.',
+  ];
+  setTimeout(() => {
+    closeModal();
+    const el = document.getElementById('summary');
+    if(el) { el.value = samples[Math.floor(Math.random()*samples.length)]; updatePreview(); }
+    btn.classList.remove('ai-loading');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg> Ottimizza con AI per ATS';
+    const score = 87 + Math.floor(Math.random()*10);
+    document.getElementById('ats-score').textContent = score + '/100';
+    document.getElementById('ats-fill').style.width = score + '%';
+  }, 2200);
+}
+
+function regenerateDesc(idx) {
+  showAILoading('Riscrivendo la descrizione con impatto professionale...');
+  const samples = [
+    'Guidato con successo un team di 5 sviluppatori senior nella progettazione di architetture microservizi cloud-native su AWS. Implementato pipeline CI/CD automatizzate riducendo i tempi di rilascio del 40%. Ottimizzato le performance del sistema con risultati misurabili: latenza ridotta del 60%, disponibilità al 99.9%. Introdotto metodologie Agile e pratiche DevOps, migliorando la produttività del team del 35%.',
+    'Responsabile dell\'architettura e sviluppo di soluzioni software enterprise per clienti Fortune 500. Coordinato sprint agili con 5 sviluppatori, garantendo delivery puntuale nel 95% dei casi. Ridotto il debito tecnico del 50% attraverso refactoring sistematico. Implementato sistemi di monitoraggio proattivo riducendo i downtime del 70%.',
+  ];
+  setTimeout(() => {
+    closeModal();
+    const descs = document.querySelectorAll('.exp-desc');
+    if(descs[idx]) { descs[idx].value = samples[Math.floor(Math.random()*samples.length)]; updatePreview(); }
+  }, 2000);
+}
+
+function suggestSkills() {
+  showAILoading('Analizzando il tuo profilo e suggerendo competenze...');
+  const suggestions = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
+  setTimeout(() => {
+    closeModal();
+    const container = document.getElementById('tech-skills');
+    suggestions.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'skill-tag fade-in';
+      div.innerHTML = s + ' <button onclick="removeSkill(this)">×</button>';
+      container.appendChild(div);
+    });
+  }, 1800);
+}
+
+function showAILoading(text) {
+  document.getElementById('ai-loading-text').textContent = text;
+  document.getElementById('ai-progress').style.animation = 'none';
+  void document.getElementById('ai-progress').offsetWidth;
+  document.getElementById('ai-progress').style.animation = 'progress 2s ease forwards';
+  showModal('ai-loading');
+}
+
+function addExperience() {
+  expCount++;
+  const container = document.getElementById('experiences-container');
+  const div = document.createElement('div');
+  div.className = 'exp-block fade-in';
+  div.innerHTML = `<div class="exp-block-header"><span class="exp-block-title">Esperienza ${expCount}</span><div style="display:flex;gap:8px"><button class="ai-btn" onclick="regenerateDesc(${expCount-1})" style="padding:5px 10px;font-size:12px">✦ Ottimizza</button><button class="btn btn-danger btn-sm" onclick="this.closest('.exp-block').remove()">Rimuovi</button></div></div>
+  <div class="form-group"><label>Nome azienda *</label><input type="text" class="exp-company" placeholder="es. Accenture" oninput="updatePreview()"></div>
+  <div class="form-row"><div class="form-group"><label>Ruolo *</label><input type="text" class="exp-role" placeholder="es. Project Manager" oninput="updatePreview()"></div><div class="form-group"><label>Città</label><input type="text" class="exp-city" placeholder="es. Roma" oninput="updatePreview()"></div></div>
+  <div class="form-row"><div class="form-group"><label>Da</label><input type="text" class="exp-from" placeholder="Gen 2018" oninput="updatePreview()"></div><div class="form-group"><label>A</label><input type="text" class="exp-to" placeholder="Feb 2020" oninput="updatePreview()"></div></div>
+  <div class="form-group"><label>Descrizione</label><textarea class="exp-desc" rows="4" oninput="updatePreview()" placeholder="Descrivi le tue responsabilità e risultati..."></textarea></div>`;
+  container.appendChild(div);
+}
+
+function addSkill() {
+  const input = document.getElementById('new-skill');
+  const val = input.value.trim();
+  if(!val) return;
+  const container = document.getElementById('tech-skills');
+  const div = document.createElement('div');
+  div.className = 'skill-tag fade-in';
+  div.innerHTML = val + ' <button onclick="removeSkill(this)">×</button>';
+  container.appendChild(div);
+  input.value = '';
+}
+
+function addSkillOnEnter(e) { if(e.key === 'Enter') addSkill(); }
+function removeSkill(btn) { btn.closest('.skill-tag').remove(); }
+
+function changeTemplate() {
+  showPage('builder-step1');
+}
+
+function downloadCV() {
+  showModal('signup');
+}
+
+function downloadFree() {
+  closeModal();
+  setTimeout(() => showModal('success'), 100);
+}
+
+function selectTier(card) {
+  document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+
+function switchImportTab(id, el) {
+  ['linkedin','pdf','manual'].forEach(t => {
+    const el2 = document.getElementById('import-' + t);
+    if(el2) el2.style.display = t === id ? 'block' : 'none';
+  });
+  document.querySelectorAll('.modal-box .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function simulateImport() {
+  closeModal();
+  showAILoading('Estraendo le informazioni dal documento con AI...');
+  setTimeout(() => {
+    closeModal();
+    document.getElementById('fn').value = 'Giulia';
+    document.getElementById('ln').value = 'Bianchi';
+    document.getElementById('title').value = 'Marketing Manager';
+    document.getElementById('email').value = 'giulia.bianchi@email.com';
+    document.getElementById('city').value = 'Roma';
+    document.getElementById('summary').value = 'Marketing manager con 6 anni di esperienza in gestione di campagne digitali e brand strategy per aziende B2C e B2B. Expertise in SEO, SEM, social media e analisi dati.';
+    updatePreview();
+    showPage('builder-step2');
+  }, 2500);
+}
+
+function goToPreview() {
+  const rightPanel = document.querySelector('.split-right');
+  if(rightPanel) rightPanel.scrollIntoView({behavior:'smooth'});
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if(e.target === this) closeModal(); });
+});
+</script>
+</body>
+</html>
