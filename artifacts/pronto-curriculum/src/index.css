@@ -848,6 +848,7 @@ nav {
   margin-bottom: 24px;
 }
 .import-zone:hover { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+.import-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.08); transform: scale(1.01); }
 .import-zone h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
 .import-zone p { font-size: 13px; color: var(--gray500); }
 

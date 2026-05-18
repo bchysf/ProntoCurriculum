@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ModalType } from '../types';
 
 interface ModalsProps {
@@ -12,6 +12,12 @@ interface ModalsProps {
 export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImportComplete }: ModalsProps) {
   const [importTab, setImportTab] = useState<'linkedin' | 'pdf' | 'manual'>('linkedin');
   const [selectedTier, setSelectedTier] = useState<'monthly' | 'single'>('monthly');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [manualText, setManualText] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const linkedinFileRef = useRef<HTMLInputElement>(null);
+  const pdfFileRef = useRef<HTMLInputElement>(null);
 
   if (!modal) return null;
 
@@ -19,10 +25,37 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
     if (e.target === e.currentTarget) onClose();
   };
 
-  const handleSimulateImport = () => {
+  const triggerImport = () => {
     onClose();
     setTimeout(() => onImportComplete(), 100);
   };
+
+  const handleFileSelected = (file: File) => {
+    setUploadedFile(file);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelected(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileSelected(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => setDragOver(false);
+
+  const canImportLinkedin = linkedinUrl.trim().length > 0 || uploadedFile !== null;
+  const canImportPdf = uploadedFile !== null;
+  const canImportManual = manualText.trim().length > 0;
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -101,7 +134,7 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
               <button
                 key={t}
                 className={`tab ${importTab === t ? 'active' : ''}`}
-                onClick={() => setImportTab(t)}
+                onClick={() => { setImportTab(t); setUploadedFile(null); }}
               >
                 {t === 'linkedin' ? 'LinkedIn' : t === 'pdf' ? 'PDF / Word' : 'Manuale'}
               </button>
@@ -112,34 +145,115 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
             <div>
               <div className="form-group">
                 <label>URL profilo LinkedIn</label>
-                <input type="url" placeholder="https://linkedin.com/in/tuo-profilo" />
+                <input
+                  type="url"
+                  placeholder="https://linkedin.com/in/tuo-profilo"
+                  value={linkedinUrl}
+                  onChange={e => setLinkedinUrl(e.target.value)}
+                />
               </div>
               <p style={{ fontSize: 13, color: 'var(--gray500)', marginBottom: 16, lineHeight: 1.5 }}>
                 Oppure scarica il tuo PDF da LinkedIn (Profilo → Altro → Salva come PDF) e caricalo qui sotto
               </p>
-              <div className="import-zone" onClick={handleSimulateImport}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🔗</div>
-                <h4>Carica il tuo PDF LinkedIn</h4>
-                <p>Trascina il file qui o clicca per selezionarlo</p>
+              <input
+                ref={linkedinFileRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                style={{ display: 'none' }}
+                onChange={handleFileInputChange}
+              />
+              <div
+                className={`import-zone${dragOver ? ' drag-over' : ''}`}
+                onClick={() => linkedinFileRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+              >
+                {uploadedFile ? (
+                  <>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                    <h4>{uploadedFile.name}</h4>
+                    <p style={{ color: 'var(--gold)' }}>File pronto · clicca per cambiarlo</p>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔗</div>
+                    <h4>Carica il tuo PDF LinkedIn</h4>
+                    <p>Trascina il file qui o <span style={{ color: 'var(--gold)', fontWeight: 600 }}>clicca per selezionarlo</span></p>
+                    <p style={{ fontSize: 12, color: 'var(--gray400)', marginTop: 4 }}>PDF, DOC, DOCX</p>
+                  </>
+                )}
               </div>
+              <button
+                className="btn btn-gold"
+                style={{ width: '100%', marginTop: 16, opacity: canImportLinkedin ? 1 : 0.5 }}
+                disabled={!canImportLinkedin}
+                onClick={triggerImport}
+              >
+                ✦ Importa con AI →
+              </button>
             </div>
           )}
 
           {importTab === 'pdf' && (
-            <div className="import-zone" onClick={handleSimulateImport}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-              <h4>Carica il tuo CV esistente</h4>
-              <p>PDF o Word (.docx) · L'AI estrarrà le informazioni automaticamente</p>
-            </div>
+            <>
+              <input
+                ref={pdfFileRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                style={{ display: 'none' }}
+                onChange={handleFileInputChange}
+              />
+              <div
+                className={`import-zone${dragOver ? ' drag-over' : ''}`}
+                onClick={() => pdfFileRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+              >
+                {uploadedFile ? (
+                  <>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                    <h4>{uploadedFile.name}</h4>
+                    <p style={{ color: 'var(--gold)' }}>File pronto · clicca per cambiarlo</p>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+                    <h4>Carica il tuo CV esistente</h4>
+                    <p>Trascina il file qui o <span style={{ color: 'var(--gold)', fontWeight: 600 }}>clicca per selezionarlo</span></p>
+                    <p style={{ fontSize: 12, color: 'var(--gray400)', marginTop: 4 }}>PDF · Word (.docx) · L'AI estrarrà le informazioni automaticamente</p>
+                  </>
+                )}
+              </div>
+              <button
+                className="btn btn-gold"
+                style={{ width: '100%', marginTop: 16, opacity: canImportPdf ? 1 : 0.5 }}
+                disabled={!canImportPdf}
+                onClick={triggerImport}
+              >
+                ✦ Analizza con AI →
+              </button>
+            </>
           )}
 
           {importTab === 'manual' && (
             <div>
               <div className="form-group">
                 <label>Incolla qui il testo del tuo CV</label>
-                <textarea rows={8} placeholder="Incolla il contenuto del tuo CV..." />
+                <textarea
+                  rows={8}
+                  placeholder="Incolla il contenuto del tuo CV..."
+                  value={manualText}
+                  onChange={e => setManualText(e.target.value)}
+                />
               </div>
-              <button className="btn btn-gold" style={{ width: '100%' }} onClick={handleSimulateImport}>
+              <button
+                className="btn btn-gold"
+                style={{ width: '100%', opacity: canImportManual ? 1 : 0.5 }}
+                disabled={!canImportManual}
+                onClick={triggerImport}
+              >
                 ✦ Analizza con AI →
               </button>
             </div>
