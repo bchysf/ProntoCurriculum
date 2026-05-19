@@ -178,21 +178,46 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
                 <h3>📋 Dati personali</h3>
                 <div className="subtitle">Informazioni di contatto e profilo professionale</div>
 
-                {hasPhotoTemplate && (
-                  <div className="photo-upload-area" onClick={() => photoInputRef.current?.click()}>
-                    {cvData.photo
-                      ? <img src={cvData.photo} alt="foto profilo" className="photo-preview" />
-                      : (
-                        <div className="photo-upload-placeholder">
-                          <span style={{ fontSize: 28 }}>👤</span>
-                          <span style={{ fontSize: 13, fontWeight: 500, marginTop: 6 }}>Carica foto profilo</span>
-                          <span style={{ fontSize: 12, color: 'var(--gray500)' }}>JPG, PNG · max 5MB</span>
-                        </div>
-                      )
-                    }
-                    <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-                  </div>
-                )}
+                <div className="photo-section">
+                  {cvData.photo ? (
+                    <div className="photo-has-photo">
+                      <img src={cvData.photo} alt="foto profilo" className="photo-existing" />
+                      <div className="photo-has-info">
+                        <span className="photo-has-label">✅ Foto profilo caricata</span>
+                        {hasPhotoTemplate
+                          ? <span className="photo-has-sub">Verrà usata automaticamente nel template selezionato</span>
+                          : <span className="photo-has-sub" style={{ color: 'var(--gold)' }}>⚠ Il template attuale non include foto. Cambia template per usarla.</span>
+                        }
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                          onClick={() => photoInputRef.current?.click()}
+                        >
+                          🔄 Cambia foto
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`photo-upload-area ${hasPhotoTemplate ? 'photo-upload-highlighted' : ''}`}
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      <div className="photo-upload-placeholder">
+                        <span style={{ fontSize: 28 }}>👤</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>
+                          {hasPhotoTemplate ? 'Carica la tua foto profilo' : 'Aggiungi foto profilo'}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--gray500)' }}>
+                          {hasPhotoTemplate
+                            ? 'Il template selezionato supporta la foto — aggiungila ora'
+                            : 'JPG, PNG · max 5MB'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
+                </div>
 
                 <div className="form-row">
                   <div className="form-group">
