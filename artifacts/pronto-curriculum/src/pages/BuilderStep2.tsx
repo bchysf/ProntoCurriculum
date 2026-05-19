@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CVData, TemplateType, ModalType } from '../types';
+import { downloadCVAsPDF } from '../utils/downloadPDF';
 
 interface BuilderStep2Props {
   cvData: CVData;
@@ -27,6 +28,17 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
   const [activeTab, setActiveTab] = useState(0);
   const [newSkill, setNewSkill] = useState('');
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
+      await downloadCVAsPDF(name);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const update = useCallback((field: keyof CVData, value: unknown) => {
     onCVChange({ ...cvData, [field]: value });
@@ -392,8 +404,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
               </div>
             </div>
             <div style={{ marginTop: 24 }}>
-              <button className="btn btn-gold btn-lg" style={{ width: '100%' }} onClick={() => onModal('signup')}>
-                Scarica il tuo CV →
+              <button className="btn btn-gold btn-lg" style={{ width: '100%' }} onClick={handleDownload} disabled={downloading}>
+                {downloading ? '⏳ Generando PDF...' : '⬇ Scarica il tuo CV in PDF →'}
               </button>
             </div>
           </div>
@@ -421,7 +433,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
           <span style={{ fontSize: 13, fontWeight: 600 }}>Anteprima CV</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step1')}>🎨 Cambia</button>
-            <button className="btn btn-gold btn-sm" onClick={() => onModal('signup')}>⬇ Scarica PDF</button>
+            <button className="btn btn-gold btn-sm" onClick={handleDownload} disabled={downloading}>{downloading ? '⏳ Generando...' : '⬇ Scarica PDF'}</button>
           </div>
         </div>
 

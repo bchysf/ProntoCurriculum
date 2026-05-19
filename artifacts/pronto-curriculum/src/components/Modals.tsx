@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { ModalType, CVData } from '../types';
-import { parseCVText, extractTextFromPDF } from '../utils/parseCV';
+import { extractTextFromPDF } from '../utils/parseCV';
+import { aiParseCV } from '../utils/aiParseCV';
 
 interface ModalsProps {
   modal: ModalType;
@@ -58,11 +59,12 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
       } else {
         text = await file.text();
       }
-      const data = parseCVText(text);
+      const data = await aiParseCV(text);
       onClose();
       setTimeout(() => onImportComplete(data), 100);
-    } catch {
-      setExtractError('Impossibile leggere il file. Prova con un altro formato o usa il testo manuale.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setExtractError(msg.includes('server') ? `Errore AI: ${msg}. Riprova tra qualche secondo.` : 'Impossibile leggere il file. Prova con un altro formato o usa il testo manuale.');
     } finally {
       setExtracting(false);
     }
@@ -81,11 +83,19 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
     if (uploadedFile) await doExtractAndImport(uploadedFile);
   };
 
-  const handleImportManual = () => {
+  const handleImportManual = async () => {
     if (!manualText.trim()) return;
-    const data = parseCVText(manualText);
-    onClose();
-    setTimeout(() => onImportComplete(data), 100);
+    setExtracting(true);
+    setExtractError('');
+    try {
+      const data = await aiParseCV(manualText);
+      onClose();
+      setTimeout(() => onImportComplete(data), 100);
+    } catch {
+      setExtractError('Errore AI. Riprova tra qualche secondo.');
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const canImportLinkedin = linkedinUrl.trim().length > 0 || uploadedFile !== null;
@@ -251,15 +261,16 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
                   value={manualText}
                   onChange={e => setManualText(e.target.value)}
                 />
-                <div className="form-hint">Copia e incolla il testo dal tuo CV esistente — anche senza formattazione</div>
+                <div className="form-hint">Copia e incolla il testo dal tuo CV — l'AI leggerà e compilerà tutti i campi automaticamente</div>
               </div>
+              {extractError && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>{extractError}</p>}
               <button
                 className="btn btn-gold"
-                style={{ width: '100%', opacity: canImportManual ? 1 : 0.5 }}
-                disabled={!canImportManual}
+                style={{ width: '100%', opacity: canImportManual && !extracting ? 1 : 0.5 }}
+                disabled={!canImportManual || extracting}
                 onClick={handleImportManual}
               >
-                ✦ Analizza e compila il CV →
+                {extracting ? '⏳ AI sta leggendo il tuo CV...' : '✦ Analizza con AI e compila →'}
               </button>
             </div>
           )}
