@@ -47,7 +47,6 @@ export default function App() {
   const [aiLoadingText, setAiLoadingText] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
   const [cvData, setCvData] = useState<CVData>(DEFAULT_CV_DATA);
-  const [atsScore, setAtsScore] = useState(87);
 
   const navigate = useCallback((p: Page) => {
     setPage(p);
@@ -73,7 +72,6 @@ export default function App() {
     setTimeout(() => {
       setModal(null);
       callback();
-      setAtsScore(87 + Math.floor(Math.random() * 10));
     }, 2200);
   };
 
@@ -117,7 +115,6 @@ export default function App() {
             selectedTemplate={selectedTemplate}
             onNavigate={navigate}
             onModal={openModal}
-            atsScore={atsScore}
             onAiAction={handleAiAction}
           />
         )}

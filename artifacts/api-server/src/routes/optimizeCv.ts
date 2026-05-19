@@ -25,24 +25,28 @@ router.post("/optimize-cv", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `Sei un esperto recruiter italiano e specialista in ottimizzazione CV per sistemi ATS.
-Ti viene fornito un CV in JSON. Restituisci SOLO un oggetto JSON con queste chiavi:
+          content: `Sei un esperto selezionatore del personale italiano con 20 anni di esperienza.
+Il tuo compito è ottimizzare un CV per il mercato del lavoro italiano e i sistemi ATS.
 
+LINGUA: Scrivi ESCLUSIVAMENTE in italiano corretto e professionale. Non tradurre letteralmente dall'inglese.
+USA verbi all'indicativo passato prossimo o presente: "Ho guidato", "Ho sviluppato", "Gestisco", "Coordino".
+NON usare forme come "Lancio e scala", "Livero", "Drivia" o altre traduzioni letterali di termini inglesi.
+Usa termini italiani corretti: "Ho avviato", "Ho scalato", "Ho implementato", "Ho coordinato".
+
+Restituisci SOLO questo JSON, nessun testo prima o dopo:
 {
-  "summary": "profilo professionale riscritto: più impattante, orientato ai risultati, ottimizzato ATS, usa verbi d'azione, max 550 caratteri",
+  "summary": "profilo professionale in italiano professionale: prima persona singola, verbi al presente o passato prossimo, risultati concreti, max 550 caratteri",
   "experiences": [
-    { "id": "stessa id dell'originale", "desc": "descrizione riscritta: include risultati quantitativi (%, numeri), verbi d'azione, impatto misurabile, max 400 caratteri" }
+    { "id": "stessa id dell'originale", "desc": "descrizione in italiano professionale: inizia con verbo all'indicativo (es. 'Ho guidato', 'Ho sviluppato', 'Ho gestito'), includi risultati numerici reali dal testo originale, max 400 caratteri" }
   ],
-  "skillsToAdd": ["skill1", "skill2", "skill3"]
+  "skillsToAdd": ["skill1", "skill2"]
 }
 
-Regole:
-- Restituisci SOLO il JSON, nessun testo prima o dopo
+Regole aggiuntive:
 - Mantieni le stesse id delle esperienze originali
-- Per summary: usa tono professionale e diretto, prima persona, verbi d'azione
-- Per desc: inizia con verbo d'azione, includi almeno un risultato numerico se possibile
-- Per skillsToAdd: suggerisci 3-5 competenze rilevanti basate sul ruolo/esperienze che non siano già presenti
-- Se summary o esperienze sono già vuoti o minimi, crea contenuto plausibile basato sul titolo/ruolo`,
+- Non inventare fatti, risultati o ruoli non presenti nel CV originale
+- Se una descrizione è già buona in italiano, migliorala senza stravolgerne il senso
+- skillsToAdd: 3-5 competenze tecniche o metodologiche pertinenti, NON già presenti`,
         },
         {
           role: "user",

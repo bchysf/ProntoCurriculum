@@ -16,7 +16,33 @@ interface BuilderStep2Props {
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
 
-export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onNavigate, onModal, atsScore, onAiAction }: BuilderStep2Props) {
+function computeCVScore(cv: CVData): { score: number; done: string[]; todo: string[] } {
+  let score = 0;
+  const done: string[] = [];
+  const todo: string[] = [];
+
+  if (cv.firstName && cv.lastName) { score += 10; done.push('Nome e cognome'); } else { todo.push('Aggiungi nome e cognome'); }
+  if (cv.title) { score += 10; done.push('Titolo professionale'); } else { todo.push('Aggiungi il titolo professionale'); }
+  if (cv.email) { score += 10; done.push('Email'); } else { todo.push('Aggiungi l\'email'); }
+  if (cv.phone) { score += 5; done.push('Telefono'); } else { todo.push('Aggiungi il telefono'); }
+  if (cv.city) { score += 5; done.push('Città'); } else { todo.push('Aggiungi la città'); }
+  if (cv.summary && cv.summary.length > 100) { score += 15; done.push('Profilo professionale'); }
+  else if (cv.summary && cv.summary.length > 0) { score += 7; todo.push('Espandi il profilo professionale (min. 100 caratteri)'); }
+  else { todo.push('Scrivi un profilo professionale'); }
+  const expWithDesc = cv.experiences.filter(e => e.company && e.role && e.desc && e.desc.length > 40);
+  if (expWithDesc.length >= 2) { score += 20; done.push('Esperienze complete con descrizione'); }
+  else if (cv.experiences.length > 0) { score += 10; todo.push('Aggiungi descrizioni dettagliate alle esperienze'); }
+  else { todo.push('Aggiungi almeno un\'esperienza lavorativa'); }
+  if (cv.education.some(e => e.institution && e.degree)) { score += 10; done.push('Formazione'); } else { todo.push('Aggiungi il titolo di studio'); }
+  if (cv.skills.length >= 6) { score += 10; done.push('Competenze (6+)'); }
+  else if (cv.skills.length >= 3) { score += 6; todo.push('Aggiungi altre competenze (ne hai ' + cv.skills.length + '/6)'); }
+  else { todo.push('Aggiungi almeno 6 competenze'); }
+  if (cv.languages.some(l => l.name)) { score += 5; done.push('Lingue'); } else { todo.push('Aggiungi le lingue conosciute'); }
+
+  return { score, done, todo };
+}
+
+export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onNavigate, onModal, onAiAction }: Omit<BuilderStep2Props, 'atsScore'>) {
   const [activeTab, setActiveTab] = useState(0);
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -470,20 +496,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
 
         {/* RIGHT PREVIEW */}
         <div className="split-right">
-          <div className="ats-meter">
-            <div className="ats-header">
-              <span>🎯 ATS Score</span>
-              <span className="ats-score">{atsScore}/100</span>
-            </div>
-            <div className="ats-bar">
-              <div className="ats-fill" style={{ width: `${atsScore}%` }} />
-            </div>
-            <div className="ats-tips">
-              <div className="ats-tip">✅ Formato leggibile dai sistemi ATS</div>
-              <div className="ats-tip">✅ Parole chiave rilevanti presenti</div>
-              <div className="ats-tip" style={{ color: 'var(--gold)' }}>⚠️ Usa "Ottimizza tutto" per massimizzare il punteggio</div>
-            </div>
-          </div>
+          {(() => {
+            const { score, done, todo } = computeCVScore(cvData);
+            const scoreColor = score >= 80 ? 'var(--success)' : score >= 50 ? 'var(--gold)' : 'var(--danger)';
+            return (
+              <div className="ats-meter">
+                <div className="ats-header">
+                  <span>📋 Completezza CV</span>
+                  <span className="ats-score" style={{ color: scoreColor }}>{score}/100</span>
+                </div>
+                <div className="ats-bar">
+                  <div className="ats-fill" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor})` }} />
+                </div>
+                <div className="ats-tips">
+                  {done.slice(0, 2).map(d => (
+                    <div key={d} className="ats-tip">✅ {d}</div>
+                  ))}
+                  {todo.slice(0, 2).map(t => (
+                    <div key={t} className="ats-tip" style={{ color: score < 50 ? 'var(--danger)' : 'var(--gold)' }}>⚠ {t}</div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <span style={{ fontSize: 13, fontWeight: 600 }}>Anteprima CV</span>
