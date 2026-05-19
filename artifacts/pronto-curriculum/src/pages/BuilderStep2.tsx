@@ -60,6 +60,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
     onCVChange({ ...cvData, experiences: cvData.experiences.filter(e => e.id !== id) });
   };
 
+  const moveExperience = (idx: number, dir: -1 | 1) => {
+    const next = idx + dir;
+    if (next < 0 || next >= cvData.experiences.length) return;
+    const arr = [...cvData.experiences];
+    [arr[idx], arr[next]] = [arr[next], arr[idx]];
+    onCVChange({ ...cvData, experiences: arr });
+  };
+
   const addSkill = () => {
     const s = newSkill.trim();
     if (!s || cvData.skills.includes(s)) return;
@@ -200,11 +208,23 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
                   <div key={exp.id} className="exp-block">
                     <div className="exp-block-header">
                       <span className="exp-block-title">Esperienza {idx + 1}</span>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '4px 8px', fontSize: 14, lineHeight: 1 }}
+                          title="Sposta su"
+                          disabled={idx === 0}
+                          onClick={() => moveExperience(idx, -1)}
+                        >↑</button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '4px 8px', fontSize: 14, lineHeight: 1 }}
+                          title="Sposta giù"
+                          disabled={idx === cvData.experiences.length - 1}
+                          onClick={() => moveExperience(idx, 1)}
+                        >↓</button>
                         <button className="ai-btn" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => handleRegenerateExp(idx)}>✦ Ottimizza</button>
-                        {idx > 0 && (
-                          <button className="btn btn-danger btn-sm" onClick={() => removeExperience(exp.id)}>Rimuovi</button>
-                        )}
+                        <button className="btn btn-danger btn-sm" onClick={() => removeExperience(exp.id)}>Rimuovi</button>
                       </div>
                     </div>
                     <div className="form-group">

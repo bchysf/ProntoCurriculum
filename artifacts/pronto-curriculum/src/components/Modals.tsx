@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react';
-import { ModalType } from '../types';
+import { ModalType, CVData } from '../types';
+import { parseCVText, extractTextFromPDF } from '../utils/parseCV';
 
 interface ModalsProps {
   modal: ModalType;
   aiLoadingText: string;
   onClose: () => void;
   onSuccess: () => void;
-  onImportComplete: () => void;
+  onImportComplete: (data: Partial<CVData>) => void;
 }
 
 export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImportComplete }: ModalsProps) {
@@ -16,6 +17,8 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
   const [manualText, setManualText] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState('');
   const linkedinFileRef = useRef<HTMLInputElement>(null);
   const pdfFileRef = useRef<HTMLInputElement>(null);
 
@@ -25,13 +28,9 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
     if (e.target === e.currentTarget) onClose();
   };
 
-  const triggerImport = () => {
-    onClose();
-    setTimeout(() => onImportComplete(), 100);
-  };
-
   const handleFileSelected = (file: File) => {
     setUploadedFile(file);
+    setExtractError('');
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,16 +45,77 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
     if (file) handleFileSelected(file);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragOver(true); };
+  const handleDragLeave = () => setDragOver(false);
+
+  const doExtractAndImport = async (file: File) => {
+    setExtracting(true);
+    setExtractError('');
+    try {
+      let text = '';
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        text = await extractTextFromPDF(file);
+      } else {
+        text = await file.text();
+      }
+      const data = parseCVText(text);
+      onClose();
+      setTimeout(() => onImportComplete(data), 100);
+    } catch {
+      setExtractError('Impossibile leggere il file. Prova con un altro formato o usa il testo manuale.');
+    } finally {
+      setExtracting(false);
+    }
   };
 
-  const handleDragLeave = () => setDragOver(false);
+  const handleImportLinkedin = async () => {
+    if (uploadedFile) {
+      await doExtractAndImport(uploadedFile);
+    } else if (linkedinUrl.trim()) {
+      onClose();
+      setTimeout(() => onImportComplete({ linkedin: linkedinUrl.trim() }), 100);
+    }
+  };
+
+  const handleImportPdf = async () => {
+    if (uploadedFile) await doExtractAndImport(uploadedFile);
+  };
+
+  const handleImportManual = () => {
+    if (!manualText.trim()) return;
+    const data = parseCVText(manualText);
+    onClose();
+    setTimeout(() => onImportComplete(data), 100);
+  };
 
   const canImportLinkedin = linkedinUrl.trim().length > 0 || uploadedFile !== null;
   const canImportPdf = uploadedFile !== null;
   const canImportManual = manualText.trim().length > 0;
+
+  const UploadZone = ({ fileRef }: { fileRef: React.RefObject<HTMLInputElement | null> }) => (
+    <div
+      className={`import-zone${dragOver ? ' drag-over' : ''}`}
+      onClick={() => fileRef.current?.click()}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      {uploadedFile ? (
+        <>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+          <h4>{uploadedFile.name}</h4>
+          <p style={{ color: 'var(--gold)' }}>File caricato · clicca per cambiarlo</p>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+          <h4>Carica il tuo CV</h4>
+          <p>Trascina il file qui o <span style={{ color: 'var(--gold)', fontWeight: 600 }}>clicca per selezionarlo</span></p>
+          <p style={{ fontSize: 12, color: 'var(--gray400)', marginTop: 4 }}>PDF o Word (.docx)</p>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -93,20 +153,14 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
           <div className="modal-title">Scegli il tuo piano</div>
           <div className="modal-sub">Sblocca il tuo CV professionale senza filigrana.</div>
           <div className="tier-cards">
-            <div
-              className={`tier-card ${selectedTier === 'monthly' ? 'selected' : ''}`}
-              onClick={() => setSelectedTier('monthly')}
-            >
+            <div className={`tier-card ${selectedTier === 'monthly' ? 'selected' : ''}`} onClick={() => setSelectedTier('monthly')}>
               <div className="tier-card-info">
                 <h4>⚡ Piano Mensile</h4>
                 <p>CV illimitati · Cover letter · ATS avanzato</p>
               </div>
               <div className="tier-price">€25<span style={{ fontSize: 14, fontWeight: 400 }}>/mese</span></div>
             </div>
-            <div
-              className={`tier-card ${selectedTier === 'single' ? 'selected' : ''}`}
-              onClick={() => setSelectedTier('single')}
-            >
+            <div className={`tier-card ${selectedTier === 'single' ? 'selected' : ''}`} onClick={() => setSelectedTier('single')}>
               <div className="tier-card-info">
                 <h4>📄 Singolo CV</h4>
                 <p>Acquisto una tantum, nessun abbonamento</p>
@@ -128,111 +182,61 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
         <div className="modal-box wide fade-in">
           <button className="modal-close" onClick={onClose}>×</button>
           <div className="modal-title">Importa il tuo profilo</div>
-          <div className="modal-sub">Risparmia tempo importando le tue informazioni da LinkedIn o da un CV esistente.</div>
+          <div className="modal-sub">L'AI estrarrà automaticamente le informazioni dal tuo CV esistente.</div>
           <div className="tabs">
             {(['linkedin', 'pdf', 'manual'] as const).map(t => (
               <button
                 key={t}
                 className={`tab ${importTab === t ? 'active' : ''}`}
-                onClick={() => { setImportTab(t); setUploadedFile(null); }}
+                onClick={() => { setImportTab(t); setUploadedFile(null); setExtractError(''); }}
               >
-                {t === 'linkedin' ? 'LinkedIn' : t === 'pdf' ? 'PDF / Word' : 'Manuale'}
+                {t === 'linkedin' ? 'LinkedIn' : t === 'pdf' ? 'PDF / Word' : 'Testo'}
               </button>
             ))}
           </div>
 
           {importTab === 'linkedin' && (
             <div>
+              <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: 'var(--navy)', lineHeight: 1.6 }}>
+                <strong>📌 Come importare da LinkedIn:</strong><br />
+                Vai su LinkedIn → Il tuo profilo → Altro → <strong>Salva come PDF</strong>, poi carica il file qui sotto.
+              </div>
               <div className="form-group">
-                <label>URL profilo LinkedIn</label>
+                <label>Oppure inserisci l'URL del tuo profilo LinkedIn</label>
                 <input
                   type="url"
                   placeholder="https://linkedin.com/in/tuo-profilo"
                   value={linkedinUrl}
                   onChange={e => setLinkedinUrl(e.target.value)}
                 />
+                <div className="form-hint">Verrà salvato nel CV come link al tuo profilo</div>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--gray500)', marginBottom: 16, lineHeight: 1.5 }}>
-                Oppure scarica il tuo PDF da LinkedIn (Profilo → Altro → Salva come PDF) e caricalo qui sotto
-              </p>
-              <input
-                ref={linkedinFileRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                style={{ display: 'none' }}
-                onChange={handleFileInputChange}
-              />
-              <div
-                className={`import-zone${dragOver ? ' drag-over' : ''}`}
-                onClick={() => linkedinFileRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-              >
-                {uploadedFile ? (
-                  <>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                    <h4>{uploadedFile.name}</h4>
-                    <p style={{ color: 'var(--gold)' }}>File pronto · clicca per cambiarlo</p>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔗</div>
-                    <h4>Carica il tuo PDF LinkedIn</h4>
-                    <p>Trascina il file qui o <span style={{ color: 'var(--gold)', fontWeight: 600 }}>clicca per selezionarlo</span></p>
-                    <p style={{ fontSize: 12, color: 'var(--gray400)', marginTop: 4 }}>PDF, DOC, DOCX</p>
-                  </>
-                )}
-              </div>
+              <input ref={linkedinFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleFileInputChange} />
+              <UploadZone fileRef={linkedinFileRef} />
+              {extractError && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>{extractError}</p>}
               <button
                 className="btn btn-gold"
-                style={{ width: '100%', marginTop: 16, opacity: canImportLinkedin ? 1 : 0.5 }}
-                disabled={!canImportLinkedin}
-                onClick={triggerImport}
+                style={{ width: '100%', opacity: canImportLinkedin && !extracting ? 1 : 0.5 }}
+                disabled={!canImportLinkedin || extracting}
+                onClick={handleImportLinkedin}
               >
-                ✦ Importa con AI →
+                {extracting ? '⏳ Estrazione in corso...' : '✦ Importa e compila il CV →'}
               </button>
             </div>
           )}
 
           {importTab === 'pdf' && (
             <>
-              <input
-                ref={pdfFileRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                style={{ display: 'none' }}
-                onChange={handleFileInputChange}
-              />
-              <div
-                className={`import-zone${dragOver ? ' drag-over' : ''}`}
-                onClick={() => pdfFileRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-              >
-                {uploadedFile ? (
-                  <>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                    <h4>{uploadedFile.name}</h4>
-                    <p style={{ color: 'var(--gold)' }}>File pronto · clicca per cambiarlo</p>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-                    <h4>Carica il tuo CV esistente</h4>
-                    <p>Trascina il file qui o <span style={{ color: 'var(--gold)', fontWeight: 600 }}>clicca per selezionarlo</span></p>
-                    <p style={{ fontSize: 12, color: 'var(--gray400)', marginTop: 4 }}>PDF · Word (.docx) · L'AI estrarrà le informazioni automaticamente</p>
-                  </>
-                )}
-              </div>
+              <input ref={pdfFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleFileInputChange} />
+              <UploadZone fileRef={pdfFileRef} />
+              {extractError && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>{extractError}</p>}
               <button
                 className="btn btn-gold"
-                style={{ width: '100%', marginTop: 16, opacity: canImportPdf ? 1 : 0.5 }}
-                disabled={!canImportPdf}
-                onClick={triggerImport}
+                style={{ width: '100%', marginTop: 4, opacity: canImportPdf && !extracting ? 1 : 0.5 }}
+                disabled={!canImportPdf || extracting}
+                onClick={handleImportPdf}
               >
-                ✦ Analizza con AI →
+                {extracting ? '⏳ Lettura PDF in corso...' : '✦ Estrai informazioni con AI →'}
               </button>
             </>
           )}
@@ -242,19 +246,20 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
               <div className="form-group">
                 <label>Incolla qui il testo del tuo CV</label>
                 <textarea
-                  rows={8}
-                  placeholder="Incolla il contenuto del tuo CV..."
+                  rows={9}
+                  placeholder="Incolla il contenuto del tuo CV: nome, contatti, esperienze, formazione..."
                   value={manualText}
                   onChange={e => setManualText(e.target.value)}
                 />
+                <div className="form-hint">Copia e incolla il testo dal tuo CV esistente — anche senza formattazione</div>
               </div>
               <button
                 className="btn btn-gold"
                 style={{ width: '100%', opacity: canImportManual ? 1 : 0.5 }}
                 disabled={!canImportManual}
-                onClick={triggerImport}
+                onClick={handleImportManual}
               >
-                ✦ Analizza con AI →
+                ✦ Analizza e compila il CV →
               </button>
             </div>
           )}
@@ -281,12 +286,7 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
           <div className="modal-title" style={{ fontSize: 20 }}>AI al lavoro...</div>
           <p style={{ fontSize: 14, color: 'var(--gray500)' }}>{aiLoadingText}</p>
           <div style={{ marginTop: 20, height: 4, background: 'var(--gray100)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              background: 'var(--gold)',
-              borderRadius: 2,
-              animation: 'progress 2s ease forwards'
-            }} />
+            <div style={{ height: '100%', background: 'var(--gold)', borderRadius: 2, animation: 'progress 2s ease forwards' }} />
           </div>
         </div>
       )}

@@ -80,14 +80,10 @@ export default function App() {
     }, 2200);
   };
 
-  const handleImportComplete = () => {
-    setAiLoadingText('Estraendo le informazioni dal documento con AI...');
-    setModal('ai-loading');
-    setTimeout(() => {
-      setModal(null);
-      setCvData(prev => ({ ...prev, ...IMPORT_DATA }));
-      navigate('builder-step2');
-    }, 2500);
+  const handleImportComplete = (extracted: Partial<CVData>) => {
+    const merged = { ...cvData, ...Object.fromEntries(Object.entries(extracted).filter(([, v]) => v !== '' && v !== undefined)) };
+    setCvData(merged);
+    navigate('builder-step2');
   };
 
   const handleSuccess = () => {
