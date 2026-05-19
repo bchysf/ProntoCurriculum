@@ -520,7 +520,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
             );
           })()}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 600 }}>Anteprima CV</span>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step1')}>🎨 Cambia</button>
