@@ -35,13 +35,10 @@ const DEFAULT_CV_DATA: CVData = {
   languages: [{ id: '1', name: 'Inglese', level: 'C1 - Avanzato' }],
 };
 
-const IMPORT_DATA: Partial<CVData> = {
-  firstName: 'Giulia',
-  lastName: 'Bianchi',
-  title: 'Marketing Manager',
-  email: 'giulia.bianchi@email.com',
-  city: 'Roma',
-  summary: 'Marketing manager con 6 anni di esperienza in gestione di campagne digitali e brand strategy per aziende B2C e B2B. Expertise in SEO, SEM, social media e analisi dati.',
+const BLANK_CV: CVData = {
+  firstName: '', lastName: '', title: '', email: '', phone: '',
+  city: '', linkedin: '', summary: '',
+  experiences: [], education: [], skills: [], languages: [],
 };
 
 export default function App() {
@@ -81,8 +78,7 @@ export default function App() {
   };
 
   const handleImportComplete = (extracted: Partial<CVData>) => {
-    const merged = { ...cvData, ...Object.fromEntries(Object.entries(extracted).filter(([, v]) => v !== '' && v !== undefined)) };
-    setCvData(merged);
+    setCvData({ ...BLANK_CV, ...extracted });
     navigate('builder-step2');
   };
 
