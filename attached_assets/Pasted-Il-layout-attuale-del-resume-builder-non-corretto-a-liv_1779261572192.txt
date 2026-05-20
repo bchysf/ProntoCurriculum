@@ -1,0 +1,105 @@
+Il layout attuale del resume builder non è corretto a livello UX/UI e spreca troppo spazio sullo schermo.
+
+Problemi attuali:
+- Il CV è troppo piccolo.
+- C’è troppo spazio vuoto attorno al resume.
+- La preview sembra una thumbnail invece del focus principale del prodotto.
+- La sidebar form è troppo stretta e poco professionale.
+- Ci sono container e padding inutili.
+- L’interfaccia non sfrutta bene tutta la larghezza e altezza dello schermo.
+
+Voglio trasformare il builder in un editor professionale stile:
+- Canva
+- Resume.io
+- FlowCV
+- Figma
+- Framer
+
+OBIETTIVO:
+Massimizzare l’utilizzo dello spazio disponibile e dare priorità visiva al CV.
+
+NUOVO LAYOUT:
+
+SINISTRA:
+- Sidebar con form input
+- Ridimensionabile trascinando il bordo destro
+- Larghezza default: 400px
+- Min-width: 320px
+- Max-width: 600px
+- Scroll indipendente
+- Sticky/full height
+- Design moderno SaaS
+- Accordion sections:
+  - Dati personali
+  - Esperienze
+  - Formazione
+  - Competenze
+  - Lingue
+
+DESTRA:
+- Live preview del CV
+- Deve occupare tutto lo spazio restante
+- CV centrato orizzontalmente
+- Sfondo editor grigio chiaro (#f3f4f6)
+- CV molto più grande e leggibile
+- Shadow realistico tipo foglio A4
+- Scaling responsive automatico
+- Eliminare completamente spazio vuoto inutile
+
+IMPORTANTE:
+NON usare:
+- container centrati con max-width piccoli
+- padding enormi
+- box inutili attorno al CV
+- margini laterali eccessivi
+- spazio vuoto sotto il CV
+
+Il CV deve essere il focus principale dell’app.
+
+FUNZIONALITÀ RESIZE:
+Aggiungere una barra draggable tra sidebar e preview:
+- Drag orizzontale
+- Cursor: col-resize
+- Resize fluido
+- UX simile a VSCode/Figma/Canva
+
+STRUTTURA TECNICA:
+
+Main layout:
+- display: flex
+- width: 100vw
+- height: 100vh
+- overflow: hidden
+
+Sidebar:
+- overflow-y: auto
+- height: 100vh
+- flex-shrink: 0
+
+Preview:
+- flex: 1
+- overflow: auto
+- display flex
+- justify-content: center
+- align-items: flex-start
+
+Resume:
+- proporzioni reali A4
+- shadow moderna
+- responsive scaling
+- grande e leggibile
+
+MOBILE:
+- layout verticale
+- form sopra
+- preview sotto
+- mantenere buona leggibilità
+
+Migliorare:
+- gerarchia visiva
+- spacing professionale
+- typography
+- look premium SaaS
+- fluidità UI
+
+L’interfaccia deve sembrare un software professionale moderno e non una semplice pagina con preview.
