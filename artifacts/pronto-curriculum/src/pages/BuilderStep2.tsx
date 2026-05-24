@@ -186,7 +186,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
     setDownloading(true);
     try {
       const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
-      await downloadCVAsPDF(name);
+      await downloadCVAsPDF(name, cvData, selectedTemplate);
     } finally {
       setDownloading(false);
     }
