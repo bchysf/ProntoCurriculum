@@ -2,9 +2,6 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-  zoom: 0.82;
-}
 
 :root {
   --navy: #0B1D3A;
