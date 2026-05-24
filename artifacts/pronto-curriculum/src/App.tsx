@@ -113,6 +113,7 @@ export default function App() {
             cvData={cvData}
             onCVChange={setCvData}
             selectedTemplate={selectedTemplate}
+            onTemplateChange={setSelectedTemplate}
             onNavigate={navigate}
             onModal={openModal}
             onAiAction={handleAiAction}

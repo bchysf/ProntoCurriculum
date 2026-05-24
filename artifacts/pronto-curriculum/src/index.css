@@ -1529,6 +1529,45 @@ nav {
 
 .ats-issue { font-size: 11px; color: var(--gray500); line-height: 1.4; margin-top: 2px; }
 
+/* TEMPLATE STRIP */
+.template-strip {
+  display: flex;
+  gap: 4px;
+  padding: 6px 14px 8px;
+  border-top: 1px solid var(--gray100);
+  background: var(--gray50, #f9f9f9);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.template-strip::-webkit-scrollbar { display: none; }
+
+.template-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1.5px solid var(--gray200);
+  background: white;
+  color: var(--gray600);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.template-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #eff6ff;
+}
+.template-pill.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
 /* PRINT — PDF vettoriale con testo selezionabile */
 @media print {
   @page {

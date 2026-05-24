@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { CVData, TemplateType, ModalType } from '../types';
-import { downloadCVAsPDF } from '../utils/downloadPDF';
+import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
 import CVPreview from '../components/CVPreview';
@@ -9,10 +9,19 @@ interface BuilderStep2Props {
   cvData: CVData;
   onCVChange: (data: CVData) => void;
   selectedTemplate: TemplateType;
+  onTemplateChange: (t: TemplateType) => void;
   onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2') => void;
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
 }
+
+const TEMPLATE_OPTIONS: { id: TemplateType; label: string; icon: string }[] = [
+  { id: 'modern',        label: 'Moderno',        icon: '🟦' },
+  { id: 'minimal',       label: 'Minimal',        icon: '⬜' },
+  { id: 'professionale', label: 'Professionale',  icon: '🟥' },
+  { id: 'executive',     label: 'Executive',      icon: '🟫' },
+  { id: 'europass',      label: 'Europass',       icon: '🇪🇺' },
+];
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
 
@@ -118,10 +127,11 @@ function AccordionSection({
   );
 }
 
-export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onNavigate, onAiAction }: Omit<BuilderStep2Props, 'atsScore'>) {
+export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, onNavigate, onModal, onAiAction }: BuilderStep2Props) {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -189,6 +199,16 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
       await downloadCVAsPDF(name, cvData, selectedTemplate);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    setPreviewing(true);
+    try {
+      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
+      await previewCVAsPDF(name, cvData, selectedTemplate);
+    } finally {
+      setPreviewing(false);
     }
   };
 
@@ -639,14 +659,28 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
                 <span className="ats-score-num" style={{ color: atsColor }}>{ats.total}/100</span>
                 <span className="ats-score-chevron">{showATSDetails ? '▲' : '▼'}</span>
               </button>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step1')}>
-                  🎨 Template
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 'auto' }}>
+                <button className="btn btn-ghost btn-sm" onClick={handlePreview} disabled={previewing} title="Anteprima PDF in nuova scheda">
+                  {previewing ? '⏳' : '👁'} Anteprima
                 </button>
                 <button className="btn btn-gold btn-sm" onClick={handleDownload} disabled={downloading}>
                   {downloading ? '⏳ Generando...' : '⬇ PDF'}
                 </button>
               </div>
+            </div>
+
+            {/* Template strip */}
+            <div className="template-strip">
+              {TEMPLATE_OPTIONS.map(t => (
+                <button
+                  key={t.id}
+                  className={`template-pill${selectedTemplate === t.id ? ' active' : ''}`}
+                  onClick={() => onTemplateChange(t.id)}
+                  title={t.label}
+                >
+                  {t.icon} {t.label}
+                </button>
+              ))}
             </div>
 
             {showATSDetails && (

@@ -1,0 +1,31 @@
+Analizzando l'ultima estrazione (la versione 5), si notano cambiamenti strutturali profondi che dimostrano come l'infrastruttura del tool sia stata modificata per risolvere i problemi di rendering emersi nei test precedenti.
+
+### 1. La Risoluzione Grafica e l'Esportazione Vettoriale (100% Risolto)
+
+La sgranatura visibile nello screenshot della versione 4 è stata superata modificando il motore di esportazione del PDF. Il testo estratto nella versione 5 mostra una formattazione pulita e nativa. Non ci sono più parole unite o caratteri speciali corrotti (*"redditą"*, *"pandemią"*). L'introduzione dei punti elenco puliti (i bullet point `•`) conferma che il sistema ora esegue il rendering come testo reale e selezionabile. Questo garantisce che i software ATS leggano perfettamente ogni stringica di testo, portando la leggibilità automatica al massimo punteggio.
+
+### 2. Struttura del Layout e Gestione dello Spazio
+
+Il tool ha abbandonato la vecchia logica di impaginazione e ha compattato tutto il testo in un flusso continuo. I margini e le interlinee sono stati ottimizzati, permettendo il rientro di tutte le informazioni fondamentali (comprese le competenze e le lingue che prima slittavano) all'interno di una struttura organica. L'eliminazione del watermark e del testo residuo isolato risolve definitivamente il problema visivo delle due pagine vuote.
+
+### 3. Errori di Parsing Residui nel Backend (L'ultimo Bug da Correggere)
+
+Nonostante il testo principale sia perfetto, l'estrazione degli ultimi blocchi (Competenze e Lingue) evidenzia un disallineamento geometrico nel posizionamento delle parole all'interno del codice del PDF.
+
+Nello specifico, l'ATS legge la struttura finale in questo modo:
+
+* In mezzo alle competenze compare la parola *"Presente"* isolata.
+
+
+* La stringa delle competenze si frammenta mischiando i concetti: *"Logistica Poliglotta Project Customer Process Design & Reengineering • People Management multiculturale No-code e infrastrutture serverless"*.
+
+
+* Il blocco delle lingue perde i separatori e incolla le diciture in modo disordinato: *"Italiano C2- Madrelingua Francese C2-Madrelingua Spagnolo C1 Avanzato Marocchino Arabo C1 Avanz... C2- Madrelingua Tedesco B1 Intermedio"*.
+
+
+
+Questo accade quando il tool, nel tentativo di risparmiare spazio verticale per far stare tutto in una pagina, dispone le competenze e le lingue su più colonne affiancate utilizzando posizionamenti CSS assoluti o tabelle invisibili. L'ATS, leggendo da sinistra a destra in modo lineare, incrocia i dati delle diverse colonne creando frasi spezzate.
+
+### Verdetto e Istruzioni per lo Sviluppo del Tool
+
+La scrittura, l'uso dei verbi impersonali e la densità delle metriche quantitative sono ormai eccellenti e allineati agli standard più rigidi. Per rendere i template di ProntoCurriculum.it strutturalmente imbattibili (95-100% ATS favourability), lo sviluppatore deve eliminare i blocchi a colonne affiancate nella parte finale del layout (Competenze e Lingue) e forzare il sistema a disporre anche quegli elementi come puro testo lineare separato da virgole o barre verticali su un'unica riga.
