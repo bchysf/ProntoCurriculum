@@ -18,16 +18,19 @@ export async function downloadCVAsPDF(name: string): Promise<void> {
   document.body.appendChild(portal);
   document.body.classList.add('cv-printing');
 
-  await new Promise<void>(resolve => {
-    const handler = () => {
-      window.removeEventListener('afterprint', handler);
-      document.body.classList.remove('cv-printing');
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    window.removeEventListener('afterprint', cleanup);
+    document.body.classList.remove('cv-printing');
+    if (portal.parentNode === document.body) {
       document.body.removeChild(portal);
-      document.title = originalTitle;
-      resolve();
-    };
-    window.addEventListener('afterprint', handler);
-    window.print();
-    setTimeout(handler, 3000);
-  });
+    }
+    document.title = originalTitle;
+  };
+
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+  setTimeout(cleanup, 4000);
 }
