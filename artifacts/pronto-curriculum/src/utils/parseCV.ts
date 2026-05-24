@@ -378,12 +378,17 @@ export function parseCVText(raw: string): Partial<CVData> {
 
 /* ──────────────────────────── PDF reader ───────────────────────── */
 
-export async function extractTextFromPDF(file: File): Promise<string> {
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  GlobalWorkerOptions.workerSrc = new URL(
+async function getPdfJsWithWorker() {
+  const pdfjs = await import('pdfjs-dist');
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.mjs',
     import.meta.url,
   ).toString();
+  return pdfjs;
+}
+
+export async function extractTextFromPDF(file: File): Promise<string> {
+  const { getDocument } = await getPdfJsWithWorker();
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await getDocument({ data: arrayBuffer }).promise;
@@ -416,4 +421,110 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   }
 
   return pages.join('\n');
+}
+
+function imageDataToDataUrl(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  kind: number,
+): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  let rgba: Uint8ClampedArray;
+
+  if (kind === 3) {
+    // RGBA_32BPP — already correct
+    rgba = data;
+  } else if (kind === 2) {
+    // RGB_24BPP — expand to RGBA
+    rgba = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < width * height; i++) {
+      rgba[i * 4] = data[i * 3];
+      rgba[i * 4 + 1] = data[i * 3 + 1];
+      rgba[i * 4 + 2] = data[i * 3 + 2];
+      rgba[i * 4 + 3] = 255;
+    }
+  } else if (kind === 1) {
+    // GRAYSCALE_1BPP — expand to RGBA
+    rgba = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < width * height; i++) {
+      const v = data[i];
+      rgba[i * 4] = v;
+      rgba[i * 4 + 1] = v;
+      rgba[i * 4 + 2] = v;
+      rgba[i * 4 + 3] = 255;
+    }
+  } else {
+    return '';
+  }
+
+  ctx.putImageData(new ImageData(rgba as Uint8ClampedArray<ArrayBuffer>, width, height), 0, 0);
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+export async function extractPhotoFromPDF(file: File): Promise<string | null> {
+  try {
+    const { getDocument, OPS } = await getPdfJsWithWorker();
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await getDocument({ data: arrayBuffer }).promise;
+
+    type ImgCandidate = { width: number; height: number; dataUrl: string; area: number };
+    const candidates: ImgCandidate[] = [];
+
+    for (let pageNum = 1; pageNum <= Math.min(pdf.numPages, 2); pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const opList = await page.getOperatorList();
+
+      const seen = new Set<string>();
+      for (let i = 0; i < opList.fnArray.length; i++) {
+        if (opList.fnArray[i] !== OPS.paintImageXObject) continue;
+        const name = opList.argsArray[i]?.[0] as string | undefined;
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+
+        try {
+          // commonObjs are populated synchronously after getOperatorList resolves
+          const img = page.commonObjs.get(name) as {
+            width: number; height: number;
+            data: Uint8ClampedArray; kind: number;
+          } | null | undefined;
+
+          if (!img || !img.data || !img.width || !img.height) continue;
+
+          const { width, height, data, kind } = img;
+          if (width < 60 || height < 60) continue;
+
+          const ratio = width / height;
+          if (ratio < 0.35 || ratio > 2.8) continue; // skip panoramic / thin banners
+
+          const area = width * height;
+          if (area > 400000) continue; // skip large background images
+
+          const dataUrl = imageDataToDataUrl(data, width, height, kind);
+          if (dataUrl) candidates.push({ width, height, dataUrl, area });
+        } catch {
+          // image not available or unsupported format — skip
+        }
+      }
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Prefer the most square image among candidates; break ties by picking smallest area
+    candidates.sort((a, b) => {
+      const squarenessA = Math.abs(1 - a.width / a.height);
+      const squarenessB = Math.abs(1 - b.width / b.height);
+      if (Math.abs(squarenessA - squarenessB) > 0.15) return squarenessA - squarenessB;
+      return a.area - b.area;
+    });
+
+    return candidates[0].dataUrl;
+  } catch {
+    return null;
+  }
 }

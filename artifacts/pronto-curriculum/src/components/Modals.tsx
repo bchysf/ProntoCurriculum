@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ModalType, CVData } from '../types';
-import { extractTextFromPDF } from '../utils/parseCV';
+import { extractTextFromPDF, extractPhotoFromPDF } from '../utils/parseCV';
 import { aiParseCV } from '../utils/aiParseCV';
 
 interface ModalsProps {
@@ -53,13 +53,21 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, onImp
     setExtracting(true);
     setExtractError('');
     try {
+      const isPdf = file.name.toLowerCase().endsWith('.pdf');
       let text = '';
-      if (file.name.toLowerCase().endsWith('.pdf')) {
-        text = await extractTextFromPDF(file);
+      let photo: string | null = null;
+
+      if (isPdf) {
+        [text, photo] = await Promise.all([
+          extractTextFromPDF(file),
+          extractPhotoFromPDF(file),
+        ]);
       } else {
         text = await file.text();
       }
+
       const data = await aiParseCV(text);
+      if (photo) data.photo = photo;
       onClose();
       setTimeout(() => onImportComplete(data), 100);
     } catch (err) {

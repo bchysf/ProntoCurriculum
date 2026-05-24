@@ -283,9 +283,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
                         ? <span className="photo-has-sub">Verrà usata nel template selezionato</span>
                         : <span className="photo-has-sub" style={{ color: 'var(--gold)' }}>⚠ Il template attuale non include foto</span>
                       }
-                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => photoInputRef.current?.click()}>
-                        🔄 Cambia foto
-                      </button>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => photoInputRef.current?.click()}>
+                          🔄 Cambia foto
+                        </button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => update('photo', undefined)}>
+                          🗑 Elimina
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
