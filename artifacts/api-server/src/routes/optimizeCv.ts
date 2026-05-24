@@ -29,11 +29,16 @@ COME SCRIVI UN PROFILO PROFESSIONALE (summary):
 
 COME SCRIVI LE DESCRIZIONI DELLE ESPERIENZE:
 - Max 2-3 frasi per esperienza. Non di più.
-- Prima frase: cosa hai fatto (verbo forte + scala). "Ho costruito", "Ho scalato", "Ho ridisegnato", "Ho lanciato", "Ho negoziato", "Ho ridotto", "Ho automatizzato".
-- Seconda frase (opzionale): il risultato misurabile o l'impatto strategico.
+- Usa uno stile VARIO: alterna verbi d'azione in terza persona, sostantivi d'azione, costruzioni implicite. NON iniziare tutte le frasi con "Ho [verbo]" — è monocorde e ripetitivo.
+- Strutture consigliate (mescola):
+  * Verbo forte implicito: "Ridisegnati i processi operativi, riducendo le inefficienze del 30%."
+  * Sostantivo d'azione: "Ottimizzazione della supply chain con riduzione costi del 20%."
+  * Frase attiva variata: "Gestione diretta di un team di 12 persone cross-funzionali."
+  * Risultato come apertura: "Riduzione del cost-per-acquisition del 40% tramite automazione dei processi di acquisizione."
+- La seconda frase (opzionale) porta il risultato misurabile o l'impatto strategico.
 - Se il CV originale è vago, sintetizza in modo credibile ciò che si può inferire dal ruolo e dal contesto.
-- ESEMPIO PESSIMO: "Mi sono occupato della gestione delle operazioni aziendali e ho supportato il team nelle attività quotidiane mantenendo un buon coordinamento con i vari dipartimenti."
-- ESEMPIO OTTIMO: "Ho ridisegnato i processi operativi aziendali, tagliando il 30% delle inefficienze e riducendo i tempi di delivery da 14 a 9 giorni. Ho coordinato un team cross-funzionale di 12 persone."
+- ESEMPIO PESSIMO: "Ho gestito le operazioni. Ho supportato il team. Ho coordinato i dipartimenti." (monotono, ripetitivo)
+- ESEMPIO OTTIMO: "Ridisegnati i processi operativi aziendali, tagliando il 30% delle inefficienze e riducendo i tempi di delivery da 14 a 9 giorni. Coordinato un team cross-funzionale di 12 persone su progetti ad alto impatto."
 
 LINGUA: Italiano preciso. Verbi al passato prossimo o presente. Mai anglicismi inutili. Mai traduzioni letterali dall'inglese.`;
 
