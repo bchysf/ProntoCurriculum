@@ -8,6 +8,35 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
+const MASTER_SYSTEM_PROMPT = `Sei un Executive Resume Writer di livello mondiale con 25 anni di esperienza nel posizionamento di figure C-suite, dirigenti e professionisti senior nei mercati italiano ed europeo.
+Hai collaborato con headhunter di Spencer Stuart, Egon Zehnder, Korn Ferry e studi di executive search di primo piano.
+
+IL TUO STANDARD È INFLESSIBILE:
+- Ogni parola deve guadagnare il suo posto. Zero parole di riempimento, zero banalità.
+- Il linguaggio è preciso, autorevole e orientato all'impatto strategico.
+- Ogni affermazione deve trasmettere leadership, risultati misurabili e valore per il business.
+- Il tono è professionale ma non burocratico: assertivo, diretto, calibrato per impressionare un Board o un CEO.
+
+LINGUA: Italiano di alta qualità. Verbi all'indicativo passato prossimo o presente. MAI traduzioni letterali dall'inglese.
+USA: "Ho guidato", "Ho orchestrato", "Ho definito la strategia", "Ho ridisegnato", "Ho scalato", "Gestisco", "Coordino", "Supervisiono".
+NON USARE MAI: frasi banali come "team player", "buone doti comunicative", "problem solving", "dinamico e proattivo", "orientato ai risultati" da soli senza contesto.
+
+REGOLE PER IL PROFILO PROFESSIONALE (summary):
+- Inizia con il titolo professionale e un'affermazione di valore forte (NON con "Sono" o "Professionista con")
+- Includi il settore, gli anni di esperienza rilevante e la specializzazione chiave
+- Cita 2-3 aree di expertise strategica
+- Chiudi con l'ambizione o il posizionamento di carriera
+- Tono: come un opening statement di un executive briefing
+- Esempio di QUALITÀ ACCETTABILE: "CFO con 15 anni di esperienza nella guida di trasformazioni finanziarie in contesti multinazionali. Ho supervisionato processi M&A per oltre €2 miliardi, ridefinito la struttura del capitale in 3 mercati europei e implementato sistemi ERP mission-critical. Expertise in corporate finance, investor relations e governance. Orientato a ruoli di leadership finanziaria in contesti di crescita accelerata o ristrutturazione."
+
+REGOLE PER LE DESCRIZIONI ESPERIENZE:
+- Inizia SEMPRE con un verbo d'azione forte che descrive il contributo principale
+- Struttura: Azione → Scala/Contesto → Risultato misurabile (dove disponibile)
+- Includi numeri reali se presenti nel testo originale, altrimenti descrivi la portata qualitativa
+- Ogni frase deve rispondere alla domanda: "Perché questo è rilevante per chi assume?"
+- Evita liste di mansioni — scrivi achievement e contributi strategici
+- Esempio di QUALITÀ ACCETTABILE: "Ho guidato la trasformazione digitale dell'area Operations, coordinando un team di 45 risorse distribite su 4 sedi europee. Ho ridotto il time-to-market del 35% attraverso l'implementazione di metodologie Agile e l'integrazione di una piattaforma di workflow automation custom. Ho contribuito a un risparmio strutturale di €1,2M annui."`;
+
 router.post("/optimize-cv", async (req, res) => {
   const { cvData } = req.body as { cvData?: Record<string, unknown> };
 
@@ -21,36 +50,27 @@ router.post("/optimize-cv", async (req, res) => {
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.1",
-      max_completion_tokens: 3000,
+      max_completion_tokens: 4000,
       messages: [
         {
           role: "system",
-          content: `Sei un esperto selezionatore del personale italiano con 20 anni di esperienza.
-Il tuo compito è ottimizzare un CV per il mercato del lavoro italiano e i sistemi ATS.
+          content: `${MASTER_SYSTEM_PROMPT}
 
-LINGUA: Scrivi ESCLUSIVAMENTE in italiano corretto e professionale. Non tradurre letteralmente dall'inglese.
-USA verbi all'indicativo passato prossimo o presente: "Ho guidato", "Ho sviluppato", "Gestisco", "Coordino".
-NON usare forme come "Lancio e scala", "Livero", "Drivia" o altre traduzioni letterali di termini inglesi.
-Usa termini italiani corretti: "Ho avviato", "Ho scalato", "Ho implementato", "Ho coordinato".
-
-Restituisci SOLO questo JSON, nessun testo prima o dopo:
+Analizza il CV fornito e restituisci SOLO questo JSON (nessun testo prima o dopo):
 {
-  "summary": "profilo professionale in italiano professionale: prima persona singola, verbi al presente o passato prossimo, risultati concreti, max 550 caratteri",
+  "summary": "profilo professionale riscritto al massimo livello qualitativo, max 600 caratteri",
   "experiences": [
-    { "id": "stessa id dell'originale", "desc": "descrizione in italiano professionale: inizia con verbo all'indicativo (es. 'Ho guidato', 'Ho sviluppato', 'Ho gestito'), includi risultati numerici reali dal testo originale, max 400 caratteri" }
+    { "id": "stessa id dell'originale", "desc": "descrizione riscritta con impatto dirigenziale, max 450 caratteri" }
   ],
-  "skillsToAdd": ["skill1", "skill2"]
+  "skillsToAdd": ["competenza1", "competenza2", "competenza3"]
 }
 
-Regole aggiuntive:
-- Mantieni le stesse id delle esperienze originali
-- Non inventare fatti, risultati o ruoli non presenti nel CV originale
-- Se una descrizione è già buona in italiano, migliorala senza stravolgerne il senso
-- skillsToAdd: 3-5 competenze tecniche o metodologiche pertinenti, NON già presenti`,
+Per skillsToAdd: suggerisci 3-5 competenze strategiche, metodologiche o tecnologiche di alto profilo pertinenti al ruolo, NON già presenti nel CV.
+Mantieni le stesse id delle esperienze originali. Non inventare fatti non presenti nel CV originale.`,
         },
         {
           role: "user",
-          content: `Ottimizza questo CV:\n\n${cvText}`,
+          content: `Riscrivi questo CV al massimo livello qualitativo executive:\n\n${cvText}`,
         },
       ],
     });
@@ -62,6 +82,60 @@ Regole aggiuntive:
   } catch (err) {
     req.log.error({ err }, "optimize-cv error");
     res.status(500).json({ error: "Errore durante l'ottimizzazione del CV" });
+  }
+});
+
+router.post("/optimize-field", async (req, res) => {
+  const { field, value, context } = req.body as {
+    field?: "summary" | "exp";
+    value?: string;
+    context?: Record<string, unknown>;
+  };
+
+  if (!field || !value) {
+    res.status(400).json({ error: "Parametri mancanti" });
+    return;
+  }
+
+  try {
+    let systemContent: string;
+    let userContent: string;
+
+    if (field === "summary") {
+      systemContent = `${MASTER_SYSTEM_PROMPT}
+
+Riscrivi il profilo professionale fornito portandolo al massimo livello qualitativo executive.
+Restituisci SOLO il testo riscritto, senza JSON, senza virgolette extra, senza spiegazioni. Max 600 caratteri.`;
+      userContent = `Titolo professionale: ${(context?.title as string) ?? "non specificato"}
+Profilo attuale da migliorare: "${value}"
+${context?.experiences ? `Esperienze principali: ${JSON.stringify(context.experiences).slice(0, 800)}` : ""}
+
+Riscrivilo al massimo livello executive.`;
+    } else {
+      systemContent = `${MASTER_SYSTEM_PROMPT}
+
+Riscrivi la descrizione dell'esperienza lavorativa fornita portandola al massimo livello qualitativo executive.
+Restituisci SOLO il testo riscritto, senza JSON, senza virgolette extra, senza spiegazioni. Max 450 caratteri.`;
+      userContent = `Ruolo: ${(context?.role as string) ?? "non specificato"} presso ${(context?.company as string) ?? "azienda"}
+Descrizione attuale: "${value}"
+
+Riscrivila al massimo livello executive con impatto strategico.`;
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5.1",
+      max_completion_tokens: 600,
+      messages: [
+        { role: "system", content: systemContent },
+        { role: "user", content: userContent },
+      ],
+    });
+
+    const result = completion.choices[0]?.message?.content?.trim() ?? value;
+    res.json({ result });
+  } catch (err) {
+    req.log.error({ err }, "optimize-field error");
+    res.status(500).json({ error: "Errore durante l'ottimizzazione del campo" });
   }
 });
 

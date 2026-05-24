@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { CVData, TemplateType, ModalType } from '../types';
 import { downloadCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
+import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
 import CVPreview from '../components/CVPreview';
 
 interface BuilderStep2Props {
@@ -197,20 +198,34 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
     });
   };
 
-  const handleOptimizeSummary = () => {
-    onAiAction('Ottimizzando il profilo per i sistemi ATS...', () => {
-      onCVChange({ ...cvData, summary: cvData.summary + ' Orientato ai risultati con comprovata esperienza in gestione team e ottimizzazione dei processi.' });
-    });
+  const handleOptimizeSummary = async () => {
+    setOptimizing(true);
+    setModal('ai-loading-local');
+    try {
+      const result = await aiOptimizeSummary(cvData);
+      onCVChange({ ...cvData, summary: result });
+    } catch {
+    } finally {
+      setOptimizing(false);
+      setModal(null);
+    }
   };
 
-  const handleOptimizeExp = (idx: number) => {
-    onAiAction('Riscrivendo la descrizione con impatto professionale...', () => {
+  const handleOptimizeExp = async (idx: number) => {
+    const exp = cvData.experiences[idx];
+    if (!exp) return;
+    setOptimizing(true);
+    setModal('ai-loading-local');
+    try {
+      const result = await aiOptimizeExp({ id: exp.id, role: exp.role, company: exp.company, desc: exp.desc });
       const updated = [...cvData.experiences];
-      if (updated[idx]) {
-        updated[idx] = { ...updated[idx], desc: (updated[idx].desc ? updated[idx].desc + ' Risultati misurabili: riduzione tempi del 30%, incremento KPI del 25%.' : 'Responsabile della gestione e ottimizzazione dei processi aziendali. Risultati misurabili con impatto diretto sul business.') };
-      }
+      updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
-    });
+    } catch {
+    } finally {
+      setOptimizing(false);
+      setModal(null);
+    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
