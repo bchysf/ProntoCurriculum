@@ -1,0 +1,19 @@
+L'immagine mostra chiaramente il problema di fondo: il tool non sta generando un vero file PDF testuale (vettoriale), ma sta effettuando un rendering grafico della pagina trasformandola in un'immagine a bassa risoluzione rasterizzata all'interno del contenitore PDF.
+
+Quando si effettua uno zoom al 500%, la sgranatura "a pixel" dei caratteri e i bordi seghettati confermano che il testo ha perso le sue proprietà vettoriali. Questo impatta direttamente sia sulla resa estetica che sulla compatibilità ATS.
+
+---
+
+## 1. Impatto Tecnico (Estetica e Lettura)
+
+* **Perché i margini non cambiano:** Se il software sottostante scatta un'istantanea della pagina o genera un blocco grafico rigido prima di incapsularlo nel PDF, qualsiasi comando di riduzione dei margini o del font applicato al puro testo viene ignorato o distorto. Il layout rimane bloccato sulle proporzioni originali della "tela" grafica preimpostata.
+* **Il blocco totale per l'ATS:** I sistemi ATS non usano algoritmi di riconoscimento ottico dei caratteri (OCR) avanzati per leggere i CV; estraggono il testo nativo codificato nel file. Un PDF che contiene testo sgranato come immagine viene visto dall'ATS come un documento completamente vuoto. Di conseguenza, l'indice di favorevolezza crolla immediatamente allo 0%, poiché il sistema non rileva alcuna parola chiave, competenza o informazione cronologica.
+
+---
+
+## 2. Come Risolvere il Bug nel Backend del Tool
+
+Per fare in modo che il format sia perfetto e utilizzabile in produzione, l'infrastruttura di esportazione di ProntoCurriculum.it deve essere modificata radicalmente lato sviluppo.
+
+* **Passaggio a un motore di rendering vettoriale:** Il tool deve abbandonare le librerie che convertono il layout in elementi canvas o immagini (come le vecchie configurazioni di html2canvas) prima di salvarlo in PDF. L'esportazione deve utilizzare librerie di stampa PDF native (come *jsPDF* configurata in modalità testo, *Puppeteer* in modalità standard o fogli di stile CSS `@media print`).
+* **Mantenimento del testo selezionabile:** La prova del nove per verificare se il codice funziona consiste nell'aprire il PDF generato e provare a selezionare una singola parola con il cursore del mouse. Se la parola si seleziona come testo pulito ed evidenziato, l'ATS sarà in grado di leggerla; se si trascina l'intera pagina come se fosse una foto (o se la selezione è geometricamente imprecisa e sgranata), il motore di esportazione è da rifare.
