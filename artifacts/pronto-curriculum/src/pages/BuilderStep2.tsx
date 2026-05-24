@@ -4,6 +4,7 @@ import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
 import CVPreview from '../components/CVPreview';
+import TemplateModal from '../components/TemplateModal';
 
 interface BuilderStep2Props {
   cvData: CVData;
@@ -14,14 +15,6 @@ interface BuilderStep2Props {
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
 }
-
-const TEMPLATE_OPTIONS: { id: TemplateType; label: string; icon: string }[] = [
-  { id: 'modern',        label: 'Moderno',        icon: '🟦' },
-  { id: 'minimal',       label: 'Minimal',        icon: '⬜' },
-  { id: 'professionale', label: 'Professionale',  icon: '🟥' },
-  { id: 'executive',     label: 'Executive',      icon: '🟫' },
-  { id: 'europass',      label: 'Europass',       icon: '🇪🇺' },
-];
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
 
@@ -134,6 +127,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [previewing, setPreviewing] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [jobDescription, setJobDescription] = useState('');
@@ -669,18 +663,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
             </div>
 
-            {/* Template strip */}
-            <div className="template-strip">
-              {TEMPLATE_OPTIONS.map(t => (
-                <button
-                  key={t.id}
-                  className={`template-pill${selectedTemplate === t.id ? ' active' : ''}`}
-                  onClick={() => onTemplateChange(t.id)}
-                  title={t.label}
-                >
-                  {t.icon} {t.label}
-                </button>
-              ))}
+            {/* Template selector button */}
+            <div style={{ padding: '4px 16px 10px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowTemplateModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600 }}
+              >
+                🎨 Seleziona Modello
+              </button>
+              <span style={{ fontSize: 12, color: 'var(--gray500)', fontWeight: 500 }}>
+                Template attivo: <strong style={{ color: 'var(--navy)' }}>{selectedTemplate.charAt(0).toUpperCase() + selectedTemplate.slice(1)}</strong>
+              </span>
             </div>
 
             {showATSDetails && (
@@ -728,6 +722,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           </div>
         </main>
       </div>
+
+      {showTemplateModal && (
+        <TemplateModal
+          current={selectedTemplate}
+          onSelect={onTemplateChange}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </>
   );
 }

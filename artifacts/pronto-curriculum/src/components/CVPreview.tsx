@@ -249,7 +249,163 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
     );
   }
 
-  const templateClass = template === 'minimal' ? 'cv-doc template-minimal' : 'cv-doc template-modern';
+  // ── Tecnico template (needs tag-style skills) ────────────────────────────────
+  if (template === 'tecnico') {
+    return (
+      <div className="cv-doc template-tecnico">
+        <div className="cv-header">
+          <div className="cv-name">{name}</div>
+          <div className="cv-title">{cvData.title || 'Titolo professionale'}</div>
+          <div className="cv-contact">
+            {cvData.email && <span>{cvData.email}</span>}
+            {cvData.phone && <span>{cvData.phone}</span>}
+            {cvData.city && <span>{cvData.city}</span>}
+            {cvData.linkedin && <span>{cvData.linkedin}</span>}
+          </div>
+        </div>
+
+        {cvData.summary && (
+          <>
+            <div className="cv-section-title">Profilo professionale</div>
+            <div className="cv-exp-desc">{cvData.summary}</div>
+          </>
+        )}
+
+        {cvData.experiences.some(e => e.company || e.role) && (
+          <>
+            <div className="cv-section-title">Esperienze lavorative</div>
+            {cvData.experiences.filter(e => e.company || e.role).map(exp => (
+              <div key={exp.id} className="cv-exp-item">
+                <div className="cv-exp-title">{exp.role}</div>
+                <div className="cv-exp-meta">
+                  {[exp.company, exp.city, exp.from && exp.to ? `${exp.from} – ${exp.to}` : exp.from || exp.to].filter(Boolean).join(' · ')}
+                </div>
+                {exp.desc && <RenderDesc text={exp.desc} className="cv-exp-desc" />}
+              </div>
+            ))}
+          </>
+        )}
+
+        {cvData.education.some(e => e.institution || e.degree) && (
+          <>
+            <div className="cv-section-title">Formazione</div>
+            {cvData.education.filter(e => e.institution || e.degree).map(edu => (
+              <div key={edu.id} className="cv-exp-item">
+                <div className="cv-exp-title">{edu.degree}</div>
+                <div className="cv-exp-meta">
+                  {[edu.institution, edu.from && edu.to ? `${edu.from} – ${edu.to}` : edu.from || edu.to, edu.grade].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {cvData.skills.length > 0 && (
+          <>
+            <div className="cv-section-title">Competenze</div>
+            <div className="cv-tecnico-tags">
+              {cvData.skills.map(s => <span key={s} className="cv-tecnico-tag">{s}</span>)}
+            </div>
+          </>
+        )}
+
+        {cvData.languages.some(l => l.name) && (
+          <>
+            <div className="cv-section-title">Lingue</div>
+            <div className="cv-exp-desc">
+              {cvData.languages.filter(l => l.name).map(l => `${l.name} (${l.level})`).join(' · ')}
+            </div>
+          </>
+        )}
+
+        <div className="cv-watermark">
+          <div className="cv-watermark-logo">P</div>
+          ProntoCurriculum.it
+        </div>
+      </div>
+    );
+  }
+
+  // ── Classico template ────────────────────────────────────────────────────────
+  if (template === 'classico') {
+    return (
+      <div className="cv-doc template-classico">
+        <div className="cv-header">
+          <div className="cv-name">{name}</div>
+          <div className="cv-title">{cvData.title || 'Titolo professionale'}</div>
+          <div className="cv-contact">
+            {cvData.email && <span>{cvData.email}</span>}
+            {cvData.phone && <span>{cvData.phone}</span>}
+            {cvData.city && <span>{cvData.city}</span>}
+            {cvData.linkedin && <span>{cvData.linkedin}</span>}
+          </div>
+        </div>
+
+        {cvData.summary && (
+          <>
+            <div className="cv-section-title">Profilo professionale</div>
+            <div className="cv-exp-desc">{cvData.summary}</div>
+          </>
+        )}
+
+        {cvData.experiences.some(e => e.company || e.role) && (
+          <>
+            <div className="cv-section-title">Esperienze lavorative</div>
+            {cvData.experiences.filter(e => e.company || e.role).map(exp => (
+              <div key={exp.id} className="cv-exp-item">
+                <div className="cv-exp-title">{exp.role}</div>
+                <div className="cv-exp-meta">
+                  {[exp.company, exp.city, exp.from && exp.to ? `${exp.from} – ${exp.to}` : exp.from || exp.to].filter(Boolean).join(' · ')}
+                </div>
+                {exp.desc && <RenderDesc text={exp.desc} className="cv-exp-desc" />}
+              </div>
+            ))}
+          </>
+        )}
+
+        {cvData.education.some(e => e.institution || e.degree) && (
+          <>
+            <div className="cv-section-title">Formazione</div>
+            {cvData.education.filter(e => e.institution || e.degree).map(edu => (
+              <div key={edu.id} className="cv-exp-item">
+                <div className="cv-exp-title">{edu.degree}</div>
+                <div className="cv-exp-meta">
+                  {[edu.institution, edu.from && edu.to ? `${edu.from} – ${edu.to}` : edu.from || edu.to, edu.grade].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {cvData.skills.length > 0 && (
+          <>
+            <div className="cv-section-title">Competenze</div>
+            <div className="cv-exp-desc">{skillsText}</div>
+          </>
+        )}
+
+        {cvData.languages.some(l => l.name) && (
+          <>
+            <div className="cv-section-title">Lingue</div>
+            <div className="cv-exp-desc">
+              {cvData.languages.filter(l => l.name).map(l => `${l.name} (${l.level})`).join(' · ')}
+            </div>
+          </>
+        )}
+
+        <div className="cv-watermark">
+          <div className="cv-watermark-logo">P</div>
+          ProntoCurriculum.it
+        </div>
+      </div>
+    );
+  }
+
+  // modern / minimal / compatto share the same JSX — CSS handles visual differences
+  const SINGLE_COL_TEMPLATES = ['modern', 'minimal', 'compatto'];
+  const templateClass = SINGLE_COL_TEMPLATES.includes(template)
+    ? `cv-doc template-${template}`
+    : 'cv-doc template-modern';
 
   return (
     <div className={templateClass}>

@@ -497,13 +497,13 @@ export async function extractPhotoFromPDF(file: File): Promise<string | null> {
           if (!img || !img.data || !img.width || !img.height) continue;
 
           const { width, height, data, kind } = img;
-          if (width < 60 || height < 60) continue;
+          if (width < 40 || height < 40) continue;
 
           const ratio = width / height;
-          if (ratio < 0.35 || ratio > 2.8) continue; // skip panoramic / thin banners
+          if (ratio < 0.3 || ratio > 3.0) continue; // skip panoramic / thin banners
 
           const area = width * height;
-          if (area > 400000) continue; // skip large background images
+          if (area > 2_000_000) continue; // skip very large background images
 
           const dataUrl = imageDataToDataUrl(data, width, height, kind);
           if (dataUrl) candidates.push({ width, height, dataUrl, area });

@@ -1,6 +1,6 @@
 export type Page = 'home' | 'builder-step1' | 'builder-step2';
 export type ModalType = 'signup' | 'pricing' | 'import' | 'success' | 'ai-loading' | null;
-export type TemplateType = 'modern' | 'minimal' | 'executive' | 'europass' | 'professionale';
+export type TemplateType = 'modern' | 'minimal' | 'executive' | 'europass' | 'professionale' | 'classico' | 'tecnico' | 'compatto';
 
 export interface Experience {
   id: string;

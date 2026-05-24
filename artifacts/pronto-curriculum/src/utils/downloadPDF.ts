@@ -14,12 +14,19 @@ interface TemplateSpec {
   accentColor: [number, number, number];
 }
 
+const CHARCOAL: [number,number,number] = [45, 55, 72];   // #2D3748
+const TEAL:     [number,number,number] = [66, 153, 225];  // #4299E1
+const BLACK:    [number,number,number] = [26, 26, 26];    // #1a1a1a
+
 const SPECS: Record<string, TemplateSpec> = {
-  modern:        { headerBg: NAVY,  headerText: [255,255,255], sectionColor: GOLD,  accentColor: GOLD  },
-  minimal:       { headerBg: null,  headerText: NAVY,          sectionColor: NAVY,  accentColor: GOLD  },
-  executive:     { headerBg: NAVY,  headerText: [255,255,255], sectionColor: GOLD,  accentColor: GOLD  },
-  professionale: { headerBg: NAVY,  headerText: [255,255,255], sectionColor: NAVY,  accentColor: GOLD  },
-  europass:      { headerBg: EU,    headerText: [255,255,255], sectionColor: EU,    accentColor: EU    },
+  modern:        { headerBg: NAVY,     headerText: [255,255,255], sectionColor: GOLD,    accentColor: GOLD    },
+  minimal:       { headerBg: null,     headerText: NAVY,          sectionColor: NAVY,    accentColor: GOLD    },
+  executive:     { headerBg: NAVY,     headerText: [255,255,255], sectionColor: GOLD,    accentColor: GOLD    },
+  professionale: { headerBg: NAVY,     headerText: [255,255,255], sectionColor: NAVY,    accentColor: GOLD    },
+  europass:      { headerBg: EU,       headerText: [255,255,255], sectionColor: EU,      accentColor: EU      },
+  classico:      { headerBg: null,     headerText: BLACK,         sectionColor: BLACK,   accentColor: BLACK   },
+  tecnico:       { headerBg: CHARCOAL, headerText: [255,255,255], sectionColor: CHARCOAL,accentColor: TEAL    },
+  compatto:      { headerBg: NAVY,     headerText: [255,255,255], sectionColor: NAVY,    accentColor: GOLD    },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
