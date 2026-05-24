@@ -1472,6 +1472,63 @@ nav {
   color: var(--navy);
 }
 
+/* ATS SCORE */
+.ats-score-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gray50);
+  border: 1.5px solid var(--gray100);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  flex: 1;
+  min-width: 0;
+  transition: border-color .2s;
+}
+.ats-score-btn:hover { border-color: var(--gold); }
+.ats-score-label { font-size: 11px; font-weight: 700; color: var(--navy); white-space: nowrap; letter-spacing: .03em; }
+.ats-score-bar-wrap { flex: 1; height: 6px; background: var(--gray100); border-radius: 100px; overflow: hidden; min-width: 60px; }
+.ats-score-bar-fill { height: 100%; border-radius: 100px; transition: width .4s; }
+.ats-score-num { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.ats-score-chevron { font-size: 9px; color: var(--gray500); }
+
+.ats-details-panel {
+  border-top: 1px solid var(--gray100);
+  background: var(--white);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ats-indicator {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray100);
+}
+
+.ats-indicator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.ats-indicator-title { font-size: 12px; font-weight: 600; color: var(--navy); }
+.ats-indicator-score { font-size: 12px; font-weight: 700; }
+
+.ats-mini-bar {
+  height: 4px;
+  background: var(--gray100);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.ats-mini-fill { height: 100%; border-radius: 100px; transition: width .4s; }
+
+.ats-issue { font-size: 11px; color: var(--gray500); line-height: 1.4; margin-top: 2px; }
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .editor-layout { flex-direction: column; height: auto; overflow: visible; }

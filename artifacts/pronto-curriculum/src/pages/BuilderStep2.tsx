@@ -16,30 +16,90 @@ interface BuilderStep2Props {
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
 
-function computeCVScore(cv: CVData): { score: number; done: string[]; todo: string[] } {
-  let score = 0;
-  const done: string[] = [];
-  const todo: string[] = [];
+const STOPWORDS = new Set(['il','la','lo','i','gli','le','un','una','uno','e','è','a','di','in','con','su','per','tra','fra','che','non','si','da','del','della','dello','dei','degli','delle','al','alla','allo','ai','agli','alle','nel','nella','nello','nei','negli','nelle','sul','sulla','sullo','sui','sugli','sulle','dal','dalla','dallo','dai','dagli','dalle','come','questo','questa','questi','queste','quello','quella','quelli','quelle','ma','o','se','anche','più','sono','ha','ho','hai','abbiamo','avete','hanno','essere','avere','fare','sono','era','the','of','and','to','is','it','you','that','he','was','for','on','are','with','as','at','be','by','this','an','or','but','from','have','not','they','which','will','has','we','our','their','been','were','each','she','do','how','him','his','her','them','then','its','my','these','would','about','up','out','if','who','than','so','your','can','into','could','after','other','new','some','any','time','two','way','what','more','very','when','where','there','all','no','just','able','all','also','been','come','did','does','doing','done','down','find','first','get','give','got','had','here','just','know','let','like','look','made','make','may','most','much','now','only','other','over','own','part','put','see','should','since','some','still','such','take','than','them','then','there','these','they','this','those','through','too','under','use','used','using','very','want','way','well','were','what','when','where','whether','which','while','who','why','will','with','within','without','would','yet']);
 
-  if (cv.firstName && cv.lastName) { score += 10; done.push('Nome e cognome'); } else { todo.push('Aggiungi nome e cognome'); }
-  if (cv.title) { score += 10; done.push('Titolo professionale'); } else { todo.push('Aggiungi il titolo professionale'); }
-  if (cv.email) { score += 10; done.push('Email'); } else { todo.push("Aggiungi l'email"); }
-  if (cv.phone) { score += 5; done.push('Telefono'); } else { todo.push('Aggiungi il telefono'); }
-  if (cv.city) { score += 5; done.push('Città'); } else { todo.push('Aggiungi la città'); }
-  if (cv.summary && cv.summary.length > 100) { score += 15; done.push('Profilo professionale'); }
-  else if (cv.summary && cv.summary.length > 0) { score += 7; todo.push('Espandi il profilo professionale (min. 100 caratteri)'); }
-  else { todo.push('Scrivi un profilo professionale'); }
-  const expWithDesc = cv.experiences.filter(e => e.company && e.role && e.desc && e.desc.length > 40);
-  if (expWithDesc.length >= 2) { score += 20; done.push('Esperienze complete con descrizione'); }
-  else if (cv.experiences.length > 0) { score += 10; todo.push('Aggiungi descrizioni dettagliate alle esperienze'); }
-  else { todo.push("Aggiungi almeno un'esperienza lavorativa"); }
-  if (cv.education.some(e => e.institution && e.degree)) { score += 10; done.push('Formazione'); } else { todo.push('Aggiungi il titolo di studio'); }
-  if (cv.skills.length >= 6) { score += 10; done.push('Competenze (6+)'); }
-  else if (cv.skills.length >= 3) { score += 6; todo.push('Aggiungi altre competenze (ne hai ' + cv.skills.length + '/6)'); }
-  else { todo.push('Aggiungi almeno 6 competenze'); }
-  if (cv.languages.some(l => l.name)) { score += 5; done.push('Lingue'); } else { todo.push('Aggiungi le lingue conosciute'); }
+interface ATSResult {
+  total: number;
+  parsing: { score: number; max: number; issues: string[] };
+  keywords: { score: number; max: number; matched: string[]; missing: string[]; hasJD: boolean; top10: string[] };
+  chronometric: { score: number; max: number; details: string[] };
+}
 
-  return { score, done, todo };
+function computeATSScore(cv: CVData, jd: string): ATSResult {
+  const allText = [
+    cv.firstName, cv.lastName, cv.title, cv.summary,
+    ...cv.experiences.map(e => `${e.company} ${e.role} ${e.desc}`),
+    ...cv.education.map(e => `${e.institution} ${e.degree}`),
+    cv.skills.join(' '),
+  ].filter(Boolean).join(' ');
+
+  // 1. Parsing Strutturale (max 30)
+  let parsingScore = 30;
+  const parsingIssues: string[] = [];
+  const mergedMatches = allText.match(/[a-zA-ZÀ-ÿ]{22,}/g);
+  if (mergedMatches && mergedMatches.length > 0) {
+    parsingScore = Math.max(0, parsingScore - 15);
+    parsingIssues.push(`${mergedMatches.length} parole attaccate rilevate`);
+  }
+  if (/[□■●►▶◆★☆]/.test(allText)) {
+    parsingScore = Math.max(0, parsingScore - 10);
+    parsingIssues.push('Caratteri speciali che compromettono il parsing');
+  }
+  if (parsingIssues.length === 0) parsingIssues.push('Struttura lineare, testo pulito ✓');
+
+  // 2. Keyword Match (max 50)
+  let keywordScore = 0;
+  let matchedKeywords: string[] = [];
+  let missingKeywords: string[] = [];
+  let top10: string[] = [];
+  const hasJD = jd.trim().length > 30;
+  if (hasJD) {
+    const jdWords = jd.toLowerCase().replace(/[^a-zA-ZÀ-ÿ\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOPWORDS.has(w));
+    const freq: Record<string, number> = {};
+    jdWords.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+    top10 = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([w]) => w);
+    const cvLower = allText.toLowerCase();
+    matchedKeywords = top10.filter(kw => cvLower.includes(kw));
+    missingKeywords = top10.filter(kw => !cvLower.includes(kw));
+    keywordScore = Math.round((matchedKeywords.length / Math.max(top10.length, 1)) * 50);
+  }
+
+  // 3. Rigore Cronologico e Metrico (max 20)
+  let chronoScore = 0;
+  const chronoDetails: string[] = [];
+  const monthRegex = /\b(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i;
+  const expsWithDates = cv.experiences.filter(e => e.from || e.to);
+  if (expsWithDates.length > 0) {
+    const withMonths = expsWithDates.filter(e => monthRegex.test(e.from) || monthRegex.test(e.to));
+    if (withMonths.length === expsWithDates.length) {
+      chronoScore += 10;
+      chronoDetails.push('Date complete con mese e anno ✓');
+    } else {
+      chronoDetails.push(`${withMonths.length}/${expsWithDates.length} esperienze con mese nelle date (es. "Gen 2020")`);
+    }
+  } else {
+    chronoDetails.push('Aggiungi date alle esperienze lavorative');
+  }
+  const expsWithDesc = cv.experiences.filter(e => e.desc && e.desc.trim().length > 0);
+  if (expsWithDesc.length > 0) {
+    const withMetrics = expsWithDesc.filter(e => /\d|%/.test(e.desc));
+    const pct = withMetrics.length / expsWithDesc.length;
+    if (pct >= 0.7) {
+      chronoScore += 10;
+      chronoDetails.push(`${Math.round(pct * 100)}% delle descrizioni con metriche quantificabili ✓`);
+    } else {
+      chronoDetails.push(`Solo ${Math.round(pct * 100)}% ha dati numerici (obiettivo: 70%+)`);
+    }
+  } else {
+    chronoDetails.push('Aggiungi descrizioni con risultati numerici alle esperienze');
+  }
+
+  return {
+    total: Math.min(100, parsingScore + keywordScore + chronoScore),
+    parsing: { score: parsingScore, max: 30, issues: parsingIssues },
+    keywords: { score: keywordScore, max: 50, matched: matchedKeywords, missing: missingKeywords, hasJD, top10 },
+    chronometric: { score: chronoScore, max: 20, details: chronoDetails },
+  };
 }
 
 function AccordionSection({
@@ -65,6 +125,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
   const [optimizing, setOptimizing] = useState(false);
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const [jobDescription, setJobDescription] = useState('');
+  const [showATSDetails, setShowATSDetails] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(420);
   const isResizing = useRef(false);
@@ -240,8 +303,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
 
   const hasPhotoTemplate = selectedTemplate === 'executive' || selectedTemplate === 'professionale' || selectedTemplate === 'modern';
 
-  const { score, done, todo } = computeCVScore(cvData);
-  const scoreColor = score >= 80 ? 'var(--success)' : score >= 50 ? 'var(--gold)' : 'var(--danger)';
+  const ats = computeATSScore(cvData, jobDescription);
+  const atsColor = ats.total >= 80 ? 'var(--success)' : ats.total >= 50 ? 'var(--gold)' : 'var(--danger)';
 
   return (
     <>
@@ -474,6 +537,48 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
               </button>
             </AccordionSection>
 
+            {/* ATS */}
+            <AccordionSection title="🎯 Analisi ATS" open={openSections.has('ats')} onToggle={() => toggleSection('ats')}>
+              <div style={{ fontSize: 12, color: 'var(--gray500)', marginBottom: 12, lineHeight: 1.5 }}>
+                Incolla l'annuncio di lavoro per calcolare la compatibilità con i sistemi ATS e scoprire le keyword mancanti.
+              </div>
+              <div className="form-group">
+                <label>Descrizione offerta di lavoro (Job Description)</label>
+                <textarea
+                  rows={5}
+                  placeholder="Incolla qui il testo dell'annuncio di lavoro..."
+                  value={jobDescription}
+                  onChange={e => setJobDescription(e.target.value)}
+                  style={{ fontSize: 12 }}
+                />
+              </div>
+              {!ats.keywords.hasJD && (
+                <div style={{ fontSize: 12, color: 'var(--gray500)', background: 'var(--gray50)', borderRadius: 8, padding: '10px 12px' }}>
+                  ⚠ Senza job description il punteggio keyword è 0/50. Incolla l'annuncio per un'analisi completa.
+                </div>
+              )}
+              {ats.keywords.hasJD && ats.keywords.missing.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>Keyword mancanti nel CV:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {ats.keywords.missing.map(kw => (
+                      <span key={kw} style={{ fontSize: 11, background: '#FFF3F3', color: 'var(--danger)', border: '1px solid #FFCECE', borderRadius: 6, padding: '3px 8px' }}>{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {ats.keywords.hasJD && ats.keywords.matched.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>Keyword presenti nel CV:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {ats.keywords.matched.map(kw => (
+                      <span key={kw} style={{ fontSize: 11, background: '#F0FFF7', color: 'var(--success)', border: '1px solid #B3EECE', borderRadius: 6, padding: '3px 8px' }}>{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </AccordionSection>
+
             {/* LINGUE */}
             <AccordionSection title="🌐 Lingue" open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
               {cvData.languages.map(lang => (
@@ -520,27 +625,66 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onN
 
         {/* ── PREVIEW ── */}
         <main className="editor-preview">
-          <div className="preview-toolbar">
-            <div className="preview-ats">
-              <span style={{ fontSize: 11, color: 'var(--gray500)', fontWeight: 500 }}>Completezza CV</span>
-              <div className="preview-ats-bar">
-                <div className="preview-ats-fill" style={{ width: `${score}%`, background: scoreColor }} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor, minWidth: 44 }}>{score}/100</span>
-              <div className="preview-ats-tips">
-                {todo.slice(0, 1).map(t => (
-                  <span key={t} style={{ fontSize: 11, color: 'var(--gray500)' }}>⚠ {t}</span>
-                ))}
+          <div className="preview-toolbar" style={{ flexDirection: 'column', gap: 0, padding: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px' }}>
+              <button
+                className="ats-score-btn"
+                onClick={() => setShowATSDetails(v => !v)}
+                style={{ '--ats-color': atsColor } as React.CSSProperties}
+              >
+                <span className="ats-score-label">ATS Score</span>
+                <div className="ats-score-bar-wrap">
+                  <div className="ats-score-bar-fill" style={{ width: `${ats.total}%`, background: atsColor }} />
+                </div>
+                <span className="ats-score-num" style={{ color: atsColor }}>{ats.total}/100</span>
+                <span className="ats-score-chevron">{showATSDetails ? '▲' : '▼'}</span>
+              </button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step1')}>
+                  🎨 Template
+                </button>
+                <button className="btn btn-gold btn-sm" onClick={handleDownload} disabled={downloading}>
+                  {downloading ? '⏳ Generando...' : '⬇ PDF'}
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step1')}>
-                🎨 Cambia template
-              </button>
-              <button className="btn btn-gold btn-sm" onClick={handleDownload} disabled={downloading}>
-                {downloading ? '⏳ Generando...' : '⬇ Scarica PDF'}
-              </button>
-            </div>
+
+            {showATSDetails && (
+              <div className="ats-details-panel">
+                <div className="ats-indicator">
+                  <div className="ats-indicator-header">
+                    <span className="ats-indicator-title">Parsing Strutturale</span>
+                    <span className="ats-indicator-score" style={{ color: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? 'var(--gold)' : 'var(--danger)' }}>{ats.parsing.score}/{ats.parsing.max}</span>
+                  </div>
+                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.parsing.score / ats.parsing.max) * 100}%`, background: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? 'var(--gold)' : 'var(--danger)' }} /></div>
+                  {ats.parsing.issues.map(i => <div key={i} className="ats-issue">{i}</div>)}
+                </div>
+
+                <div className="ats-indicator">
+                  <div className="ats-indicator-header">
+                    <span className="ats-indicator-title">Keyword Match</span>
+                    <span className="ats-indicator-score" style={{ color: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? 'var(--gold)' : 'var(--danger)' }}>{ats.keywords.score}/{ats.keywords.max}</span>
+                  </div>
+                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.keywords.score / ats.keywords.max) * 100}%`, background: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? 'var(--gold)' : 'var(--danger)' }} /></div>
+                  {!ats.keywords.hasJD
+                    ? <div className="ats-issue">⚠ Incolla la job description nella sezione "Analisi ATS" per calcolare il match</div>
+                    : <>
+                        {ats.keywords.matched.length > 0 && <div className="ats-issue" style={{ color: 'var(--success)' }}>✓ {ats.keywords.matched.length} keyword trovate: {ats.keywords.matched.join(', ')}</div>}
+                        {ats.keywords.missing.length > 0 && <div className="ats-issue" style={{ color: 'var(--danger)' }}>✗ Mancanti: {ats.keywords.missing.join(', ')}</div>}
+                      </>
+                  }
+                </div>
+
+                <div className="ats-indicator" style={{ borderBottom: 'none' }}>
+                  <div className="ats-indicator-header">
+                    <span className="ats-indicator-title">Rigore Cronologico e Metrico</span>
+                    <span className="ats-indicator-score" style={{ color: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? 'var(--gold)' : 'var(--danger)' }}>{ats.chronometric.score}/{ats.chronometric.max}</span>
+                  </div>
+                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.chronometric.score / ats.chronometric.max) * 100}%`, background: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? 'var(--gold)' : 'var(--danger)' }} /></div>
+                  {ats.chronometric.details.map(d => <div key={d} className="ats-issue">{d}</div>)}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="preview-canvas" ref={previewRef}>
