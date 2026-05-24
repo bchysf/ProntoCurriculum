@@ -13,7 +13,7 @@ export async function downloadCVAsPDF(name: string): Promise<void> {
     : 'CV_ProntoCurriculum.pdf';
 
   const opt = {
-    margin: [4, 4, 4, 4] as [number, number, number, number],
+    margin: [12, 12, 12, 12] as [number, number, number, number],
     filename,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {

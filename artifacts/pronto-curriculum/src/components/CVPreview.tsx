@@ -5,6 +5,24 @@ interface CVPreviewProps {
   template: TemplateType;
 }
 
+function RenderDesc({ text, className }: { text: string; className: string }) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const hasBullets = lines.some(l => l.startsWith('•'));
+  if (hasBullets) {
+    return (
+      <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+        {lines.map((line, i) => (
+          <li key={i} className={className} style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
+            <span style={{ flexShrink: 0, color: 'inherit', opacity: 0.6 }}>{line.startsWith('•') ? '•' : '·'}</span>
+            <span>{line.startsWith('•') ? line.slice(1).trim() : line}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return <div className={className}>{text}</div>;
+}
+
 export default function CVPreview({ cvData, template }: CVPreviewProps) {
   const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'Il tuo nome';
   const skillsText = cvData.skills.join(' · ');
@@ -59,7 +77,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
                 <div key={exp.id} className="cve-exp-item">
                   <div className="cve-exp-role">{exp.role}</div>
                   <div className="cve-exp-meta">{[exp.company, exp.city, exp.from && exp.to ? `${exp.from}–${exp.to}` : exp.from || exp.to].filter(Boolean).join(' · ')}</div>
-                  {exp.desc && <div className="cve-text">{exp.desc}</div>}
+                  {exp.desc && <RenderDesc text={exp.desc} className="cve-text" />}
                 </div>
               ))}
             </div>
@@ -114,7 +132,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
                 <div className="cveu-exp-content">
                   <div className="cveu-exp-role">{exp.role}</div>
                   <div className="cveu-exp-company">{[exp.company, exp.city].filter(Boolean).join(', ')}</div>
-                  {exp.desc && <div className="cveu-text">{exp.desc}</div>}
+                  {exp.desc && <RenderDesc text={exp.desc} className="cveu-text" />}
                 </div>
               </div>
             ))}
@@ -189,7 +207,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
                   <span className="cvp-exp-dates">{exp.from && exp.to ? `${exp.from} – ${exp.to}` : exp.from || exp.to}</span>
                 </div>
                 <div className="cvp-exp-company">{[exp.company, exp.city].filter(Boolean).join(' · ')}</div>
-                {exp.desc && <div className="cvp-text">{exp.desc}</div>}
+                {exp.desc && <RenderDesc text={exp.desc} className="cvp-text" />}
               </div>
             ))}
           </div>
@@ -265,7 +283,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
               <div className="cv-exp-meta">
                 {[exp.company, exp.city, exp.from && exp.to ? `${exp.from} – ${exp.to}` : exp.from || exp.to].filter(Boolean).join(' · ')}
               </div>
-              {exp.desc && <div className="cv-exp-desc">{exp.desc}</div>}
+              {exp.desc && <RenderDesc text={exp.desc} className="cv-exp-desc" />}
             </div>
           ))}
         </>
