@@ -329,6 +329,68 @@ nav {
 .badge-green { background: #E6F4ED; color: var(--success); }
 .badge-navy { background: var(--gray50); color: var(--navy); }
 
+/* ─── BUILDER STEP 1 — live preview grid ─────────────────────────── */
+.step1-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.step1-tpl-card {
+  background: var(--white);
+  border: 2px solid var(--gray100);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+  display: flex;
+  flex-direction: column;
+}
+.step1-tpl-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 8px 24px rgba(201,168,76,0.18);
+  transform: translateY(-3px);
+}
+.step1-tpl-card--sel {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(11,29,58,0.13), 0 8px 24px rgba(11,29,58,0.1);
+}
+
+.step1-preview-wrap {
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--gray50);
+  position: relative;
+}
+.step1-preview-inner {
+  pointer-events: none;
+  user-select: none;
+}
+/* hide watermark inside card previews */
+.step1-preview-inner .cv-watermark { display: none !important; }
+
+.step1-card-footer {
+  padding: 10px 12px 12px;
+  flex: 1;
+  border-top: 1px solid var(--gray100);
+}
+.step1-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.step1-badge {
+  display: inline-block;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
 /* PRICING */
 .pricing-section { padding: 72px 2rem; background: var(--white); }
 .pricing-inner { max-width: 1000px; margin: 0 auto; }
