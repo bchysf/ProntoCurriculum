@@ -1053,6 +1053,217 @@ nav {
 .cv-doc.template-compatto .cv-exp-desc { font-size: 9.5px; color: var(--gray700); line-height: 1.45; }
 
 /* ═══════════════════════════════════════════════════════════════
+   MILANO — Editorial bold, typographic impact, navy/gold
+   ATS rating: ★★★★★
+════════════════════════════════════════════════════════════════ */
+.cv-doc.template-milano .cv-header {
+  background: none;
+  color: var(--navy);
+  padding: 0 0 18px 0;
+  margin: 0 0 0 0;
+  border-top: 5px solid var(--navy);
+  padding-top: 20px;
+}
+.cv-doc.template-milano .cv-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.cv-doc.template-milano .cv-title {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: 5px;
+  letter-spacing: 0.3px;
+}
+.cv-doc.template-milano .cv-contact {
+  font-size: 10.5px;
+  color: var(--gray500);
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--gray100);
+  padding-top: 8px;
+}
+.cv-doc.template-milano .cv-section-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--navy);
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 4px;
+  margin: 18px 0 9px;
+}
+.cv-doc.template-milano .cv-exp-item { margin-bottom: 12px; }
+.cv-doc.template-milano .cv-exp-title { font-size: 12px; font-weight: 700; color: var(--navy); }
+.cv-doc.template-milano .cv-exp-meta { font-size: 10px; color: var(--gray500); margin-bottom: 4px; }
+.cv-doc.template-milano .cv-exp-desc { font-size: 10.5px; color: var(--gray700); line-height: 1.55; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ELEGANTE — Cream bg, Playfair serif, Italian luxury feel
+   ATS rating: ★★★★★
+════════════════════════════════════════════════════════════════ */
+.cv-doc.template-elegante {
+  background: #FAF8F4;
+  padding: 36px 32px;
+}
+.cv-doc.template-elegante .cv-header {
+  background: none;
+  color: #1a1a1a;
+  text-align: center;
+  padding: 0 0 18px 0;
+  border-bottom: 1px solid #C9A84C;
+  margin-bottom: 4px;
+}
+.cv-doc.template-elegante .cv-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 1px;
+}
+.cv-doc.template-elegante .cv-title {
+  font-size: 12px;
+  color: #8B6914;
+  margin-top: 5px;
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+.cv-doc.template-elegante .cv-contact {
+  font-size: 10px;
+  color: #666;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cv-doc.template-elegante .cv-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8B6914;
+  border-bottom: 0.5px solid #C9A84C;
+  padding-bottom: 4px;
+  margin: 20px 0 10px;
+  font-style: italic;
+}
+.cv-doc.template-elegante .cv-exp-item { margin-bottom: 12px; }
+.cv-doc.template-elegante .cv-exp-title { font-size: 11.5px; font-weight: 700; color: #1a1a1a; }
+.cv-doc.template-elegante .cv-exp-meta { font-size: 10px; color: #888; margin-bottom: 4px; font-style: italic; }
+.cv-doc.template-elegante .cv-exp-desc { font-size: 10.5px; color: #444; line-height: 1.6; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NORDICO — Forest green, Scandinavian clean, skill tags
+   ATS rating: ★★★★★
+════════════════════════════════════════════════════════════════ */
+.cv-doc.template-nordico .cv-header {
+  background: none;
+  color: #1E4E34;
+  padding: 0 0 16px 0;
+  border-bottom: 3px solid #1E4E34;
+  margin-bottom: 4px;
+}
+.cv-doc.template-nordico .cv-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1E4E34;
+  letter-spacing: -0.5px;
+}
+.cv-doc.template-nordico .cv-title {
+  font-size: 12px;
+  color: #386641;
+  margin-top: 4px;
+  font-weight: 500;
+}
+.cv-doc.template-nordico .cv-contact {
+  font-size: 10.5px;
+  color: #4a5568;
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cv-doc.template-nordico .cv-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #1E4E34;
+  border-left: 3px solid #1E4E34;
+  padding-left: 8px;
+  margin: 16px 0 8px;
+  border-bottom: none;
+}
+.cv-doc.template-nordico .cv-exp-item { margin-bottom: 11px; }
+.cv-doc.template-nordico .cv-exp-title { font-size: 11.5px; font-weight: 700; color: #1E4E34; }
+.cv-doc.template-nordico .cv-exp-meta { font-size: 10px; color: #718096; margin-bottom: 4px; }
+.cv-doc.template-nordico .cv-exp-desc { font-size: 10.5px; color: #2d3748; line-height: 1.55; }
+.cv-nordico-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.cv-nordico-tag {
+  background: #E6F4EC;
+  color: #1E4E34;
+  border: 1px solid #A8D5B5;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CORPORATE — Gray header band, formal business structure
+   ATS rating: ★★★★★
+════════════════════════════════════════════════════════════════ */
+.cv-doc.template-corporate .cv-header {
+  background: #ECEFF4;
+  color: var(--navy);
+  padding: 22px 28px;
+  margin: -32px -28px 22px;
+  border-bottom: 3px solid var(--navy);
+}
+.cv-doc.template-corporate .cv-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.3px;
+}
+.cv-doc.template-corporate .cv-title {
+  font-size: 12px;
+  color: var(--gray500);
+  margin-top: 3px;
+  font-weight: 500;
+}
+.cv-doc.template-corporate .cv-contact {
+  font-size: 10.5px;
+  color: var(--gray500);
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cv-doc.template-corporate .cv-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--navy);
+  border-bottom: 1px solid var(--gray300);
+  padding-bottom: 4px;
+  margin: 16px 0 8px;
+}
+.cv-doc.template-corporate .cv-exp-item { margin-bottom: 11px; }
+.cv-doc.template-corporate .cv-exp-title { font-size: 11.5px; font-weight: 700; color: var(--navy); }
+.cv-doc.template-corporate .cv-exp-meta { font-size: 10px; color: var(--gray500); margin-bottom: 4px; }
+.cv-doc.template-corporate .cv-exp-desc { font-size: 10.5px; color: var(--gray700); line-height: 1.55; }
+
+/* ═══════════════════════════════════════════════════════════════
    TEMPLATE MODAL
 ════════════════════════════════════════════════════════════════ */
 .tpl-overlay {

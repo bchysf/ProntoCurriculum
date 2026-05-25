@@ -60,12 +60,16 @@ interface TplInfo {
 const TEMPLATES: TplInfo[] = [
   { id: 'modern',        name: 'Moderno',       atsStars: 5, badge: '⭐ Più scelto',      badgeBg: '#C9A84C',  sample: MARIO  },
   { id: 'minimal',       name: 'Minimal',       atsStars: 5, badge: '✓ Max ATS',          badgeBg: '#1A6B45',  sample: MARIO  },
-  { id: 'classico',      name: 'Classico',      atsStars: 5, badge: '✓ Ultra ATS',        badgeBg: '#1A6B45',  sample: MARIO  },
-  { id: 'tecnico',       name: 'Tecnico',       atsStars: 5, badge: '💻 Tech & IT',        badgeBg: '#2B6CB0',  sample: MARIO  },
-  { id: 'compatto',      name: 'Compatto',      atsStars: 4, badge: '📄 Una pagina',       badgeBg: '#6B46C1',  sample: MARIO  },
-  { id: 'professionale', name: 'Professionale', atsStars: 4, badge: '📸 Con foto',         badgeBg: '#9B2C2C',  sample: GIULIA },
-  { id: 'executive',     name: 'Executive',     atsStars: 3, badge: '🎨 Premium',          badgeBg: '#744210',  sample: GIULIA, warning: 'Sidebar — verifica ATS' },
-  { id: 'europass',      name: 'Europass',      atsStars: 4, badge: '🇪🇺 EU Standard',    badgeBg: '#003399',  sample: GIULIA },
+  { id: 'milano',        name: 'Milano',        atsStars: 5, badge: '✦ Editorial',         badgeBg: '#0B1D3A',  sample: MARIO  },
+  { id: 'elegante',      name: 'Elegante',      atsStars: 5, badge: '✦ Luxury',            badgeBg: '#8B6914',  sample: GIULIA },
+  { id: 'classico',      name: 'Classico',      atsStars: 5, badge: '✓ Ultra ATS',         badgeBg: '#1A6B45',  sample: MARIO  },
+  { id: 'nordico',       name: 'Nordico',       atsStars: 5, badge: '🌿 Scandinavo',        badgeBg: '#1E4E34',  sample: MARIO  },
+  { id: 'tecnico',       name: 'Tecnico',       atsStars: 5, badge: '💻 Tech & IT',         badgeBg: '#2B6CB0',  sample: MARIO  },
+  { id: 'corporate',     name: 'Corporate',     atsStars: 5, badge: '🏢 Business',          badgeBg: '#2D3748',  sample: GIULIA },
+  { id: 'compatto',      name: 'Compatto',      atsStars: 4, badge: '📄 Una pagina',        badgeBg: '#6B46C1',  sample: MARIO  },
+  { id: 'professionale', name: 'Professionale', atsStars: 4, badge: '📸 Con foto',          badgeBg: '#9B2C2C',  sample: GIULIA },
+  { id: 'europass',      name: 'Europass',      atsStars: 4, badge: '🇪🇺 EU Standard',     badgeBg: '#003399',  sample: GIULIA },
+  { id: 'executive',     name: 'Executive',     atsStars: 3, badge: '🎨 Premium',           badgeBg: '#744210',  sample: GIULIA, warning: 'Sidebar — verifica ATS' },
 ];
 
 function Stars({ n }: { n: number }) {

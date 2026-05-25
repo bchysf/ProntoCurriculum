@@ -27,6 +27,10 @@ const SPECS: Record<string, TemplateSpec> = {
   classico:      { headerBg: null,     headerText: BLACK,         sectionColor: BLACK,   accentColor: BLACK   },
   tecnico:       { headerBg: CHARCOAL, headerText: [255,255,255], sectionColor: CHARCOAL,accentColor: TEAL    },
   compatto:      { headerBg: NAVY,     headerText: [255,255,255], sectionColor: NAVY,    accentColor: GOLD    },
+  milano:        { headerBg: null,     headerText: NAVY,          sectionColor: NAVY,    accentColor: GOLD    },
+  elegante:      { headerBg: null,     headerText: BLACK,         sectionColor: [150,100,50], accentColor: GOLD },
+  nordico:       { headerBg: null,     headerText: [30,78,52],    sectionColor: [30,78,52],  accentColor: [30,78,52] },
+  corporate:     { headerBg: [236,239,244], headerText: NAVY,    sectionColor: NAVY,    accentColor: GRAY5   },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

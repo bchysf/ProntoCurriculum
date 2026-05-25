@@ -250,9 +250,11 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
   }
 
   // ── Tecnico template (needs tag-style skills) ────────────────────────────────
-  if (template === 'tecnico') {
+  if (template === 'tecnico' || template === 'nordico') {
+    const tagClass = template === 'nordico' ? 'cv-nordico-tag' : 'cv-tecnico-tag';
+    const tagsClass = template === 'nordico' ? 'cv-nordico-tags' : 'cv-tecnico-tags';
     return (
-      <div className="cv-doc template-tecnico">
+      <div className={`cv-doc template-${template}`}>
         <div className="cv-header">
           <div className="cv-name">{name}</div>
           <div className="cv-title">{cvData.title || 'Titolo professionale'}</div>
@@ -303,8 +305,8 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
         {cvData.skills.length > 0 && (
           <>
             <div className="cv-section-title">Competenze</div>
-            <div className="cv-tecnico-tags">
-              {cvData.skills.map(s => <span key={s} className="cv-tecnico-tag">{s}</span>)}
+            <div className={tagsClass}>
+              {cvData.skills.map(s => <span key={s} className={tagClass}>{s}</span>)}
             </div>
           </>
         )}
@@ -401,8 +403,8 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
     );
   }
 
-  // modern / minimal / compatto share the same JSX — CSS handles visual differences
-  const SINGLE_COL_TEMPLATES = ['modern', 'minimal', 'compatto'];
+  // modern / minimal / compatto / milano / elegante / corporate share JSX — CSS differs
+  const SINGLE_COL_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano', 'elegante', 'corporate'];
   const templateClass = SINGLE_COL_TEMPLATES.includes(template)
     ? `cv-doc template-${template}`
     : 'cv-doc template-modern';
