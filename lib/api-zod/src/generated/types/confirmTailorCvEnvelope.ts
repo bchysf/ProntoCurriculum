@@ -5,8 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { TailoredCVData } from './tailoredCVData';
 
-export interface TailorCvEnvelope {
-  cvData: TailoredCVData;
+export interface ConfirmTailorCvEnvelope {
+  /** ID of the saved tailored CV record. */
+  savedCvId: string;
 }

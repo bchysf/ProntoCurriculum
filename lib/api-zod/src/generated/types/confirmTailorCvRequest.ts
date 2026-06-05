@@ -7,6 +7,8 @@
  */
 import type { TailoredCVData } from './tailoredCVData';
 
-export interface TailorCvEnvelope {
+export interface ConfirmTailorCvRequest {
   cvData: TailoredCVData;
+  /** @minLength 1 */
+  jobDescription: string;
 }

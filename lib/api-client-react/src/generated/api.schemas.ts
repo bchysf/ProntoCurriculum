@@ -143,8 +143,17 @@ export interface TailoredCVData {
 
 export interface TailorCvEnvelope {
   cvData: TailoredCVData;
-  /** ID of the auto-saved tailored CV record. */
-  savedCvId?: string;
+}
+
+export interface ConfirmTailorCvRequest {
+  cvData: TailoredCVData;
+  /** @minLength 1 */
+  jobDescription: string;
+}
+
+export interface ConfirmTailorCvEnvelope {
+  /** ID of the saved tailored CV record. */
+  savedCvId: string;
 }
 
 export interface StoredTailoredCv {

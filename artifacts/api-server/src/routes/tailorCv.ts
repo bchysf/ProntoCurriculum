@@ -317,55 +317,76 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       languages: [],
     };
 
-    // Auto-save the tailored CV; enforce max 10 per user by deleting oldest
-    let savedCvId: string | undefined;
-    try {
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(tailoredCvsTable)
-        .where(eq(tailoredCvsTable.userId, userId));
-
-      if (total >= MAX_SAVED_CVS) {
-        // Delete oldest entries to stay within limit
-        const toDelete = await db
-          .select({ id: tailoredCvsTable.id })
-          .from(tailoredCvsTable)
-          .where(eq(tailoredCvsTable.userId, userId))
-          .orderBy(asc(tailoredCvsTable.createdAt))
-          .limit(total - MAX_SAVED_CVS + 1);
-
-        if (toDelete.length > 0) {
-          await db
-            .delete(tailoredCvsTable)
-            .where(
-              and(
-                eq(tailoredCvsTable.userId, userId),
-                inArray(tailoredCvsTable.id, toDelete.map(r => r.id)),
-              ),
-            );
-        }
-      }
-
-      const [saved] = await db
-        .insert(tailoredCvsTable)
-        .values({
-          userId,
-          jobTitle: cvData.title || "CV su misura",
-          jobDescription: jobDescription.trim().slice(0, 10000),
-          cvData,
-        })
-        .returning({ id: tailoredCvsTable.id });
-
-      savedCvId = saved?.id;
-    } catch (saveErr) {
-      // Non-fatal: log but don't fail the main response
-      req.log.warn({ saveErr }, "tailor-cv: failed to auto-save");
-    }
-
-    res.json({ cvData, ...(savedCvId ? { savedCvId } : {}) });
+    res.json({ cvData });
   } catch (err) {
     req.log.error({ err }, "tailor-cv error");
     res.status(500).json({ error: "Errore durante la generazione del CV. Riprova tra qualche secondo." });
+  }
+});
+
+router.post("/tailor-cv/confirm", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Non autenticato" });
+    return;
+  }
+
+  const userId = req.user!.id;
+  const { cvData, jobDescription } = req.body as {
+    cvData?: unknown;
+    jobDescription?: unknown;
+  };
+
+  if (!cvData || typeof cvData !== "object") {
+    res.status(400).json({ error: "cvData mancante o non valido" });
+    return;
+  }
+  if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length === 0) {
+    res.status(400).json({ error: "jobDescription mancante" });
+    return;
+  }
+
+  const typedCvData = cvData as { title?: string };
+
+  try {
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(tailoredCvsTable)
+      .where(eq(tailoredCvsTable.userId, userId));
+
+    if (total >= MAX_SAVED_CVS) {
+      const toDelete = await db
+        .select({ id: tailoredCvsTable.id })
+        .from(tailoredCvsTable)
+        .where(eq(tailoredCvsTable.userId, userId))
+        .orderBy(asc(tailoredCvsTable.createdAt))
+        .limit(total - MAX_SAVED_CVS + 1);
+
+      if (toDelete.length > 0) {
+        await db
+          .delete(tailoredCvsTable)
+          .where(
+            and(
+              eq(tailoredCvsTable.userId, userId),
+              inArray(tailoredCvsTable.id, toDelete.map(r => r.id)),
+            ),
+          );
+      }
+    }
+
+    const [saved] = await db
+      .insert(tailoredCvsTable)
+      .values({
+        userId,
+        jobTitle: typedCvData.title || "CV su misura",
+        jobDescription: jobDescription.trim().slice(0, 10000),
+        cvData,
+      })
+      .returning({ id: tailoredCvsTable.id });
+
+    res.json({ savedCvId: saved!.id });
+  } catch (err) {
+    req.log.error({ err }, "tailor-cv/confirm: save failed");
+    res.status(500).json({ error: "Errore durante il salvataggio del CV." });
   }
 });
 

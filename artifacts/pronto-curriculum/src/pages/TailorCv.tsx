@@ -13,7 +13,6 @@ type ViewState = 'form' | 'preview';
 
 interface PreviewData {
   cvData: CVData;
-  savedCvId?: string;
 }
 
 export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvProps) {
@@ -83,12 +82,12 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         body: JSON.stringify(body),
         credentials: 'include',
       });
-      const data = await res.json() as { cvData?: CVData; savedCvId?: string; error?: string };
+      const data = await res.json() as { cvData?: CVData; error?: string };
       if (!res.ok || !data.cvData) {
         setGenError(data.error ?? 'Errore nella generazione del CV. Riprova tra qualche secondo.');
         return;
       }
-      setPreviewData({ cvData: data.cvData, savedCvId: data.savedCvId });
+      setPreviewData({ cvData: data.cvData });
       setSelectedExpIds(new Set(data.cvData.experiences.map(e => e.id)));
       setViewState('preview');
     } catch {
@@ -98,7 +97,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     }
   };
 
-  const handleConfirm = () => {
+  const [confirming, setConfirming] = useState(false);
+
+  const handleConfirm = async () => {
     if (!previewData) return;
     const filtered = {
       ...previewData.cvData,
@@ -106,6 +107,19 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         .filter(e => selectedExpIds.has(e.id))
         .map(e => editedDescs[e.id] !== undefined ? { ...e, desc: editedDescs[e.id] } : e),
     };
+    setConfirming(true);
+    try {
+      await fetch('/api/tailor-cv/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvData: filtered, jobDescription: jobText }),
+        credentials: 'include',
+      });
+    } catch {
+      // Non-fatal: proceed even if save fails
+    } finally {
+      setConfirming(false);
+    }
     onCVLoaded(filtered);
     onNavigate('builder-step2');
   };
@@ -422,13 +436,20 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               style={{
                 fontSize: 15,
                 padding: '13px 32px',
-                opacity: confirmedCount === 0 ? 0.5 : 1,
-                cursor: confirmedCount === 0 ? 'not-allowed' : 'pointer',
+                opacity: confirmedCount === 0 || confirming ? 0.5 : 1,
+                cursor: confirmedCount === 0 || confirming ? 'not-allowed' : 'pointer',
               }}
-              onClick={confirmedCount > 0 ? handleConfirm : undefined}
-              disabled={confirmedCount === 0}
+              onClick={confirmedCount > 0 && !confirming ? handleConfirm : undefined}
+              disabled={confirmedCount === 0 || confirming}
             >
-              Conferma e apri nel builder →
+              {confirming ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
+                  Salvataggio...
+                </span>
+              ) : (
+                'Conferma e apri nel builder →'
+              )}
             </button>
           </div>
         </div>

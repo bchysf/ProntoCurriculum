@@ -22,6 +22,8 @@ import type {
 import type {
   AuthUserEnvelope,
   BeginBrowserLoginParams,
+  ConfirmTailorCvEnvelope,
+  ConfirmTailorCvRequest,
   DeleteSuccess,
   ErrorEnvelope,
   ExperienceEnvelope,
@@ -732,6 +734,77 @@ export const useTailorCv = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getTailorCvMutationOptions(options));
+    }
+
+export const getConfirmTailorCvUrl = () => {
+
+
+
+
+  return `/api/tailor-cv/confirm`
+}
+
+/**
+ * @summary Save the user-confirmed (post-editing) tailored CV to their saved CVs
+ */
+export const confirmTailorCv = async (confirmTailorCvRequest: ConfirmTailorCvRequest, options?: RequestInit): Promise<ConfirmTailorCvEnvelope> => {
+
+  return customFetch<ConfirmTailorCvEnvelope>(getConfirmTailorCvUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      confirmTailorCvRequest,)
+  }
+);}
+
+
+
+
+export const getConfirmTailorCvMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmTailorCv>>, TError,{data: BodyType<ConfirmTailorCvRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmTailorCv>>, TError,{data: BodyType<ConfirmTailorCvRequest>}, TContext> => {
+
+const mutationKey = ['confirmTailorCv'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmTailorCv>>, {data: BodyType<ConfirmTailorCvRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmTailorCv(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmTailorCvMutationResult = NonNullable<Awaited<ReturnType<typeof confirmTailorCv>>>
+    export type ConfirmTailorCvMutationBody = BodyType<ConfirmTailorCvRequest>
+    export type ConfirmTailorCvMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Save the user-confirmed (post-editing) tailored CV to their saved CVs
+ */
+export const useConfirmTailorCv = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmTailorCv>>, TError,{data: BodyType<ConfirmTailorCvRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmTailorCv>>,
+        TError,
+        {data: BodyType<ConfirmTailorCvRequest>},
+        TContext
+      > => {
+      return useMutation(getConfirmTailorCvMutationOptions(options));
     }
 
 export const getListTailoredCvsUrl = () => {

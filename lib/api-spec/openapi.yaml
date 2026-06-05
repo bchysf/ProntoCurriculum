@@ -223,6 +223,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+  /tailor-cv/confirm:
+    post:
+      tags: [AI]
+      operationId: confirmTailorCv
+      summary: Save the user-confirmed (post-editing) tailored CV to their saved CVs
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmTailorCvRequest'
+      responses:
+        '200':
+          description: Tailored CV saved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmTailorCvEnvelope'
+        '400':
+          description: Missing or invalid CV data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Save failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /tailored-cvs:
     get:
       tags: [TailoredCVs]
@@ -653,9 +692,22 @@ components:
       properties:
         cvData:
           $ref: '#/components/schemas/TailoredCVData'
+    ConfirmTailorCvRequest:
+      type: object
+      required: [cvData, jobDescription]
+      properties:
+        cvData:
+          $ref: '#/components/schemas/TailoredCVData'
+        jobDescription:
+          type: string
+          minLength: 1
+    ConfirmTailorCvEnvelope:
+      type: object
+      required: [savedCvId]
+      properties:
         savedCvId:
           type: string
-          description: ID of the auto-saved tailored CV record.
+          description: ID of the saved tailored CV record.
     StoredTailoredCv:
       type: object
       required: [id, userId, jobTitle, jobDescription, cvData, createdAt]

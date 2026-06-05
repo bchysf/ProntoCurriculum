@@ -153,8 +153,52 @@ export const TailorCvResponse = zod.object({
   "languages": zod.array(zod.object({
 
 }).passthrough())
+})
+})
+
+
+/**
+ * @summary Save the user-confirmed (post-editing) tailored CV to their saved CVs
+ */
+export const ConfirmTailorCvHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+
+
+
+export const ConfirmTailorCvBody = zod.object({
+  "cvData": zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "title": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "city": zod.string(),
+  "linkedin": zod.string(),
+  "summary": zod.string(),
+  "experiences": zod.array(zod.object({
+  "id": zod.string(),
+  "company": zod.string(),
+  "role": zod.string(),
+  "city": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "desc": zod.string()
+})),
+  "education": zod.array(zod.object({
+
+}).passthrough()),
+  "skills": zod.array(zod.string()),
+  "languages": zod.array(zod.object({
+
+}).passthrough())
 }),
-  "savedCvId": zod.string().optional().describe('ID of the auto-saved tailored CV record.')
+  "jobDescription": zod.string().min(1)
+})
+
+export const ConfirmTailorCvResponse = zod.object({
+  "savedCvId": zod.string().describe('ID of the saved tailored CV record.')
 })
 
 

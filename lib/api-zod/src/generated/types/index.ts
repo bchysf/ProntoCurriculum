@@ -10,6 +10,8 @@ export * from './authorizationSessionHeaderParameter';
 export * from './authUser';
 export * from './authUserEnvelope';
 export * from './beginBrowserLoginParams';
+export * from './confirmTailorCvEnvelope';
+export * from './confirmTailorCvRequest';
 export * from './deleteSuccess';
 export * from './errorEnvelope';
 export * from './experienceEnvelope';
