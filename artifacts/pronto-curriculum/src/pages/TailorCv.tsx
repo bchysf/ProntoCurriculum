@@ -92,6 +92,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       }
       setPreviewData({ cvData: data.cvData });
       setSelectedExpIds(new Set(data.cvData.experiences.map(e => e.id)));
+      setEditedDescs({});
       setEditedTitle(null);
       setEditedSummary(null);
       setEditingTitleSummary(false);
@@ -782,7 +783,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
           )}
 
           {/* Generate button */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button
               className="btn btn-ghost"
               style={{ fontSize: 14 }}
@@ -797,6 +798,16 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             >
               📋 Le mie candidature
             </button>
+            {previewData && (
+              <button
+                className="btn btn-ghost"
+                style={{ fontSize: 14, borderColor: 'var(--gold)', color: 'var(--navy)' }}
+                onClick={() => setViewState('preview')}
+                disabled={generating}
+              >
+                ← Torna all'anteprima
+              </button>
+            )}
             <button
               className="btn btn-gold"
               style={{
@@ -814,7 +825,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                   AI sta analizzando l'offerta...
                 </span>
               ) : (
-                '✦ Genera CV su misura'
+                previewData ? '🔄 Rigenera CV' : '✦ Genera CV su misura'
               )}
             </button>
           </div>
