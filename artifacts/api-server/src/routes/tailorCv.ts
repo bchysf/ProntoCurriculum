@@ -170,9 +170,10 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
     return;
   }
 
-  const { jobDescription, experienceIds } = req.body as {
+  const { jobDescription, experienceIds, excludeExperienceIds } = req.body as {
     jobDescription?: unknown;
     experienceIds?: unknown;
+    excludeExperienceIds?: unknown;
   };
 
   if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
@@ -189,8 +190,14 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
       ? (experienceIds as unknown[]).filter((x): x is string => typeof x === "string")
       : null;
 
+  // Validate and normalise excludeExperienceIds (IDs to exclude from the AI pool)
+  const excludedIds: Set<string> =
+    Array.isArray(excludeExperienceIds) && excludeExperienceIds.length > 0
+      ? new Set((excludeExperienceIds as unknown[]).filter((x): x is string => typeof x === "string"))
+      : new Set();
+
   // Fetch experiences: if caller supplied IDs, use them; otherwise all for user
-  const savedExperiences =
+  const allExperiences =
     filteredIds !== null
       ? await db
           .select()
@@ -203,12 +210,18 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
           .where(eq(experiencesTable.userId, userId))
           .orderBy(experiencesTable.createdAt);
 
+  // Filter out explicitly excluded experiences so the AI cannot re-select them
+  const savedExperiences =
+    excludedIds.size > 0
+      ? allExperiences.filter(e => !excludedIds.has(e.id))
+      : allExperiences;
+
   const experiencesText =
     savedExperiences.length > 0
       ? savedExperiences
           .map(
-            (e, i) =>
-              `[${i + 1}] ${e.role} @ ${e.company}${e.city ? ` (${e.city})` : ""}` +
+            (e) =>
+              `[ID:${e.id}] ${e.role} @ ${e.company}${e.city ? ` (${e.city})` : ""}` +
               `${e.startDate ? ` | ${e.startDate}` : ""}${e.endDate ? ` → ${e.endDate}` : ""}${e.isCurrent ? " → Presente" : ""}` +
               `${e.description ? `\nDescrizione: ${e.description}` : ""}` +
               `${e.skills?.length ? `\nSkill: ${e.skills.join(", ")}` : ""}`,
@@ -249,7 +262,7 @@ Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
   "skills": ["skill1", "skill2", "skill3", "max 10 skill rilevanti per l'offerta"]
 }
 
-VINCOLI: usa gli id 1, 2, 3... come stringhe. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio.`,
+VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio.`,
         },
         {
           role: "user",
@@ -290,8 +303,8 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       city: "",
       linkedin: "",
       summary: aiResult.summary ?? "",
-      experiences: (aiResult.experiences ?? []).map((e, i) => ({
-        id: String(i + 1),
+      experiences: (aiResult.experiences ?? []).map((e) => ({
+        id: e.id ?? "",
         company: e.company ?? "",
         role: e.role ?? "",
         city: e.city ?? "",

@@ -61,7 +61,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (excludeExperienceIds?: string[]) => {
     const description = jobText.trim();
     if (description.length < 50) {
       setGenError("L'offerta di lavoro è troppo corta. Aggiungi più dettagli (minimo 50 caratteri).");
@@ -71,10 +71,14 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     setGenError('');
     setViewState('form');
     try {
+      const body: Record<string, unknown> = { jobDescription: description };
+      if (excludeExperienceIds && excludeExperienceIds.length > 0) {
+        body.excludeExperienceIds = excludeExperienceIds;
+      }
       const res = await fetch('/api/tailor-cv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobDescription: description }),
+        body: JSON.stringify(body),
         credentials: 'include',
       });
       const data = await res.json() as { cvData?: CVData; savedCvId?: string; error?: string };
@@ -103,10 +107,16 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   };
 
   const handleRegenerate = () => {
+    // Capture deselected experience IDs (real DB IDs) before resetting state
+    const excludedIds = previewData
+      ? previewData.cvData.experiences
+          .filter(e => !selectedExpIds.has(e.id))
+          .map(e => e.id)
+      : [];
     setViewState('form');
     setPreviewData(null);
     setSelectedExpIds(new Set());
-    void handleGenerate();
+    void handleGenerate(excludedIds.length > 0 ? excludedIds : undefined);
   };
 
   const toggleExp = (id: string) => {
