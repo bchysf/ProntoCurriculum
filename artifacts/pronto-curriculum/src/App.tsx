@@ -4,6 +4,7 @@ import BuilderStep1 from './pages/BuilderStep1';
 import BuilderStep2 from './pages/BuilderStep2';
 import Modals from './components/Modals';
 import { Page, ModalType, TemplateType, CVData } from './types';
+import { useAuth } from '@workspace/replit-auth-web';
 
 const DEFAULT_CV_DATA: CVData = {
   firstName: 'Mario',
@@ -42,6 +43,7 @@ const BLANK_CV: CVData = {
 };
 
 export default function App() {
+  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
   const [page, setPage] = useState<Page>('home');
   const [modal, setModal] = useState<ModalType>(null);
   const [aiLoadingText, setAiLoadingText] = useState('');
@@ -92,7 +94,29 @@ export default function App() {
           <span className="logo-text">Pronto<span>Curriculum</span></span>
         </div>
         <div className="nav-actions">
-          <button className="btn btn-outline" onClick={() => openModal('signup')}>Accedi</button>
+          {isLoading ? (
+            <div style={{ width: 80, height: 36 }} />
+          ) : isAuthenticated && user ? (
+            <>
+              {user.profileImageUrl ? (
+                <img
+                  src={user.profileImageUrl}
+                  alt="avatar"
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)' }}
+                />
+              ) : (
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>
+                  {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
+                </div>
+              )}
+              <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.firstName ?? user.email ?? 'Utente'}
+              </span>
+              <button className="btn btn-outline" style={{ fontSize: 13 }} onClick={logout}>Esci</button>
+            </>
+          ) : (
+            <button className="btn btn-outline" onClick={login}>Accedi</button>
+          )}
           <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>Crea il tuo CV →</button>
         </div>
       </nav>
@@ -127,6 +151,8 @@ export default function App() {
         onClose={closeModal}
         onSuccess={handleSuccess}
         onImportComplete={handleImportComplete}
+        isAuthenticated={isAuthenticated}
+        onLogin={login}
       />
     </>
   );
