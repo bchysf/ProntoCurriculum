@@ -30,6 +30,8 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [viewState, setViewState] = useState<ViewState>('form');
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [selectedExpIds, setSelectedExpIds] = useState<Set<string>>(new Set());
+  const [editingExpId, setEditingExpId] = useState<string | null>(null);
+  const [editedDescs, setEditedDescs] = useState<Record<string, string>>({});
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
@@ -100,7 +102,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     if (!previewData) return;
     const filtered = {
       ...previewData.cvData,
-      experiences: previewData.cvData.experiences.filter(e => selectedExpIds.has(e.id)),
+      experiences: previewData.cvData.experiences
+        .filter(e => selectedExpIds.has(e.id))
+        .map(e => editedDescs[e.id] !== undefined ? { ...e, desc: editedDescs[e.id] } : e),
     };
     onCVLoaded(filtered);
     onNavigate('builder-step2');
@@ -200,35 +204,40 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {cvData.experiences.map(exp => {
                 const isSelected = selectedExpIds.has(exp.id);
+                const isEditing = editingExpId === exp.id;
+                const displayDesc = editedDescs[exp.id] !== undefined ? editedDescs[exp.id] : exp.desc;
+                const wasEdited = editedDescs[exp.id] !== undefined && editedDescs[exp.id] !== exp.desc;
                 return (
                   <div
                     key={exp.id}
-                    onClick={() => toggleExp(exp.id)}
                     style={{
                       background: isSelected ? 'var(--surface)' : 'rgba(0,0,0,0.02)',
                       border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
                       borderRadius: 12,
                       padding: '20px 22px',
-                      cursor: 'pointer',
                       transition: 'all 0.15s',
                       opacity: isSelected ? 1 : 0.5,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                       {/* Checkbox */}
-                      <div style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 6,
-                        border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
-                        background: isSelected ? 'var(--gold)' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: 2,
-                        transition: 'all 0.15s',
-                      }}>
+                      <div
+                        onClick={() => toggleExp(exp.id)}
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 6,
+                          border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
+                          background: isSelected ? 'var(--gold)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          marginTop: 2,
+                          transition: 'all 0.15s',
+                          cursor: 'pointer',
+                        }}
+                      >
                         {isSelected && (
                           <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
                             <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -237,36 +246,106 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Role + company + dates */}
+                        {/* Role + company + dates + Modifica button */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'baseline', marginBottom: 6 }}>
-                          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>{exp.role}</span>
-                          <span style={{ color: 'var(--gray500)', fontSize: 14 }}>@ {exp.company}</span>
-                          {exp.city && <span style={{ color: 'var(--gray500)', fontSize: 13 }}>• {exp.city}</span>}
+                          <span
+                            onClick={() => toggleExp(exp.id)}
+                            style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', cursor: 'pointer' }}
+                          >{exp.role}</span>
+                          <span
+                            onClick={() => toggleExp(exp.id)}
+                            style={{ color: 'var(--gray500)', fontSize: 14, cursor: 'pointer' }}
+                          >@ {exp.company}</span>
+                          {exp.city && (
+                            <span
+                              onClick={() => toggleExp(exp.id)}
+                              style={{ color: 'var(--gray500)', fontSize: 13, cursor: 'pointer' }}
+                            >• {exp.city}</span>
+                          )}
                           {(exp.from || exp.to) && (
-                            <span style={{
-                              marginLeft: 'auto',
-                              fontSize: 12,
-                              color: 'var(--gray500)',
-                              whiteSpace: 'nowrap',
-                              background: 'var(--surface)',
-                              padding: '2px 8px',
-                              borderRadius: 6,
-                              border: '1px solid var(--border)',
-                            }}>
+                            <span
+                              onClick={() => toggleExp(exp.id)}
+                              style={{
+                                marginLeft: 'auto',
+                                fontSize: 12,
+                                color: 'var(--gray500)',
+                                whiteSpace: 'nowrap',
+                                background: 'var(--surface)',
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                cursor: 'pointer',
+                              }}
+                            >
                               {exp.from}{exp.from && exp.to ? ' → ' : ''}{exp.to}
                             </span>
                           )}
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (isEditing) {
+                                setEditingExpId(null);
+                              } else {
+                                if (editedDescs[exp.id] === undefined) {
+                                  setEditedDescs(prev => ({ ...prev, [exp.id]: exp.desc }));
+                                }
+                                setEditingExpId(exp.id);
+                              }
+                            }}
+                            style={{
+                              marginLeft: 'auto',
+                              padding: '2px 10px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              border: `1px solid ${isEditing ? 'var(--navy)' : 'var(--border)'}`,
+                              borderRadius: 6,
+                              background: isEditing ? 'var(--navy)' : 'transparent',
+                              color: isEditing ? '#fff' : 'var(--gray500)',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {isEditing ? '✓ Chiudi' : wasEdited ? '✏️ Modificato' : '✏️ Modifica'}
+                          </button>
                         </div>
 
-                        {/* Rewritten description */}
-                        <div style={{
-                          fontSize: 13,
-                          color: 'var(--gray500)',
-                          lineHeight: 1.65,
-                          whiteSpace: 'pre-line',
-                        }}>
-                          {exp.desc}
-                        </div>
+                        {/* Rewritten description — textarea when editing, text when not */}
+                        {isEditing ? (
+                          <textarea
+                            value={editedDescs[exp.id] ?? exp.desc}
+                            onChange={e => setEditedDescs(prev => ({ ...prev, [exp.id]: e.target.value }))}
+                            onClick={e => e.stopPropagation()}
+                            rows={6}
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              borderRadius: 8,
+                              border: '1.5px solid var(--gold)',
+                              fontSize: 13,
+                              fontFamily: 'inherit',
+                              lineHeight: 1.65,
+                              resize: 'vertical',
+                              boxSizing: 'border-box',
+                              color: 'var(--navy)',
+                              background: 'rgba(var(--gold-rgb),0.04)',
+                              outline: 'none',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            onClick={() => toggleExp(exp.id)}
+                            style={{
+                              fontSize: 13,
+                              color: 'var(--gray500)',
+                              lineHeight: 1.65,
+                              whiteSpace: 'pre-line',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {displayDesc}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
