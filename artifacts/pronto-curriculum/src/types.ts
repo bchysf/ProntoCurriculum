@@ -1,4 +1,4 @@
-export type Page = 'home' | 'builder-step1' | 'builder-step2' | 'archivio';
+export type Page = 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor';
 export type ModalType = 'signup' | 'pricing' | 'import' | 'success' | 'ai-loading' | null;
 export type TemplateType = 'modern' | 'minimal' | 'executive' | 'europass' | 'professionale' | 'classico' | 'tecnico' | 'compatto' | 'milano' | 'elegante' | 'nordico' | 'corporate';
 

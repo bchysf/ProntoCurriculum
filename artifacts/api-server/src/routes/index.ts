@@ -4,6 +4,7 @@ import authRouter from "./auth";
 import parseCvRouter from "./parseCv";
 import optimizeCvRouter from "./optimizeCv";
 import experiencesRouter from "./experiences";
+import tailorCvRouter from "./tailorCv";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(authRouter);
 router.use(parseCvRouter);
 router.use(optimizeCvRouter);
 router.use(experiencesRouter);
+router.use(tailorCvRouter);
 
 export default router;

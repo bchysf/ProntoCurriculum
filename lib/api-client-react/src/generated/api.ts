@@ -27,11 +27,15 @@ import type {
   ExperienceEnvelope,
   ExperienceInput,
   ExperienceListEnvelope,
+  FetchJobRequest,
+  FetchJobResponse,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   LogoutSuccess,
   MobileTokenExchangeRequest,
-  MobileTokenExchangeSuccess
+  MobileTokenExchangeSuccess,
+  TailorCvEnvelope,
+  TailorCvRequest
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -585,6 +589,148 @@ export const useLogoutMobileSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getLogoutMobileSessionMutationOptions(options));
+    }
+
+export const getFetchJobDescriptionUrl = () => {
+
+
+
+
+  return `/api/fetch-job`
+}
+
+/**
+ * @summary Scrape a job posting URL and return clean text
+ */
+export const fetchJobDescription = async (fetchJobRequest: FetchJobRequest, options?: RequestInit): Promise<FetchJobResponse> => {
+
+  return customFetch<FetchJobResponse>(getFetchJobDescriptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      fetchJobRequest,)
+  }
+);}
+
+
+
+
+export const getFetchJobDescriptionMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fetchJobDescription>>, TError,{data: BodyType<FetchJobRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof fetchJobDescription>>, TError,{data: BodyType<FetchJobRequest>}, TContext> => {
+
+const mutationKey = ['fetchJobDescription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof fetchJobDescription>>, {data: BodyType<FetchJobRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  fetchJobDescription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FetchJobDescriptionMutationResult = NonNullable<Awaited<ReturnType<typeof fetchJobDescription>>>
+    export type FetchJobDescriptionMutationBody = BodyType<FetchJobRequest>
+    export type FetchJobDescriptionMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Scrape a job posting URL and return clean text
+ */
+export const useFetchJobDescription = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fetchJobDescription>>, TError,{data: BodyType<FetchJobRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof fetchJobDescription>>,
+        TError,
+        {data: BodyType<FetchJobRequest>},
+        TContext
+      > => {
+      return useMutation(getFetchJobDescriptionMutationOptions(options));
+    }
+
+export const getTailorCvUrl = () => {
+
+
+
+
+  return `/api/tailor-cv`
+}
+
+/**
+ * @summary Generate a job-tailored CV using AI and the user's saved experiences
+ */
+export const tailorCv = async (tailorCvRequest: TailorCvRequest, options?: RequestInit): Promise<TailorCvEnvelope> => {
+
+  return customFetch<TailorCvEnvelope>(getTailorCvUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tailorCvRequest,)
+  }
+);}
+
+
+
+
+export const getTailorCvMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tailorCv>>, TError,{data: BodyType<TailorCvRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof tailorCv>>, TError,{data: BodyType<TailorCvRequest>}, TContext> => {
+
+const mutationKey = ['tailorCv'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tailorCv>>, {data: BodyType<TailorCvRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  tailorCv(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TailorCvMutationResult = NonNullable<Awaited<ReturnType<typeof tailorCv>>>
+    export type TailorCvMutationBody = BodyType<TailorCvRequest>
+    export type TailorCvMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Generate a job-tailored CV using AI and the user's saved experiences
+ */
+export const useTailorCv = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tailorCv>>, TError,{data: BodyType<TailorCvRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof tailorCv>>,
+        TError,
+        {data: BodyType<TailorCvRequest>},
+        TContext
+      > => {
+      return useMutation(getTailorCvMutationOptions(options));
     }
 
 export const getListExperiencesUrl = () => {

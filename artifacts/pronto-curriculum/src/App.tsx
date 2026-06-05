@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import BuilderStep1 from './pages/BuilderStep1';
 import BuilderStep2 from './pages/BuilderStep2';
 import Archivio from './pages/Archivio';
+import TailorCv from './pages/TailorCv';
 import Modals from './components/Modals';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from '@workspace/replit-auth-web';
@@ -83,6 +84,10 @@ export default function App() {
     navigate('builder-step2');
   };
 
+  const handleTailoredCV = (generated: CVData) => {
+    setCvData(generated);
+  };
+
   const handleSuccess = () => {
     setModal('success');
   };
@@ -113,6 +118,13 @@ export default function App() {
               <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.firstName ?? user.email ?? 'Utente'}
               </span>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 13 }}
+                onClick={() => navigate('tailor')}
+              >
+                ✦ CV su misura
+              </button>
               <button
                 className="btn btn-ghost btn-sm"
                 style={{ fontSize: 13 }}
@@ -154,6 +166,13 @@ export default function App() {
         )}
         {page === 'archivio' && (
           <Archivio onNavigate={navigate} />
+        )}
+        {page === 'tailor' && (
+          <TailorCv
+            onNavigate={navigate}
+            onCVLoaded={handleTailoredCV}
+            onLogin={login}
+          />
         )}
       </main>
 

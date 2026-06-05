@@ -24,7 +24,7 @@ interface BuilderStep2Props {
   onCVChange: (data: CVData) => void;
   selectedTemplate: TemplateType;
   onTemplateChange: (t: TemplateType) => void;
-  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio') => void;
+  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor') => void;
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
   onGoToArchivio: () => void;
@@ -396,6 +396,30 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           </div>
 
           <div className="sidebar-scroll">
+            {/* CV SU MISURA BANNER */}
+            {isAuthenticated && (
+              <div
+                style={{
+                  margin: '0 0 8px 0',
+                  padding: '12px 16px',
+                  background: 'linear-gradient(135deg, var(--navy) 0%, #1a3a6b 100%)',
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  cursor: 'pointer',
+                }}
+                onClick={() => onNavigate('tailor')}
+              >
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)', marginBottom: 2 }}>✦ CV su misura</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>L'AI adatta il CV a una specifica offerta</div>
+                </div>
+                <div style={{ fontSize: 18, color: 'var(--gold)', flexShrink: 0 }}>→</div>
+              </div>
+            )}
+
             {/* DATI PERSONALI */}
             <AccordionSection title="📋 Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
               <div className="photo-section">

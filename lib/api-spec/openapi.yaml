@@ -14,6 +14,8 @@ tags:
     description: Browser and mobile authentication endpoints.
   - name: Experiences
     description: Personal experience vault CRUD.
+  - name: AI
+    description: AI-powered CV generation and optimization.
 paths:
   /healthz:
     get:
@@ -150,6 +152,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogoutSuccess'
+  /fetch-job:
+    post:
+      tags: [AI]
+      operationId: fetchJobDescription
+      summary: Scrape a job posting URL and return clean text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FetchJobRequest'
+      responses:
+        '200':
+          description: Text extracted from the job page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchJobResponse'
+        '400':
+          description: Missing or invalid URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          description: Scraping failed or no content found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /tailor-cv:
+    post:
+      tags: [AI]
+      operationId: tailorCv
+      summary: Generate a job-tailored CV using AI and the user's saved experiences
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TailorCvRequest'
+      responses:
+        '200':
+          description: Tailored CV data generated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailorCvEnvelope'
+        '400':
+          description: Job description missing or too short.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: AI generation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /experiences:
     get:
       tags: [Experiences]
@@ -441,3 +512,84 @@ components:
         success:
           type: boolean
           const: true
+    FetchJobRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+    FetchJobResponse:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+    TailorCvRequest:
+      type: object
+      required: [jobDescription]
+      properties:
+        jobDescription:
+          type: string
+          minLength: 50
+    TailoredCVExperience:
+      type: object
+      required: [id, company, role, city, from, to, desc]
+      properties:
+        id:
+          type: string
+        company:
+          type: string
+        role:
+          type: string
+        city:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        desc:
+          type: string
+    TailoredCVData:
+      type: object
+      required: [firstName, lastName, title, email, phone, city, linkedin, summary, experiences, education, skills, languages]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        title:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+        linkedin:
+          type: string
+        summary:
+          type: string
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/TailoredCVExperience'
+        education:
+          type: array
+          items:
+            type: object
+        skills:
+          type: array
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            type: object
+    TailorCvEnvelope:
+      type: object
+      required: [cvData]
+      properties:
+        cvData:
+          $ref: '#/components/schemas/TailoredCVData'

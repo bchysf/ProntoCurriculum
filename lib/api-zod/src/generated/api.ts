@@ -97,6 +97,66 @@ export const LogoutMobileSessionResponse = zod.object({
 
 
 /**
+ * @summary Scrape a job posting URL and return clean text
+ */
+
+
+
+export const FetchJobDescriptionBody = zod.object({
+  "url": zod.string().url().min(1)
+})
+
+export const FetchJobDescriptionResponse = zod.object({
+  "text": zod.string()
+})
+
+
+/**
+ * @summary Generate a job-tailored CV using AI and the user's saved experiences
+ */
+export const TailorCvHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const tailorCvBodyJobDescriptionMin = 50;
+
+
+
+export const TailorCvBody = zod.object({
+  "jobDescription": zod.string().min(tailorCvBodyJobDescriptionMin)
+})
+
+export const TailorCvResponse = zod.object({
+  "cvData": zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "title": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "city": zod.string(),
+  "linkedin": zod.string(),
+  "summary": zod.string(),
+  "experiences": zod.array(zod.object({
+  "id": zod.string(),
+  "company": zod.string(),
+  "role": zod.string(),
+  "city": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "desc": zod.string()
+})),
+  "education": zod.array(zod.object({
+
+}).passthrough()),
+  "skills": zod.array(zod.string()),
+  "languages": zod.array(zod.object({
+
+}).passthrough())
+})
+})
+
+
+/**
  * @summary List all saved experiences for the authenticated user
  */
 export const ListExperiencesHeader = zod.object({

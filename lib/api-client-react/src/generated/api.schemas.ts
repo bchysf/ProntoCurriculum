@@ -96,6 +96,53 @@ export const DeleteSuccessValue = {
 } as const;
 export type DeleteSuccess = typeof DeleteSuccessValue;
 
+export interface FetchJobRequest {
+  /** @minLength 1 */
+  url: string;
+}
+
+export interface FetchJobResponse {
+  text: string;
+}
+
+export interface TailorCvRequest {
+  /** @minLength 50 */
+  jobDescription: string;
+}
+
+export interface TailoredCVExperience {
+  id: string;
+  company: string;
+  role: string;
+  city: string;
+  from: string;
+  to: string;
+  desc: string;
+}
+
+export type TailoredCVDataEducationItem = { [key: string]: unknown };
+
+export type TailoredCVDataLanguagesItem = { [key: string]: unknown };
+
+export interface TailoredCVData {
+  firstName: string;
+  lastName: string;
+  title: string;
+  email: string;
+  phone: string;
+  city: string;
+  linkedin: string;
+  summary: string;
+  experiences: TailoredCVExperience[];
+  education: TailoredCVDataEducationItem[];
+  skills: string[];
+  languages: TailoredCVDataLanguagesItem[];
+}
+
+export interface TailorCvEnvelope {
+  cvData: TailoredCVData;
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */
