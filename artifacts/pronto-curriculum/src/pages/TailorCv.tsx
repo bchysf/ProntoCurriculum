@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { CVData, Page } from '../types';
+import { CVData, Experience, Page } from '../types';
 import { useAuth } from '@workspace/replit-auth-web';
 
 interface TailorCvProps {
@@ -35,6 +35,8 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [editingTitleSummary, setEditingTitleSummary] = useState(false);
   const [editedTitle, setEditedTitle] = useState<string | null>(null);
   const [editedSummary, setEditedSummary] = useState<string | null>(null);
+  const [excludedExperiences, setExcludedExperiences] = useState<Experience[]>([]);
+  const [excludedSectionOpen, setExcludedSectionOpen] = useState(false);
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
@@ -66,7 +68,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     }
   };
 
-  const handleGenerate = async (excludeExperienceIds?: string[]) => {
+  const handleGenerate = async (excludeExperienceIds?: string[], excludedExps?: Experience[]) => {
     const description = jobText.trim();
     if (description.length < 50) {
       setGenError("L'offerta di lavoro è troppo corta. Aggiungi più dettagli (minimo 50 caratteri).");
@@ -75,6 +77,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     setGenerating(true);
     setGenError('');
     setViewState('form');
+    if (!excludeExperienceIds) {
+      setExcludedExperiences([]);
+    }
     try {
       const body: Record<string, unknown> = { jobDescription: description };
       if (excludeExperienceIds && excludeExperienceIds.length > 0) {
@@ -97,6 +102,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       setEditedTitle(null);
       setEditedSummary(null);
       setEditingTitleSummary(false);
+      if (excludedExps && excludedExps.length > 0) {
+        setExcludedExperiences(excludedExps);
+        setExcludedSectionOpen(false);
+      }
       setViewState('preview');
     } catch {
       setGenError('Errore di rete. Controlla la connessione e riprova.');
@@ -154,16 +163,32 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   };
 
   const handleRegenerate = () => {
-    // Capture deselected experience IDs (real DB IDs) before resetting state
-    const excludedIds = previewData
-      ? previewData.cvData.experiences
-          .filter(e => !selectedExpIds.has(e.id))
-          .map(e => e.id)
+    const excluded = previewData
+      ? previewData.cvData.experiences.filter(e => !selectedExpIds.has(e.id))
       : [];
+    const excludedIds = excluded.map(e => e.id);
     setViewState('form');
     setPreviewData(null);
     setSelectedExpIds(new Set());
-    void handleGenerate(excludedIds.length > 0 ? excludedIds : undefined);
+    void handleGenerate(
+      excludedIds.length > 0 ? excludedIds : undefined,
+      excluded.length > 0 ? excluded : undefined,
+    );
+  };
+
+  const addExcludedBack = (exp: Experience) => {
+    setPreviewData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        cvData: {
+          ...prev.cvData,
+          experiences: [...prev.cvData.experiences, exp],
+        },
+      };
+    });
+    setSelectedExpIds(prev => new Set([...prev, exp.id]));
+    setExcludedExperiences(prev => prev.filter(e => e.id !== exp.id));
   };
 
   const toggleExp = (id: string) => {
@@ -475,6 +500,125 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               })}
             </div>
           </div>
+
+          {/* Excluded experiences — collapsed section shown after Rigenera */}
+          {excludedExperiences.length > 0 && (
+            <div style={{
+              border: '1px dashed var(--border)',
+              borderRadius: 12,
+              overflow: 'hidden',
+            }}>
+              <button
+                onClick={() => setExcludedSectionOpen(o => !o)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '14px 20px',
+                  background: 'rgba(0,0,0,0.02)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 15, color: 'var(--gray500)' }}>
+                  {excludedSectionOpen ? '▾' : '▸'}
+                </span>
+                <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--gray500)', flex: 1 }}>
+                  Esperienze non incluse dall'AI ({excludedExperiences.length})
+                </span>
+                <span style={{
+                  fontSize: 11,
+                  color: 'var(--gray500)',
+                  fontWeight: 500,
+                }}>
+                  Clicca per vedere · puoi aggiungerle manualmente
+                </span>
+              </button>
+
+              {excludedSectionOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 16px 16px' }}>
+                  {excludedExperiences.map(exp => (
+                    <div
+                      key={exp.id}
+                      style={{
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        padding: '14px 18px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 14,
+                        opacity: 0.75,
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'baseline', marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>{exp.role}</span>
+                          <span style={{ color: 'var(--gray500)', fontSize: 13 }}>@ {exp.company}</span>
+                          {exp.city && (
+                            <span style={{ color: 'var(--gray500)', fontSize: 12 }}>• {exp.city}</span>
+                          )}
+                          {(exp.from || exp.to) && (
+                            <span style={{
+                              marginLeft: 'auto',
+                              fontSize: 11,
+                              color: 'var(--gray500)',
+                              whiteSpace: 'nowrap',
+                              background: 'rgba(0,0,0,0.04)',
+                              padding: '2px 7px',
+                              borderRadius: 5,
+                              border: '1px solid var(--border)',
+                            }}>
+                              {exp.from}{exp.from && exp.to ? ' → ' : ''}{exp.to}
+                            </span>
+                          )}
+                        </div>
+                        {exp.desc && (
+                          <div style={{
+                            fontSize: 12,
+                            color: 'var(--gray500)',
+                            lineHeight: 1.6,
+                            whiteSpace: 'pre-line',
+                            marginTop: 4,
+                          }}>
+                            {exp.desc}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => addExcludedBack(exp)}
+                        style={{
+                          flexShrink: 0,
+                          padding: '5px 14px',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          border: '1.5px solid var(--gold)',
+                          borderRadius: 7,
+                          background: 'transparent',
+                          color: 'var(--navy)',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--gold)';
+                          (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                          (e.currentTarget as HTMLButtonElement).style.color = 'var(--navy)';
+                        }}
+                      >
+                        + Aggiungi
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Skills preview */}
           {cvData.skills.length > 0 && (
