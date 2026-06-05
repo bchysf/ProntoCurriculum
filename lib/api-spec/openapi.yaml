@@ -533,6 +533,11 @@ components:
         jobDescription:
           type: string
           minLength: 50
+        experienceIds:
+          type: array
+          description: Optional list of archived experience IDs to use. If omitted, all saved experiences are considered.
+          items:
+            type: string
     TailoredCVExperience:
       type: object
       required: [id, company, role, city, from, to, desc]

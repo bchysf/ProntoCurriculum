@@ -123,7 +123,8 @@ export const tailorCvBodyJobDescriptionMin = 50;
 
 
 export const TailorCvBody = zod.object({
-  "jobDescription": zod.string().min(tailorCvBodyJobDescriptionMin)
+  "jobDescription": zod.string().min(tailorCvBodyJobDescriptionMin),
+  "experienceIds": zod.array(zod.string()).optional().describe('Optional list of archived experience IDs to use. If omitted, all saved experiences are considered.')
 })
 
 export const TailorCvResponse = zod.object({

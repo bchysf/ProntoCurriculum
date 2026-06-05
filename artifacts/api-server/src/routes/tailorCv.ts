@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import { promises as dns } from "dns";
 import OpenAI from "openai";
 import { db, experiencesTable } from "@workspace/db";
 
@@ -43,29 +44,103 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+function isPrivateIp(ip: string): boolean {
+  // IPv4 private / loopback / link-local ranges
+  const ipv4Private = [
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^0\./,
+    /^::1$/,
+    /^fc[0-9a-f]{2}:/i,
+    /^fd[0-9a-f]{2}:/i,
+    /^fe80:/i,
+  ];
+  return ipv4Private.some(re => re.test(ip));
+}
+
+const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
+const BLOCKED_HOSTNAMES = new Set([
+  "localhost",
+  "metadata.google.internal",
+  "169.254.169.254",
+]);
+
+async function validateJobUrl(rawUrl: string): Promise<{ ok: true; url: URL } | { ok: false; reason: string }> {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return { ok: false, reason: "URL non valido." };
+  }
+
+  if (!ALLOWED_PROTOCOLS.has(parsed.protocol)) {
+    return { ok: false, reason: "Solo URL http:// e https:// sono accettati." };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (BLOCKED_HOSTNAMES.has(hostname)) {
+    return { ok: false, reason: "URL non consentito." };
+  }
+
+  // Resolve DNS and block private ranges (SSRF mitigation)
+  try {
+    const result = await dns.lookup(hostname, { all: true });
+    for (const { address } of result) {
+      if (isPrivateIp(address)) {
+        return { ok: false, reason: "URL non consentito: l'indirizzo risolve su una rete interna." };
+      }
+    }
+  } catch {
+    return { ok: false, reason: "Impossibile risolvere il nome host dell'URL fornito." };
+  }
+
+  return { ok: true, url: parsed };
+}
+
 router.post("/fetch-job", async (req: Request, res: Response) => {
-  const { url } = req.body as { url?: string };
-  if (!url || typeof url !== "string") {
+  const { url } = req.body as { url?: unknown };
+  if (!url || typeof url !== "string" || url.trim().length === 0) {
     res.status(400).json({ error: "URL mancante" });
     return;
   }
 
+  const validation = await validateJobUrl(url.trim());
+  if (!validation.ok) {
+    res.status(400).json({ error: validation.reason });
+    return;
+  }
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(validation.url.toString(), {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       },
+      redirect: "follow",
       signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
-      res
-        .status(422)
-        .json({ error: `Il sito ha risposto con errore ${response.status}. Incolla il testo manualmente.` });
+      res.status(422).json({
+        error: `Il sito ha risposto con errore ${response.status}. Incolla il testo manualmente.`,
+      });
       return;
+    }
+
+    // Re-check after redirect: ensure final URL is not internal
+    const finalUrl = response.url;
+    if (finalUrl) {
+      const recheck = await validateJobUrl(finalUrl);
+      if (!recheck.ok) {
+        res.status(400).json({ error: "Redirect verso URL non consentito." });
+        return;
+      }
     }
 
     const html = await response.text();
@@ -93,8 +168,12 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
     return;
   }
 
-  const { jobDescription } = req.body as { jobDescription?: string };
-  if (!jobDescription || jobDescription.trim().length < 50) {
+  const { jobDescription, experienceIds } = req.body as {
+    jobDescription?: unknown;
+    experienceIds?: unknown;
+  };
+
+  if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
     res.status(400).json({ error: "Descrizione dell'offerta troppo corta (minimo 50 caratteri)" });
     return;
   }
@@ -102,11 +181,25 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const user = req.user!;
 
-  const savedExperiences = await db
-    .select()
-    .from(experiencesTable)
-    .where(eq(experiencesTable.userId, userId))
-    .orderBy(experiencesTable.createdAt);
+  // Validate and normalise experienceIds (optional filter)
+  const filteredIds: string[] | null =
+    Array.isArray(experienceIds) && experienceIds.length > 0
+      ? (experienceIds as unknown[]).filter((x): x is string => typeof x === "string")
+      : null;
+
+  // Fetch experiences: if caller supplied IDs, use them; otherwise all for user
+  const savedExperiences =
+    filteredIds !== null
+      ? await db
+          .select()
+          .from(experiencesTable)
+          .where(inArray(experiencesTable.id, filteredIds))
+          .then(rows => rows.filter(r => r.userId === userId)) // ownership check
+      : await db
+          .select()
+          .from(experiencesTable)
+          .where(eq(experiencesTable.userId, userId))
+          .orderBy(experiencesTable.createdAt);
 
   const experiencesText =
     savedExperiences.length > 0

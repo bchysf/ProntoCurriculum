@@ -9,4 +9,6 @@
 export interface TailorCvRequest {
   /** @minLength 50 */
   jobDescription: string;
+  /** Optional list of archived experience IDs to use. If omitted, all saved experiences are considered. */
+  experienceIds?: string[];
 }
