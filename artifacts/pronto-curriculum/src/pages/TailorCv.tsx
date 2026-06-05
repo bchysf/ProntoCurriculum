@@ -402,56 +402,70 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
           )}
 
           {/* Action buttons */}
-          {confirmedCount === 0 && (
-            <div style={{
-              padding: '12px 16px',
-              background: 'rgba(220,53,69,0.07)',
-              border: '1px solid rgba(220,53,69,0.2)',
-              borderRadius: 10,
-              color: 'var(--danger)',
-              fontSize: 13,
-            }}>
-              ⚠️ Seleziona almeno un'esperienza per continuare.
-            </div>
-          )}
+          {(() => {
+            const allExcluded = confirmedCount === 0 && cvData.experiences.length > 0;
+            return (
+              <>
+                {confirmedCount === 0 && (
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'rgba(220,53,69,0.07)',
+                    border: '1px solid rgba(220,53,69,0.2)',
+                    borderRadius: 10,
+                    color: 'var(--danger)',
+                    fontSize: 13,
+                  }}>
+                    {allExcluded
+                      ? '⚠️ Hai escluso tutte le esperienze — aggiungi almeno una per rigenerare o confermare.'
+                      : '⚠️ Seleziona almeno un\'esperienza per continuare.'}
+                  </div>
+                )}
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 4 }}>
-            <button
-              className="btn btn-ghost"
-              style={{ fontSize: 14 }}
-              onClick={handleRegenerate}
-              disabled={generating}
-            >
-              {generating ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
-                  Rigenerazione...
-                </span>
-              ) : (
-                '🔄 Rigenera'
-              )}
-            </button>
-            <button
-              className="btn btn-gold"
-              style={{
-                fontSize: 15,
-                padding: '13px 32px',
-                opacity: confirmedCount === 0 || confirming ? 0.5 : 1,
-                cursor: confirmedCount === 0 || confirming ? 'not-allowed' : 'pointer',
-              }}
-              onClick={confirmedCount > 0 && !confirming ? handleConfirm : undefined}
-              disabled={confirmedCount === 0 || confirming}
-            >
-              {confirming ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
-                  Salvataggio...
-                </span>
-              ) : (
-                'Conferma e apri nel builder →'
-              )}
-            </button>
-          </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 4 }}>
+                  <button
+                    className="btn btn-ghost"
+                    style={{
+                      fontSize: 14,
+                      opacity: allExcluded || generating ? 0.45 : 1,
+                      cursor: allExcluded || generating ? 'not-allowed' : 'pointer',
+                    }}
+                    onClick={allExcluded || generating ? undefined : handleRegenerate}
+                    disabled={allExcluded || generating}
+                    title={allExcluded ? 'Hai escluso tutte le esperienze — aggiungi almeno una per rigenerare' : undefined}
+                  >
+                    {generating ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
+                        Rigenerazione...
+                      </span>
+                    ) : (
+                      '🔄 Rigenera'
+                    )}
+                  </button>
+                  <button
+                    className="btn btn-gold"
+                    style={{
+                      fontSize: 15,
+                      padding: '13px 32px',
+                      opacity: confirmedCount === 0 || confirming ? 0.5 : 1,
+                      cursor: confirmedCount === 0 || confirming ? 'not-allowed' : 'pointer',
+                    }}
+                    onClick={confirmedCount > 0 && !confirming ? handleConfirm : undefined}
+                    disabled={confirmedCount === 0 || confirming}
+                  >
+                    {confirming ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
+                        Salvataggio...
+                      </span>
+                    ) : (
+                      'Conferma e apri nel builder →'
+                    )}
+                  </button>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Re-generating overlay */}
