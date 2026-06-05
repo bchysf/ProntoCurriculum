@@ -153,7 +153,68 @@ export const TailorCvResponse = zod.object({
   "languages": zod.array(zod.object({
 
 }).passthrough())
+}),
+  "savedCvId": zod.string().optional().describe('ID of the auto-saved tailored CV record.')
 })
+
+
+/**
+ * @summary List all saved tailored CVs for the authenticated user
+ */
+export const ListTailoredCvsHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const ListTailoredCvsResponse = zod.object({
+  "tailoredCvs": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "jobTitle": zod.string(),
+  "jobDescription": zod.string(),
+  "cvData": zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "title": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "city": zod.string(),
+  "linkedin": zod.string(),
+  "summary": zod.string(),
+  "experiences": zod.array(zod.object({
+  "id": zod.string(),
+  "company": zod.string(),
+  "role": zod.string(),
+  "city": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "desc": zod.string()
+})),
+  "education": zod.array(zod.object({
+
+}).passthrough()),
+  "skills": zod.array(zod.string()),
+  "languages": zod.array(zod.object({
+
+}).passthrough())
+}),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Delete a saved tailored CV
+ */
+export const DeleteTailoredCvParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteTailoredCvHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const DeleteTailoredCvResponse = zod.object({
+  "success": zod.boolean()
 })
 
 

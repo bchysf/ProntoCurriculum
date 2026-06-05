@@ -16,6 +16,8 @@ tags:
     description: Personal experience vault CRUD.
   - name: AI
     description: AI-powered CV generation and optimization.
+  - name: TailoredCVs
+    description: Saved tailored CVs CRUD.
 paths:
   /healthz:
     get:
@@ -217,6 +219,59 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
         '500':
           description: AI generation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /tailored-cvs:
+    get:
+      tags: [TailoredCVs]
+      operationId: listTailoredCvs
+      summary: List all saved tailored CVs for the authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Tailored CV list returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailoredCvListEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /tailored-cvs/{id}:
+    delete:
+      tags: [TailoredCVs]
+      operationId: deleteTailoredCv
+      summary: Delete a saved tailored CV
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tailored CV deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Tailored CV not found or not owned by user.
           content:
             application/json:
               schema:
@@ -598,3 +653,31 @@ components:
       properties:
         cvData:
           $ref: '#/components/schemas/TailoredCVData'
+        savedCvId:
+          type: string
+          description: ID of the auto-saved tailored CV record.
+    StoredTailoredCv:
+      type: object
+      required: [id, userId, jobTitle, jobDescription, cvData, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        jobTitle:
+          type: string
+        jobDescription:
+          type: string
+        cvData:
+          $ref: '#/components/schemas/TailoredCVData'
+        createdAt:
+          type: string
+          format: date-time
+    TailoredCvListEnvelope:
+      type: object
+      required: [tailoredCvs]
+      properties:
+        tailoredCvs:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoredTailoredCv'

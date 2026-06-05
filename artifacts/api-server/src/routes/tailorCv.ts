@@ -1,8 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, asc, count, and } from "drizzle-orm";
 import { promises as dns } from "dns";
 import OpenAI from "openai";
-import { db, experiencesTable } from "@workspace/db";
+import { db, experiencesTable, tailoredCvsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -162,6 +162,8 @@ router.post("/fetch-job", async (req: Request, res: Response) => {
   }
 });
 
+const MAX_SAVED_CVS = 10;
+
 router.post("/tailor-cv", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Non autenticato" });
@@ -302,11 +304,96 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       languages: [],
     };
 
-    res.json({ cvData });
+    // Auto-save the tailored CV; enforce max 10 per user by deleting oldest
+    let savedCvId: string | undefined;
+    try {
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(tailoredCvsTable)
+        .where(eq(tailoredCvsTable.userId, userId));
+
+      if (total >= MAX_SAVED_CVS) {
+        // Delete oldest entries to stay within limit
+        const toDelete = await db
+          .select({ id: tailoredCvsTable.id })
+          .from(tailoredCvsTable)
+          .where(eq(tailoredCvsTable.userId, userId))
+          .orderBy(asc(tailoredCvsTable.createdAt))
+          .limit(total - MAX_SAVED_CVS + 1);
+
+        if (toDelete.length > 0) {
+          await db
+            .delete(tailoredCvsTable)
+            .where(
+              and(
+                eq(tailoredCvsTable.userId, userId),
+                inArray(tailoredCvsTable.id, toDelete.map(r => r.id)),
+              ),
+            );
+        }
+      }
+
+      const [saved] = await db
+        .insert(tailoredCvsTable)
+        .values({
+          userId,
+          jobTitle: cvData.title || "CV su misura",
+          jobDescription: jobDescription.trim().slice(0, 10000),
+          cvData,
+        })
+        .returning({ id: tailoredCvsTable.id });
+
+      savedCvId = saved?.id;
+    } catch (saveErr) {
+      // Non-fatal: log but don't fail the main response
+      req.log.warn({ saveErr }, "tailor-cv: failed to auto-save");
+    }
+
+    res.json({ cvData, ...(savedCvId ? { savedCvId } : {}) });
   } catch (err) {
     req.log.error({ err }, "tailor-cv error");
     res.status(500).json({ error: "Errore durante la generazione del CV. Riprova tra qualche secondo." });
   }
+});
+
+router.get("/tailored-cvs", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Non autenticato" });
+    return;
+  }
+
+  const userId = req.user!.id;
+
+  const rows = await db
+    .select()
+    .from(tailoredCvsTable)
+    .where(eq(tailoredCvsTable.userId, userId))
+    .orderBy(asc(tailoredCvsTable.createdAt));
+
+  // Return newest first
+  res.json({ tailoredCvs: rows.reverse() });
+});
+
+router.delete("/tailored-cvs/:id", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Non autenticato" });
+    return;
+  }
+
+  const userId = req.user!.id;
+  const id = String(req.params.id);
+
+  const [row] = await db
+    .delete(tailoredCvsTable)
+    .where(and(eq(tailoredCvsTable.id, id), eq(tailoredCvsTable.userId, userId)))
+    .returning({ id: tailoredCvsTable.id });
+
+  if (!row) {
+    res.status(404).json({ error: "CV non trovato" });
+    return;
+  }
+
+  res.json({ success: true });
 });
 
 export default router;

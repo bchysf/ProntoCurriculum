@@ -1,4 +1,4 @@
-export type Page = 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor';
+export type Page = 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor' | 'candidature';
 export type ModalType = 'signup' | 'pricing' | 'import' | 'success' | 'ai-loading' | null;
 export type TemplateType = 'modern' | 'minimal' | 'executive' | 'europass' | 'professionale' | 'classico' | 'tecnico' | 'compatto' | 'milano' | 'elegante' | 'nordico' | 'corporate';
 
@@ -41,4 +41,13 @@ export interface CVData {
   skills: string[];
   languages: Language[];
   photo?: string;
+}
+
+export interface SavedTailoredCv {
+  id: string;
+  userId: string;
+  jobTitle: string;
+  jobDescription: string;
+  cvData: CVData;
+  createdAt: string;
 }

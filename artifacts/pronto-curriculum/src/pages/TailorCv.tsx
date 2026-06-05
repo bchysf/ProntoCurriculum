@@ -20,6 +20,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [urlError, setUrlError] = useState('');
   const [genError, setGenError] = useState('');
   const [urlLoaded, setUrlLoaded] = useState(false);
+  const [savedConfirmation, setSavedConfirmation] = useState(false);
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
@@ -66,12 +67,17 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         body: JSON.stringify({ jobDescription: description }),
         credentials: 'include',
       });
-      const data = await res.json() as { cvData?: CVData; error?: string };
+      const data = await res.json() as { cvData?: CVData; savedCvId?: string; error?: string };
       if (!res.ok || !data.cvData) {
         setGenError(data.error ?? 'Errore nella generazione del CV. Riprova tra qualche secondo.');
         return;
       }
       onCVLoaded(data.cvData);
+      if (data.savedCvId) {
+        setSavedConfirmation(true);
+      }
+      // Brief pause so the user sees the save confirmation before navigating
+      await new Promise(resolve => setTimeout(resolve, 1800));
       onNavigate('builder-step2');
     } catch {
       setGenError('Errore di rete. Controlla la connessione e riprova.');
@@ -299,6 +305,13 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               💼 Gestisci archivio
             </button>
             <button
+              className="btn btn-ghost"
+              style={{ fontSize: 14 }}
+              onClick={() => onNavigate('candidature')}
+            >
+              📋 Le mie candidature
+            </button>
+            <button
               className="btn btn-gold"
               style={{
                 fontSize: 16,
@@ -347,17 +360,33 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       {generating && (
         <div className="modal-overlay" style={{ zIndex: 300 }}>
           <div className="modal-box" style={{ textAlign: 'center', padding: 56, maxWidth: 420 }}>
-            <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
-            <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
-            <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-              AI sta creando il tuo CV...
-            </div>
-            <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
-              Analisi dell'offerta in corso.<br />
-              Selezione delle esperienze più rilevanti.<br />
-              Riscrittura con le keyword richieste.<br />
-              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
-            </div>
+            {savedConfirmation ? (
+              <>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
+                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+                  CV salvato!
+                </div>
+                <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
+                  Il tuo CV su misura è stato salvato in{' '}
+                  <strong style={{ color: 'var(--navy)' }}>Le mie candidature</strong>.<br />
+                  Apertura del builder...
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
+                <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
+                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+                  AI sta creando il tuo CV...
+                </div>
+                <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
+                  Analisi dell'offerta in corso.<br />
+                  Selezione delle esperienze più rilevanti.<br />
+                  Riscrittura con le keyword richieste.<br />
+                  <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

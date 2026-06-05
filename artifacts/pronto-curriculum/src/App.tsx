@@ -4,6 +4,7 @@ import BuilderStep1 from './pages/BuilderStep1';
 import BuilderStep2 from './pages/BuilderStep2';
 import Archivio from './pages/Archivio';
 import TailorCv from './pages/TailorCv';
+import Candidature from './pages/Candidature';
 import Modals from './components/Modals';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from '@workspace/replit-auth-web';
@@ -128,6 +129,13 @@ export default function App() {
               <button
                 className="btn btn-ghost btn-sm"
                 style={{ fontSize: 13 }}
+                onClick={() => navigate('candidature')}
+              >
+                📋 Le mie candidature
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 13 }}
                 onClick={() => navigate('archivio')}
               >
                 💼 Le mie esperienze
@@ -169,6 +177,13 @@ export default function App() {
         )}
         {page === 'tailor' && (
           <TailorCv
+            onNavigate={navigate}
+            onCVLoaded={handleTailoredCV}
+            onLogin={login}
+          />
+        )}
+        {page === 'candidature' && (
+          <Candidature
             onNavigate={navigate}
             onCVLoaded={handleTailoredCV}
             onLogin={login}

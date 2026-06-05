@@ -35,7 +35,8 @@ import type {
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   TailorCvEnvelope,
-  TailorCvRequest
+  TailorCvRequest,
+  TailoredCvListEnvelope
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -731,6 +732,153 @@ export const useTailorCv = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getTailorCvMutationOptions(options));
+    }
+
+export const getListTailoredCvsUrl = () => {
+
+
+
+
+  return `/api/tailored-cvs`
+}
+
+/**
+ * @summary List all saved tailored CVs for the authenticated user
+ */
+export const listTailoredCvs = async ( options?: RequestInit): Promise<TailoredCvListEnvelope> => {
+
+  return customFetch<TailoredCvListEnvelope>(getListTailoredCvsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTailoredCvsQueryKey = () => {
+    return [
+    `/api/tailored-cvs`
+    ] as const;
+    }
+
+
+export const getListTailoredCvsQueryOptions = <TData = Awaited<ReturnType<typeof listTailoredCvs>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTailoredCvs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTailoredCvsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTailoredCvs>>> = ({ signal }) => listTailoredCvs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTailoredCvs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTailoredCvsQueryResult = NonNullable<Awaited<ReturnType<typeof listTailoredCvs>>>
+export type ListTailoredCvsQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all saved tailored CVs for the authenticated user
+ */
+
+export function useListTailoredCvs<TData = Awaited<ReturnType<typeof listTailoredCvs>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTailoredCvs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTailoredCvsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDeleteTailoredCvUrl = (id: string,) => {
+
+
+
+
+  return `/api/tailored-cvs/${id}`
+}
+
+/**
+ * @summary Delete a saved tailored CV
+ */
+export const deleteTailoredCv = async (id: string, options?: RequestInit): Promise<DeleteSuccess> => {
+
+  return customFetch<DeleteSuccess>(getDeleteTailoredCvUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteTailoredCvMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTailoredCv>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTailoredCv>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteTailoredCv'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTailoredCv>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteTailoredCv(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTailoredCvMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTailoredCv>>>
+
+    export type DeleteTailoredCvMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Delete a saved tailored CV
+ */
+export const useDeleteTailoredCv = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTailoredCv>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTailoredCv>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteTailoredCvMutationOptions(options));
     }
 
 export const getListExperiencesUrl = () => {

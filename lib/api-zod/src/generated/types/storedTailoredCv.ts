@@ -7,8 +7,11 @@
  */
 import type { TailoredCVData } from './tailoredCVData';
 
-export interface TailorCvEnvelope {
+export interface StoredTailoredCv {
+  id: string;
+  userId: string;
+  jobTitle: string;
+  jobDescription: string;
   cvData: TailoredCVData;
-  /** ID of the auto-saved tailored CV record. */
-  savedCvId?: string;
+  createdAt: Date;
 }
