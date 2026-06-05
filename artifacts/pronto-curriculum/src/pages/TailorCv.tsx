@@ -106,6 +106,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   };
 
   const [confirming, setConfirming] = useState(false);
+  const [savedCvId, setSavedCvId] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     if (!previewData) return;
@@ -120,13 +121,20 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     setConfirming(true);
     let saveError = false;
     try {
+      const body: Record<string, unknown> = { cvData: filtered, jobDescription: jobText };
+      if (savedCvId) body.existingCvId = savedCvId;
       const res = await fetch('/api/tailor-cv/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvData: filtered, jobDescription: jobText }),
+        body: JSON.stringify(body),
         credentials: 'include',
       });
-      if (!res.ok) saveError = true;
+      if (!res.ok) {
+        saveError = true;
+      } else {
+        const data = await res.json() as { savedCvId?: string };
+        if (data.savedCvId) setSavedCvId(data.savedCvId);
+      }
     } catch {
       saveError = true;
     } finally {

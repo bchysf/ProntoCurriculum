@@ -331,9 +331,10 @@ router.post("/tailor-cv/confirm", async (req: Request, res: Response) => {
   }
 
   const userId = req.user!.id;
-  const { cvData, jobDescription } = req.body as {
+  const { cvData, jobDescription, existingCvId } = req.body as {
     cvData?: unknown;
     jobDescription?: unknown;
+    existingCvId?: unknown;
   };
 
   if (!cvData || typeof cvData !== "object") {
@@ -348,6 +349,30 @@ router.post("/tailor-cv/confirm", async (req: Request, res: Response) => {
   const typedCvData = cvData as { title?: string };
 
   try {
+    // If an existing CV ID is provided, attempt an UPDATE on the owned record
+    if (existingCvId && typeof existingCvId === "string") {
+      const [updated] = await db
+        .update(tailoredCvsTable)
+        .set({
+          jobTitle: typedCvData.title || "CV su misura",
+          jobDescription: jobDescription.trim().slice(0, 10000),
+          cvData,
+        })
+        .where(
+          and(
+            eq(tailoredCvsTable.id, existingCvId),
+            eq(tailoredCvsTable.userId, userId),
+          ),
+        )
+        .returning({ id: tailoredCvsTable.id });
+
+      if (updated) {
+        res.json({ savedCvId: updated.id });
+        return;
+      }
+      // Record not found or not owned — fall through to INSERT below
+    }
+
     const [{ total }] = await db
       .select({ total: count() })
       .from(tailoredCvsTable)
