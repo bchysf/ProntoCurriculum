@@ -31,6 +31,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [selectedExpIds, setSelectedExpIds] = useState<Set<string>>(new Set());
   const [editingExpId, setEditingExpId] = useState<string | null>(null);
   const [editedDescs, setEditedDescs] = useState<Record<string, string>>({});
+  const [editingTitleSummary, setEditingTitleSummary] = useState(false);
+  const [editedTitle, setEditedTitle] = useState<string | null>(null);
+  const [editedSummary, setEditedSummary] = useState<string | null>(null);
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
@@ -89,6 +92,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       }
       setPreviewData({ cvData: data.cvData });
       setSelectedExpIds(new Set(data.cvData.experiences.map(e => e.id)));
+      setEditedTitle(null);
+      setEditedSummary(null);
+      setEditingTitleSummary(false);
       setViewState('preview');
     } catch {
       setGenError('Errore di rete. Controlla la connessione e riprova.');
@@ -103,6 +109,8 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     if (!previewData) return;
     const filtered = {
       ...previewData.cvData,
+      title: editedTitle !== null ? editedTitle : previewData.cvData.title,
+      summary: editedSummary !== null ? editedSummary : previewData.cvData.summary,
       experiences: previewData.cvData.experiences
         .filter(e => selectedExpIds.has(e.id))
         .map(e => editedDescs[e.id] !== undefined ? { ...e, desc: editedDescs[e.id] } : e),
@@ -180,23 +188,102 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* AI-generated title + summary */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(var(--navy-rgb),0.04) 0%, rgba(var(--gold-rgb),0.07) 100%)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: '24px 28px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ fontSize: 18 }}>🎯</div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>Titolo e profilo generati dall'AI</div>
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 10 }}>
-              {cvData.title}
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--gray500)', lineHeight: 1.7 }}>
-              {cvData.summary}
-            </div>
-          </div>
+          {(() => {
+            const displayTitle = editedTitle !== null ? editedTitle : cvData.title;
+            const displaySummary = editedSummary !== null ? editedSummary : cvData.summary;
+            const titleWasEdited = editedTitle !== null && editedTitle !== cvData.title;
+            const summaryWasEdited = editedSummary !== null && editedSummary !== cvData.summary;
+            const wasEdited = titleWasEdited || summaryWasEdited;
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(var(--navy-rgb),0.04) 0%, rgba(var(--gold-rgb),0.07) 100%)',
+                border: `1px solid ${editingTitleSummary ? 'var(--gold)' : 'var(--border)'}`,
+                borderRadius: 16,
+                padding: '24px 28px',
+                transition: 'border-color 0.15s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div style={{ fontSize: 18 }}>🎯</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', flex: 1 }}>Titolo e profilo generati dall'AI</div>
+                  <button
+                    onClick={() => {
+                      if (editingTitleSummary) {
+                        setEditingTitleSummary(false);
+                      } else {
+                        if (editedTitle === null) setEditedTitle(cvData.title);
+                        if (editedSummary === null) setEditedSummary(cvData.summary);
+                        setEditingTitleSummary(true);
+                      }
+                    }}
+                    style={{
+                      padding: '3px 12px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: `1px solid ${editingTitleSummary ? 'var(--navy)' : 'var(--border)'}`,
+                      borderRadius: 6,
+                      background: editingTitleSummary ? 'var(--navy)' : 'transparent',
+                      color: editingTitleSummary ? '#fff' : wasEdited ? 'var(--navy)' : 'var(--gray500)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {editingTitleSummary ? '✓ Chiudi' : wasEdited ? '✏️ Modificato' : '✏️ Modifica'}
+                  </button>
+                </div>
+                {editingTitleSummary ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <input
+                      type="text"
+                      value={displayTitle}
+                      onChange={e => setEditedTitle(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: 8,
+                        border: '1.5px solid var(--gold)',
+                        fontSize: 16,
+                        fontWeight: 700,
+                        fontFamily: 'inherit',
+                        color: 'var(--navy)',
+                        background: 'rgba(var(--gold-rgb),0.04)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <textarea
+                      value={displaySummary}
+                      onChange={e => setEditedSummary(e.target.value)}
+                      rows={5}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: '1.5px solid var(--gold)',
+                        fontSize: 14,
+                        fontFamily: 'inherit',
+                        lineHeight: 1.7,
+                        resize: 'vertical',
+                        color: 'var(--navy)',
+                        background: 'rgba(var(--gold-rgb),0.04)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 10 }}>
+                      {displayTitle}
+                    </div>
+                    <div style={{ fontSize: 14, color: 'var(--gray500)', lineHeight: 1.7 }}>
+                      {displaySummary}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Experiences */}
           <div>
