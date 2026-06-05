@@ -9,6 +9,12 @@ interface TailorCvProps {
 }
 
 type InputMode = 'url' | 'text';
+type ViewState = 'form' | 'preview';
+
+interface PreviewData {
+  cvData: CVData;
+  savedCvId?: string;
+}
 
 export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvProps) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,7 +26,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [urlError, setUrlError] = useState('');
   const [genError, setGenError] = useState('');
   const [urlLoaded, setUrlLoaded] = useState(false);
-  const [savedConfirmation, setSavedConfirmation] = useState(false);
+
+  const [viewState, setViewState] = useState<ViewState>('form');
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [selectedExpIds, setSelectedExpIds] = useState<Set<string>>(new Set());
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
@@ -60,6 +69,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     }
     setGenerating(true);
     setGenError('');
+    setViewState('form');
     try {
       const res = await fetch('/api/tailor-cv', {
         method: 'POST',
@@ -72,13 +82,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         setGenError(data.error ?? 'Errore nella generazione del CV. Riprova tra qualche secondo.');
         return;
       }
-      onCVLoaded(data.cvData);
-      if (data.savedCvId) {
-        setSavedConfirmation(true);
-      }
-      // Brief pause so the user sees the save confirmation before navigating
-      await new Promise(resolve => setTimeout(resolve, 1800));
-      onNavigate('builder-step2');
+      setPreviewData({ cvData: data.cvData, savedCvId: data.savedCvId });
+      setSelectedExpIds(new Set(data.cvData.experiences.map(e => e.id)));
+      setViewState('preview');
     } catch {
       setGenError('Errore di rete. Controlla la connessione e riprova.');
     } finally {
@@ -86,8 +92,277 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     }
   };
 
+  const handleConfirm = () => {
+    if (!previewData) return;
+    const filtered = {
+      ...previewData.cvData,
+      experiences: previewData.cvData.experiences.filter(e => selectedExpIds.has(e.id)),
+    };
+    onCVLoaded(filtered);
+    onNavigate('builder-step2');
+  };
+
+  const handleRegenerate = () => {
+    setViewState('form');
+    setPreviewData(null);
+    setSelectedExpIds(new Set());
+    void handleGenerate();
+  };
+
+  const toggleExp = (id: string) => {
+    setSelectedExpIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const charCount = jobText.trim().length;
   const isReady = charCount >= 50;
+
+  if (viewState === 'preview' && previewData) {
+    const { cvData } = previewData;
+    const confirmedCount = selectedExpIds.size;
+
+    return (
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 40, textAlign: 'center' }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ marginBottom: 24, fontSize: 13 }}
+            onClick={() => setViewState('form')}
+          >
+            ← Torna all'offerta
+          </button>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>
+            Anteprima selezione AI
+          </h1>
+          <p style={{ color: 'var(--gray500)', fontSize: 15, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+            L'AI ha selezionato {cvData.experiences.length} esperienze dal tuo archivio e le ha riscritte per questa offerta.
+            Deseleziona quelle che non vuoi includere, poi conferma.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* AI-generated title + summary */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(var(--navy-rgb),0.04) 0%, rgba(var(--gold-rgb),0.07) 100%)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '24px 28px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ fontSize: 18 }}>🎯</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>Titolo e profilo generati dall'AI</div>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 10 }}>
+              {cvData.title}
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--gray500)', lineHeight: 1.7 }}>
+              {cvData.summary}
+            </div>
+          </div>
+
+          {/* Experiences */}
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>💼</span>
+              <span>Esperienze selezionate</span>
+              <span style={{
+                padding: '2px 10px',
+                background: confirmedCount > 0 ? 'rgba(var(--gold-rgb),0.15)' : 'rgba(220,53,69,0.1)',
+                color: confirmedCount > 0 ? 'var(--navy)' : 'var(--danger)',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+              }}>
+                {confirmedCount} / {cvData.experiences.length} selezionate
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {cvData.experiences.map(exp => {
+                const isSelected = selectedExpIds.has(exp.id);
+                return (
+                  <div
+                    key={exp.id}
+                    onClick={() => toggleExp(exp.id)}
+                    style={{
+                      background: isSelected ? 'var(--surface)' : 'rgba(0,0,0,0.02)',
+                      border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
+                      borderRadius: 12,
+                      padding: '20px 22px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      opacity: isSelected ? 1 : 0.5,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                      {/* Checkbox */}
+                      <div style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
+                        background: isSelected ? 'var(--gold)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: 2,
+                        transition: 'all 0.15s',
+                      }}>
+                        {isSelected && (
+                          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                            <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Role + company + dates */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'baseline', marginBottom: 6 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>{exp.role}</span>
+                          <span style={{ color: 'var(--gray500)', fontSize: 14 }}>@ {exp.company}</span>
+                          {exp.city && <span style={{ color: 'var(--gray500)', fontSize: 13 }}>• {exp.city}</span>}
+                          {(exp.from || exp.to) && (
+                            <span style={{
+                              marginLeft: 'auto',
+                              fontSize: 12,
+                              color: 'var(--gray500)',
+                              whiteSpace: 'nowrap',
+                              background: 'var(--surface)',
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              border: '1px solid var(--border)',
+                            }}>
+                              {exp.from}{exp.from && exp.to ? ' → ' : ''}{exp.to}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Rewritten description */}
+                        <div style={{
+                          fontSize: 13,
+                          color: 'var(--gray500)',
+                          lineHeight: 1.65,
+                          whiteSpace: 'pre-line',
+                        }}>
+                          {exp.desc}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Skills preview */}
+          {cvData.skills.length > 0 && (
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '18px 22px',
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>🔧</span>
+                <span>Skill selezionate per questa offerta</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {cvData.skills.map(skill => (
+                  <span
+                    key={skill}
+                    style={{
+                      padding: '4px 12px',
+                      background: 'rgba(var(--gold-rgb),0.12)',
+                      color: 'var(--navy)',
+                      borderRadius: 20,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      border: '1px solid rgba(var(--gold-rgb),0.25)',
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {confirmedCount === 0 && (
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(220,53,69,0.07)',
+              border: '1px solid rgba(220,53,69,0.2)',
+              borderRadius: 10,
+              color: 'var(--danger)',
+              fontSize: 13,
+            }}>
+              ⚠️ Seleziona almeno un'esperienza per continuare.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 14 }}
+              onClick={handleRegenerate}
+              disabled={generating}
+            >
+              {generating ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
+                  Rigenerazione...
+                </span>
+              ) : (
+                '🔄 Rigenera'
+              )}
+            </button>
+            <button
+              className="btn btn-gold"
+              style={{
+                fontSize: 15,
+                padding: '13px 32px',
+                opacity: confirmedCount === 0 ? 0.5 : 1,
+                cursor: confirmedCount === 0 ? 'not-allowed' : 'pointer',
+              }}
+              onClick={confirmedCount > 0 ? handleConfirm : undefined}
+              disabled={confirmedCount === 0}
+            >
+              Conferma e apri nel builder →
+            </button>
+          </div>
+        </div>
+
+        {/* Re-generating overlay */}
+        {generating && (
+          <div className="modal-overlay" style={{ zIndex: 300 }}>
+            <div className="modal-box" style={{ textAlign: 'center', padding: 56, maxWidth: 420 }}>
+              <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
+              <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+                AI sta rigenerando il CV...
+              </div>
+              <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
+                Nuova selezione delle esperienze in corso.<br />
+                <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px' }}>
@@ -270,7 +545,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             {[
               { icon: '🔍', label: 'Analisi', desc: "L'AI legge l'offerta e identifica le keyword chiave" },
               { icon: '💼', label: 'Selezione', desc: "Sceglie le esperienze più rilevanti dal tuo archivio" },
-              { icon: '✍️', label: 'Riscrittura', desc: 'Riscrive le descrizioni integrando le keyword richieste' },
+              { icon: '✍️', label: 'Anteprima', desc: 'Puoi vedere e modificare la selezione prima di confermare' },
               { icon: '🎯', label: 'CV pronto', desc: 'Genera summary e skill list su misura per il ruolo' },
             ].map(step => (
               <div key={step.label} style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -325,7 +600,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               {generating ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span className="ai-pulse-ring" style={{ width: 18, height: 18, margin: 0 }} />
-                  AI sta generando il tuo CV...
+                  AI sta analizzando l'offerta...
                 </span>
               ) : (
                 '✦ Genera CV su misura'
@@ -360,33 +635,17 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       {generating && (
         <div className="modal-overlay" style={{ zIndex: 300 }}>
           <div className="modal-box" style={{ textAlign: 'center', padding: 56, maxWidth: 420 }}>
-            {savedConfirmation ? (
-              <>
-                <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-                  CV salvato!
-                </div>
-                <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
-                  Il tuo CV su misura è stato salvato in{' '}
-                  <strong style={{ color: 'var(--navy)' }}>Le mie candidature</strong>.<br />
-                  Apertura del builder...
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
-                <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
-                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-                  AI sta creando il tuo CV...
-                </div>
-                <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
-                  Analisi dell'offerta in corso.<br />
-                  Selezione delle esperienze più rilevanti.<br />
-                  Riscrittura con le keyword richieste.<br />
-                  <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
-                </div>
-              </>
-            )}
+            <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
+            <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
+            <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+              AI sta creando il tuo CV...
+            </div>
+            <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
+              Analisi dell'offerta in corso.<br />
+              Selezione delle esperienze più rilevanti.<br />
+              Riscrittura con le keyword richieste.<br />
+              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
+            </div>
           </div>
         </div>
       )}
