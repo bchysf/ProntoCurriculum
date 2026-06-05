@@ -3,6 +3,7 @@ import { CVData, TemplateType, ModalType } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
+import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
 import { useAuth } from '@workspace/replit-auth-web';
@@ -149,6 +150,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [savedExps, setSavedExps] = useState<StoredExp[]>([]);
   const [importLoading, setImportLoading] = useState(false);
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('IT');
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState('');
 
   const openImportPanel = async () => {
     setShowImportPanel(true);
@@ -336,6 +341,53 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     }
   };
 
+  const handleTranslateCV = async () => {
+    if (selectedLanguage === 'IT') return;
+    setTranslating(true);
+    setTranslateError('');
+    setModal('ai-loading-local');
+    try {
+      const translated = await aiTranslateCV(cvData, selectedLanguage);
+      onCVChange({ ...cvData, ...translated, photo: cvData.photo });
+    } catch (err) {
+      setTranslateError(err instanceof Error ? err.message : 'Errore traduzione');
+    } finally {
+      setTranslating(false);
+      setModal(null);
+    }
+  };
+
+  const handleTranslateSummary = async () => {
+    if (!cvData.summary.trim()) return;
+    setTranslating(true);
+    setModal('ai-loading-local');
+    try {
+      const result = await aiTranslateField('summary', cvData.summary, selectedLanguage);
+      onCVChange({ ...cvData, summary: result });
+    } catch {
+    } finally {
+      setTranslating(false);
+      setModal(null);
+    }
+  };
+
+  const handleTranslateExp = async (idx: number) => {
+    const exp = cvData.experiences[idx];
+    if (!exp?.desc?.trim()) return;
+    setTranslating(true);
+    setModal('ai-loading-local');
+    try {
+      const result = await aiTranslateField('exp-desc', exp.desc, selectedLanguage, { role: exp.role, company: exp.company });
+      const updated = [...cvData.experiences];
+      updated[idx] = { ...updated[idx], desc: result };
+      onCVChange({ ...cvData, experiences: updated });
+    } catch {
+    } finally {
+      setTranslating(false);
+      setModal(null);
+    }
+  };
+
   const handleOptimizeExp = async (idx: number) => {
     const exp = cvData.experiences[idx];
     if (!exp) return;
@@ -420,6 +472,58 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
             )}
 
+            {/* LINGUA DEL CV */}
+            <div style={{
+              margin: '0 0 8px 0',
+              padding: '12px 16px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>🌐 Lingua del CV</div>
+                {selectedLanguage !== 'IT' && (
+                  <button
+                    className="ai-btn"
+                    style={{ padding: '4px 10px', fontSize: 11 }}
+                    onClick={() => void handleTranslateCV()}
+                    disabled={translating || optimizing}
+                  >
+                    ✦ {translating ? 'Traduzione...' : `Traduci tutto in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label ?? selectedLanguage}`}
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => { setSelectedLanguage(lang.code); setTranslateError(''); }}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 20,
+                      border: `1.5px solid ${selectedLanguage === lang.code ? 'var(--gold)' : 'var(--border)'}`,
+                      background: selectedLanguage === lang.code ? 'rgba(201,168,76,0.12)' : 'transparent',
+                      color: selectedLanguage === lang.code ? 'var(--navy)' : 'var(--gray500)',
+                      fontSize: 12,
+                      fontWeight: selectedLanguage === lang.code ? 700 : 400,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {lang.flag} {lang.code}
+                  </button>
+                ))}
+              </div>
+              {translateError && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--danger)' }}>⚠ {translateError}</div>
+              )}
+              {selectedLanguage === 'IT' && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--gray500)' }}>
+                  Seleziona un'altra lingua per tradurre il CV o i singoli campi con AI.
+                </div>
+              )}
+            </div>
+
             {/* DATI PERSONALI */}
             <AccordionSection title="📋 Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
               <div className="photo-section">
@@ -495,12 +599,24 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 <textarea rows={4} placeholder="Breve descrizione professionale..." value={cvData.summary} onChange={e => update('summary', e.target.value)} />
                 <div className="form-hint">L'AI ottimizzerà questo testo per i sistemi ATS</div>
               </div>
-              <button className="ai-btn" onClick={handleOptimizeSummary}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 13, height: 13 }}>
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
-                </svg>
-                Ottimizza profilo con AI
-              </button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="ai-btn" onClick={handleOptimizeSummary} disabled={optimizing || translating}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 13, height: 13 }}>
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
+                  </svg>
+                  Ottimizza profilo con AI
+                </button>
+                {selectedLanguage !== 'IT' && (
+                  <button
+                    className="ai-btn"
+                    style={{ background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
+                    onClick={() => void handleTranslateSummary()}
+                    disabled={optimizing || translating || !cvData.summary.trim()}
+                  >
+                    🌐 Traduci in {LANGUAGES.find(l => l.code === selectedLanguage)?.label}
+                  </button>
+                )}
+              </div>
             </AccordionSection>
 
             {/* ESPERIENZE */}
@@ -512,7 +628,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta su" disabled={idx === 0} onClick={() => moveExperience(idx, -1)}>↑</button>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta giù" disabled={idx === cvData.experiences.length - 1} onClick={() => moveExperience(idx, 1)}>↓</button>
-                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} onClick={() => handleOptimizeExp(idx)}>✦ AI</button>
+                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating} onClick={() => handleOptimizeExp(idx)}>✦ AI</button>
+                      {selectedLanguage !== 'IT' && (
+                        <button
+                          className="ai-btn"
+                          style={{ padding: '4px 9px', fontSize: 11, background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
+                          title={`Traduci in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label}`}
+                          disabled={optimizing || translating || !exp.desc?.trim()}
+                          onClick={() => void handleTranslateExp(idx)}
+                        >
+                          🌐
+                        </button>
+                      )}
                       <button className="btn btn-danger btn-sm" onClick={() => removeExperience(exp.id)}>×</button>
                     </div>
                   </div>
