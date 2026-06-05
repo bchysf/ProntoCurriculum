@@ -96,3 +96,111 @@ export const LogoutMobileSessionResponse = zod.object({
 })
 
 
+/**
+ * @summary List all saved experiences for the authenticated user
+ */
+export const ListExperiencesHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const ListExperiencesResponse = zod.object({
+  "experiences": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "company": zod.string(),
+  "role": zod.string(),
+  "city": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "isCurrent": zod.boolean().optional(),
+  "description": zod.string().nullish(),
+  "skills": zod.array(zod.string()).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create a new saved experience
+ */
+export const CreateExperienceHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+
+
+
+
+export const CreateExperienceBody = zod.object({
+  "company": zod.string().min(1),
+  "role": zod.string().min(1),
+  "city": zod.string().optional(),
+  "startDate": zod.string().optional(),
+  "endDate": zod.string().optional(),
+  "isCurrent": zod.boolean().optional(),
+  "description": zod.string().optional(),
+  "skills": zod.array(zod.string()).optional()
+})
+
+
+/**
+ * @summary Update a saved experience
+ */
+export const UpdateExperienceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateExperienceHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+
+
+
+
+export const UpdateExperienceBody = zod.object({
+  "company": zod.string().min(1),
+  "role": zod.string().min(1),
+  "city": zod.string().optional(),
+  "startDate": zod.string().optional(),
+  "endDate": zod.string().optional(),
+  "isCurrent": zod.boolean().optional(),
+  "description": zod.string().optional(),
+  "skills": zod.array(zod.string()).optional()
+})
+
+export const UpdateExperienceResponse = zod.object({
+  "experience": zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "company": zod.string(),
+  "role": zod.string(),
+  "city": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "isCurrent": zod.boolean().optional(),
+  "description": zod.string().nullish(),
+  "skills": zod.array(zod.string()).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Delete a saved experience
+ */
+export const DeleteExperienceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteExperienceHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const DeleteExperienceResponse = zod.object({
+  "success": zod.boolean()
+})
+
+

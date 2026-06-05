@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import Home from './pages/Home';
 import BuilderStep1 from './pages/BuilderStep1';
 import BuilderStep2 from './pages/BuilderStep2';
+import Archivio from './pages/Archivio';
 import Modals from './components/Modals';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from '@workspace/replit-auth-web';
@@ -112,6 +113,13 @@ export default function App() {
               <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.firstName ?? user.email ?? 'Utente'}
               </span>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 13 }}
+                onClick={() => navigate('archivio')}
+              >
+                💼 Le mie esperienze
+              </button>
               <button className="btn btn-outline" style={{ fontSize: 13 }} onClick={logout}>Esci</button>
             </>
           ) : (
@@ -141,7 +149,11 @@ export default function App() {
             onNavigate={navigate}
             onModal={openModal}
             onAiAction={handleAiAction}
+            onGoToArchivio={() => navigate('archivio')}
           />
+        )}
+        {page === 'archivio' && (
+          <Archivio onNavigate={navigate} />
         )}
       </main>
 

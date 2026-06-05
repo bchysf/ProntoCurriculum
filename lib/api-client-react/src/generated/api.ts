@@ -22,7 +22,11 @@ import type {
 import type {
   AuthUserEnvelope,
   BeginBrowserLoginParams,
+  DeleteSuccess,
   ErrorEnvelope,
+  ExperienceEnvelope,
+  ExperienceInput,
+  ExperienceListEnvelope,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   LogoutSuccess,
@@ -581,5 +585,295 @@ export const useLogoutMobileSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getLogoutMobileSessionMutationOptions(options));
+    }
+
+export const getListExperiencesUrl = () => {
+
+
+
+
+  return `/api/experiences`
+}
+
+/**
+ * @summary List all saved experiences for the authenticated user
+ */
+export const listExperiences = async ( options?: RequestInit): Promise<ExperienceListEnvelope> => {
+
+  return customFetch<ExperienceListEnvelope>(getListExperiencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListExperiencesQueryKey = () => {
+    return [
+    `/api/experiences`
+    ] as const;
+    }
+
+
+export const getListExperiencesQueryOptions = <TData = Awaited<ReturnType<typeof listExperiences>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listExperiences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExperiencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExperiences>>> = ({ signal }) => listExperiences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExperiences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListExperiencesQueryResult = NonNullable<Awaited<ReturnType<typeof listExperiences>>>
+export type ListExperiencesQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all saved experiences for the authenticated user
+ */
+
+export function useListExperiences<TData = Awaited<ReturnType<typeof listExperiences>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listExperiences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListExperiencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateExperienceUrl = () => {
+
+
+
+
+  return `/api/experiences`
+}
+
+/**
+ * @summary Create a new saved experience
+ */
+export const createExperience = async (experienceInput: ExperienceInput, options?: RequestInit): Promise<ExperienceEnvelope> => {
+
+  return customFetch<ExperienceEnvelope>(getCreateExperienceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      experienceInput,)
+  }
+);}
+
+
+
+
+export const getCreateExperienceMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExperience>>, TError,{data: BodyType<ExperienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createExperience>>, TError,{data: BodyType<ExperienceInput>}, TContext> => {
+
+const mutationKey = ['createExperience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExperience>>, {data: BodyType<ExperienceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExperience(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExperienceMutationResult = NonNullable<Awaited<ReturnType<typeof createExperience>>>
+    export type CreateExperienceMutationBody = BodyType<ExperienceInput>
+    export type CreateExperienceMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Create a new saved experience
+ */
+export const useCreateExperience = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExperience>>, TError,{data: BodyType<ExperienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createExperience>>,
+        TError,
+        {data: BodyType<ExperienceInput>},
+        TContext
+      > => {
+      return useMutation(getCreateExperienceMutationOptions(options));
+    }
+
+export const getUpdateExperienceUrl = (id: string,) => {
+
+
+
+
+  return `/api/experiences/${id}`
+}
+
+/**
+ * @summary Update a saved experience
+ */
+export const updateExperience = async (id: string,
+    experienceInput: ExperienceInput, options?: RequestInit): Promise<ExperienceEnvelope> => {
+
+  return customFetch<ExperienceEnvelope>(getUpdateExperienceUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      experienceInput,)
+  }
+);}
+
+
+
+
+export const getUpdateExperienceMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateExperience>>, TError,{id: string;data: BodyType<ExperienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateExperience>>, TError,{id: string;data: BodyType<ExperienceInput>}, TContext> => {
+
+const mutationKey = ['updateExperience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateExperience>>, {id: string;data: BodyType<ExperienceInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateExperience(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateExperienceMutationResult = NonNullable<Awaited<ReturnType<typeof updateExperience>>>
+    export type UpdateExperienceMutationBody = BodyType<ExperienceInput>
+    export type UpdateExperienceMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Update a saved experience
+ */
+export const useUpdateExperience = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateExperience>>, TError,{id: string;data: BodyType<ExperienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateExperience>>,
+        TError,
+        {id: string;data: BodyType<ExperienceInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateExperienceMutationOptions(options));
+    }
+
+export const getDeleteExperienceUrl = (id: string,) => {
+
+
+
+
+  return `/api/experiences/${id}`
+}
+
+/**
+ * @summary Delete a saved experience
+ */
+export const deleteExperience = async (id: string, options?: RequestInit): Promise<DeleteSuccess> => {
+
+  return customFetch<DeleteSuccess>(getDeleteExperienceUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteExperienceMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteExperience>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteExperience>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteExperience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteExperience>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteExperience(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteExperienceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteExperience>>>
+
+    export type DeleteExperienceMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Delete a saved experience
+ */
+export const useDeleteExperience = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteExperience>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteExperience>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteExperienceMutationOptions(options));
     }
 

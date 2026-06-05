@@ -51,6 +51,51 @@ export interface ErrorEnvelope {
   error: string;
 }
 
+export interface StoredExperience {
+  id: string;
+  userId: string;
+  company: string;
+  role: string;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  isCurrent?: boolean;
+  /** @nullable */
+  description?: string | null;
+  skills?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExperienceInput {
+  /** @minLength 1 */
+  company: string;
+  /** @minLength 1 */
+  role: string;
+  city?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+  skills?: string[];
+}
+
+export interface ExperienceListEnvelope {
+  experiences: StoredExperience[];
+}
+
+export interface ExperienceEnvelope {
+  experience: StoredExperience;
+}
+
+export const DeleteSuccessValue = {
+  success: true,
+} as const;
+export type DeleteSuccess = typeof DeleteSuccessValue;
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */

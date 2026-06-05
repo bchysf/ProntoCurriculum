@@ -5,15 +5,29 @@ import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
+import { useAuth } from '@workspace/replit-auth-web';
+
+interface StoredExp {
+  id: string;
+  company: string;
+  role: string;
+  city: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  isCurrent: boolean;
+  description: string | null;
+  skills: string[];
+}
 
 interface BuilderStep2Props {
   cvData: CVData;
   onCVChange: (data: CVData) => void;
   selectedTemplate: TemplateType;
   onTemplateChange: (t: TemplateType) => void;
-  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2') => void;
+  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio') => void;
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
+  onGoToArchivio: () => void;
 }
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
@@ -120,7 +134,8 @@ function AccordionSection({
   );
 }
 
-export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, onNavigate, onModal, onAiAction }: BuilderStep2Props) {
+export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, onNavigate, onModal, onAiAction, onGoToArchivio }: BuilderStep2Props) {
+  const { isAuthenticated } = useAuth();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -129,6 +144,39 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const [showImportPanel, setShowImportPanel] = useState(false);
+  const [savedExps, setSavedExps] = useState<StoredExp[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+
+  const openImportPanel = async () => {
+    setShowImportPanel(true);
+    setImportLoading(true);
+    try {
+      const res = await fetch('/api/experiences', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json() as { experiences: StoredExp[] };
+        setSavedExps(data.experiences);
+      }
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const importExperience = (exp: StoredExp) => {
+    const cvExp = {
+      id: Date.now().toString() + exp.id.slice(-4),
+      company: exp.company,
+      role: exp.role,
+      city: exp.city ?? '',
+      from: exp.startDate ?? '',
+      to: exp.isCurrent ? 'Presente' : (exp.endDate ?? ''),
+      desc: exp.description ?? '',
+    };
+    onCVChange({ ...cvData, experiences: [...cvData.experiences, cvExp] });
+    setImportedIds(prev => new Set([...prev, exp.id]));
+  };
 
   const [jobDescription, setJobDescription] = useState('');
   const [showATSDetails, setShowATSDetails] = useState(false);
@@ -474,9 +522,76 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   </div>
                 </div>
               ))}
-              <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 4 }} onClick={addExperience}>
-                + Aggiungi esperienza
-              </button>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={addExperience}>
+                  + Aggiungi esperienza
+                </button>
+                {isAuthenticated && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ flex: 1, color: 'var(--gold)', borderColor: 'var(--gold)' }}
+                    onClick={showImportPanel ? () => setShowImportPanel(false) : openImportPanel}
+                  >
+                    📥 {showImportPanel ? 'Chiudi archivio' : 'Importa dal mio archivio'}
+                  </button>
+                )}
+              </div>
+
+              {showImportPanel && (
+                <div style={{ marginTop: 12, background: 'var(--gray50)', border: '1.5px solid var(--gray100)', borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>📥 Il tuo archivio</span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 11 }}
+                      onClick={onGoToArchivio}
+                    >
+                      Gestisci archivio →
+                    </button>
+                  </div>
+                  {importLoading ? (
+                    <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
+                  ) : savedExps.length === 0 ? (
+                    <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
+                      Nessuna esperienza salvata.{' '}
+                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline' }} onClick={onGoToArchivio}>Aggiungine una →</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {savedExps.map(exp => {
+                        const alreadyImported = importedIds.has(exp.id);
+                        return (
+                          <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--gray100)' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
+                              </div>
+                              {(exp.startDate || exp.endDate || exp.isCurrent) && (
+                                <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 1 }}>
+                                  {exp.startDate ?? ''}{exp.startDate ? ' → ' : ''}{exp.isCurrent ? 'Presente' : (exp.endDate ?? '')}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                fontSize: 11,
+                                background: alreadyImported ? 'var(--gray100)' : 'var(--gold)',
+                                color: alreadyImported ? 'var(--gray500)' : 'var(--navy)',
+                                border: 'none',
+                                flexShrink: 0,
+                              }}
+                              onClick={() => !alreadyImported && importExperience(exp)}
+                            >
+                              {alreadyImported ? '✓ Aggiunto' : '+ Aggiungi'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </AccordionSection>
 
             {/* FORMAZIONE */}

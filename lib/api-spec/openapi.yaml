@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: Auth
     description: Browser and mobile authentication endpoints.
+  - name: Experiences
+    description: Personal experience vault CRUD.
 paths:
   /healthz:
     get:
@@ -148,6 +150,134 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogoutSuccess'
+  /experiences:
+    get:
+      tags: [Experiences]
+      operationId: listExperiences
+      summary: List all saved experiences for the authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Experience list returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceListEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [Experiences]
+      operationId: createExperience
+      summary: Create a new saved experience
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperienceInput'
+      responses:
+        '201':
+          description: Experience created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceEnvelope'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /experiences/{id}:
+    put:
+      tags: [Experiences]
+      operationId: updateExperience
+      summary: Update a saved experience
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperienceInput'
+      responses:
+        '200':
+          description: Experience updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceEnvelope'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Experience not found or not owned by user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      tags: [Experiences]
+      operationId: deleteExperience
+      summary: Delete a saved experience
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Experience deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Experience not found or not owned by user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -234,3 +364,80 @@ components:
       properties:
         error:
           type: string
+    StoredExperience:
+      type: object
+      required: [id, userId, company, role, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        company:
+          type: string
+        role:
+          type: string
+        city:
+          type: [string, 'null']
+        startDate:
+          type: [string, 'null']
+        endDate:
+          type: [string, 'null']
+        isCurrent:
+          type: boolean
+        description:
+          type: [string, 'null']
+        skills:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExperienceInput:
+      type: object
+      required: [company, role]
+      properties:
+        company:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          minLength: 1
+        city:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        isCurrent:
+          type: boolean
+        description:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+    ExperienceListEnvelope:
+      type: object
+      required: [experiences]
+      properties:
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoredExperience'
+    ExperienceEnvelope:
+      type: object
+      required: [experience]
+      properties:
+        experience:
+          $ref: '#/components/schemas/StoredExperience'
+    DeleteSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
