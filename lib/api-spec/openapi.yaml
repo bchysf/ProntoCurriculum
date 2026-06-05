@@ -36,11 +36,17 @@ paths:
         - $ref: '#/components/parameters/SessionCookie'
       responses:
         '200':
-          description: Auth status resolved successfully.
+          description: Auth status resolved successfully — user is authenticated.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthUserEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /login:
     get:
       tags: [Auth]

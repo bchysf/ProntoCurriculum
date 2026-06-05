@@ -19,13 +19,15 @@ export function useAuth(): AuthState {
     let cancelled = false;
 
     fetch("/api/auth/user", { credentials: "include" })
-      .then((res) => {
+      .then(async (res) => {
+        if (res.status === 401) return null;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ user: AuthUser | null }>;
+        const data = (await res.json()) as { user: AuthUser };
+        return data.user ?? null;
       })
-      .then((data) => {
+      .then((user) => {
         if (!cancelled) {
-          setUser(data.user ?? null);
+          setUser(user);
           setIsLoading(false);
         }
       })
