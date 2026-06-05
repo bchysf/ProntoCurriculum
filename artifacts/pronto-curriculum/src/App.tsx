@@ -6,6 +6,7 @@ import Archivio from './pages/Archivio';
 import TailorCv from './pages/TailorCv';
 import Candidature from './pages/Candidature';
 import Modals from './components/Modals';
+import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from '@workspace/replit-auth-web';
 
@@ -200,6 +201,7 @@ export default function App() {
         isAuthenticated={isAuthenticated}
         onLogin={login}
       />
+      <Toaster position="bottom-center" richColors />
     </>
   );
 }

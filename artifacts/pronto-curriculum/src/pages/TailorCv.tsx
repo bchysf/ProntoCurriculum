@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { CVData, Page } from '../types';
 import { useAuth } from '@workspace/replit-auth-web';
 
@@ -117,17 +118,28 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
         .map(e => editedDescs[e.id] !== undefined ? { ...e, desc: editedDescs[e.id] } : e),
     };
     setConfirming(true);
+    let saveError = false;
     try {
-      await fetch('/api/tailor-cv/confirm', {
+      const res = await fetch('/api/tailor-cv/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cvData: filtered, jobDescription: jobText }),
         credentials: 'include',
       });
+      if (!res.ok) saveError = true;
     } catch {
-      // Non-fatal: proceed even if save fails
+      saveError = true;
     } finally {
       setConfirming(false);
+    }
+    if (saveError) {
+      toast.warning('CV aperto nell\'editor, ma il salvataggio in "Le mie candidature" non è riuscito.', {
+        duration: 5000,
+      });
+    } else {
+      toast.success('CV salvato in "Le mie candidature"', {
+        duration: 4000,
+      });
     }
     onCVLoaded(filtered);
     onNavigate('builder-step2');
