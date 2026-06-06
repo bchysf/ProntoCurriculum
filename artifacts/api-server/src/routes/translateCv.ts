@@ -19,9 +19,28 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 const ALLOWED_LANGUAGES = new Set(Object.keys(LANGUAGE_NAMES));
 
+interface CvDataInput {
+  title?: string;
+  summary?: string;
+  experiences?: { id?: string; role?: string; desc?: string }[];
+  education?: { id?: string; degree?: string }[];
+  skills?: string[];
+  languages?: { id?: string; name?: string; level?: string }[];
+  [key: string]: unknown;
+}
+
+interface TranslatablePayload {
+  title: string;
+  summary: string;
+  experiences: { id: string; role: string; desc: string }[];
+  education: { id: string; degree: string }[];
+  skills: string[];
+  languages: { id: string; name: string; level: string }[];
+}
+
 router.post("/translate-cv", async (req: Request, res: Response) => {
   const { cvData, targetLanguage } = req.body as {
-    cvData?: Record<string, unknown>;
+    cvData?: CvDataInput;
     targetLanguage?: unknown;
   };
 
@@ -42,53 +61,92 @@ router.post("/translate-cv", async (req: Request, res: Response) => {
   const lang = targetLanguage.toUpperCase();
   const langName = LANGUAGE_NAMES[lang];
 
-  const cvText = JSON.stringify(cvData, null, 2).slice(0, 8000);
+  // Extract ONLY the translatable fields — no personal data, no dates, no company names.
+  // This avoids truncation and cuts token usage by ~60%.
+  const payload: TranslatablePayload = {
+    title: (cvData.title as string) ?? "",
+    summary: (cvData.summary as string) ?? "",
+    experiences: (cvData.experiences ?? []).map((e, i) => ({
+      id: (e.id as string) ?? String(i),
+      role: (e.role as string) ?? "",
+      desc: (e.desc as string) ?? "",
+    })),
+    education: (cvData.education ?? []).map((e, i) => ({
+      id: (e.id as string) ?? String(i),
+      degree: (e.degree as string) ?? "",
+    })),
+    skills: (cvData.skills as string[]) ?? [],
+    languages: (cvData.languages ?? []).map((l, i) => ({
+      id: (l.id as string) ?? String(i),
+      name: (l.name as string) ?? "",
+      level: (l.level as string) ?? "",
+    })),
+  };
 
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.1",
-      max_completion_tokens: 4000,
+      max_completion_tokens: 6000,
       messages: [
         {
           role: "system",
-          content: `Sei un traduttore professionale specializzato in CV e documenti aziendali di alto livello.
+          content: `Sei un traduttore professionale specializzato in CV e documenti aziendali.
 
 LINGUA TARGET: ${langName} (codice: ${lang})
 
-COSA TRADURRE — traduci TUTTI questi campi:
-- "title" (titolo professionale)
-- "summary" (profilo professionale)
-- "experiences" → ogni elemento: "desc" (descrizione) e "role" (ruolo/titolo)
-- "education" → ogni elemento: "degree" (titolo di studio)
-- "skills" → ogni stringa nell'array (traduci nella lingua target)
-- "languages" → ogni elemento: "name" (nome della lingua) e "level" (livello CEFR nella lingua target)
+Ricevi un JSON con SOLO i campi da tradurre. Traduci TUTTI i valori stringa non vuoti:
+- "title": titolo professionale
+- "summary": profilo professionale
+- "experiences[].role": titolo del ruolo
+- "experiences[].desc": descrizione mansioni (mantieni bullet point "• " se presenti)
+- "education[].degree": titolo di studio
+- "skills[]": ogni competenza tecnica o soft skill
+- "languages[].name": nome della lingua (es. "Inglese" → "English" in EN, "Anglais" in FR)
+- "languages[].level": livello CEFR nella lingua target (es. "C1 - Avanzato" → "C1 - Advanced" in EN)
 
-COSA NON TRADURRE — lascia INVARIATO:
-- firstName, lastName, email, phone, city, linkedin, photo
-- "company" (nome aziende), "institution" (nome università/scuole)
-- "from", "to", "startDate", "endDate" (date)
-- "grade" (voti numerici)
+STILE:
+- Forma impersonale professionale (zero prima persona singolare)
+- Per l'inglese: imperativo/participio passato (Led, Managed, Reduced)
+- Per le altre lingue: stile participio passato senza soggetto
+- Mantieni bullet "• " e numeri/percentuali invariati
 
-STILE OBBLIGATORIO:
-- Mantieni la forma impersonale professionale (zero prima persona: no "I have", no "J'ai", no "Ich habe")
-- Mantieni i bullet point "• " nelle descrizioni delle esperienze
-- Usa terminologia professionale di alto livello nella lingua target
-- Per l'inglese: usa l'imperativo/participio passato anglosassone standard dei CV (es. "Led", "Managed", "Reduced")
-- Per le altre lingue: mantieni lo stile participio passato / sostantivo d'azione senza soggetto
-
-VINCOLO ASSOLUTO: restituisci SOLO il JSON dell'intero cvData tradotto. Zero testo prima o dopo, zero markdown.`,
+VINCOLO ASSOLUTO: restituisci SOLO il JSON con la stessa struttura e gli stessi "id". Zero testo extra, zero markdown.`,
         },
         {
           role: "user",
-          content: `Traduci questo CV in ${langName}:\n\n${cvText}`,
+          content: `Traduci in ${langName}:\n\n${JSON.stringify(payload)}`,
         },
       ],
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? "";
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-    const translated = JSON.parse(jsonStr);
-    res.json({ cvData: translated });
+    const translated = JSON.parse(jsonStr) as TranslatablePayload;
+
+    // Merge translated fields back into original cvData (preserving all untouched fields)
+    const result: CvDataInput = {
+      ...cvData,
+      title: translated.title ?? cvData.title,
+      summary: translated.summary ?? cvData.summary,
+      experiences: (cvData.experiences ?? []).map((exp, i) => {
+        const tr = translated.experiences?.find(e => e.id === ((exp.id as string) ?? String(i)));
+        if (!tr) return exp;
+        return { ...exp, role: tr.role || exp.role, desc: tr.desc || exp.desc };
+      }),
+      education: (cvData.education ?? []).map((edu, i) => {
+        const tr = translated.education?.find(e => e.id === ((edu.id as string) ?? String(i)));
+        if (!tr) return edu;
+        return { ...edu, degree: tr.degree || edu.degree };
+      }),
+      skills: translated.skills?.length ? translated.skills : cvData.skills,
+      languages: (cvData.languages ?? []).map((lang2, i) => {
+        const tr = translated.languages?.find(l => l.id === ((lang2.id as string) ?? String(i)));
+        if (!tr) return lang2;
+        return { ...lang2, name: tr.name || lang2.name, level: tr.level || lang2.level };
+      }),
+    };
+
+    res.json({ cvData: result });
   } catch (err) {
     req.log.error({ err }, "translate-cv error");
     res.status(500).json({ error: "Errore durante la traduzione del CV. Riprova tra qualche secondo." });
