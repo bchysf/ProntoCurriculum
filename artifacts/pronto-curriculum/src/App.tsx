@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Home from './pages/Home';
 import BuilderStep1 from './pages/BuilderStep1';
 import BuilderStep2 from './pages/BuilderStep2';
@@ -49,6 +49,119 @@ const BLANK_CV: CVData = {
   experiences: [], education: [], skills: [], languages: [],
 };
 
+const NAV_ITEMS: { page: Page; icon: string; labelKey: string }[] = [
+  { page: 'dashboard',   icon: '📊', labelKey: 'nav.dashboard' },
+  { page: 'tailor',      icon: '✦',  labelKey: 'nav.tailorCV' },
+  { page: 'candidature', icon: '📋', labelKey: 'nav.applications' },
+  { page: 'archivio',    icon: '💼', labelKey: 'nav.experiences' },
+];
+
+function AppSidebar({
+  open,
+  onClose,
+  currentPage,
+  onNavigate,
+  onLogout,
+  user,
+}: {
+  open: boolean;
+  onClose: () => void;
+  currentPage: Page;
+  onNavigate: (p: Page) => void;
+  onLogout: () => void;
+  user: { firstName?: string | null; email?: string | null; profileImageUrl?: string | null } | null;
+}) {
+  const t = useT();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  const handleNav = (p: Page) => { onNavigate(p); onClose(); };
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className={`sidebar-overlay${open ? ' sidebar-overlay--visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer */}
+      <aside className={`app-sidebar${open ? ' app-sidebar--open' : ''}`}>
+        {/* Header */}
+        <div className="app-sidebar__header">
+          <div className="app-sidebar__logo">
+            <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 15 }}>P</div>
+            <span className="logo-text" style={{ fontSize: 16 }}>Pronto<span>Curriculum</span></span>
+          </div>
+          <button className="app-sidebar__close" onClick={onClose} title="Chiudi">✕</button>
+        </div>
+
+        {/* User info */}
+        {user && (
+          <div className="app-sidebar__user">
+            {user.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt="avatar"
+                style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: 'var(--navy)', flexShrink: 0 }}>
+                {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
+              </div>
+            )}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--white)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user.firstName ?? 'Utente'}
+              </div>
+              {user.email && (
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.email}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="app-sidebar__divider" />
+
+        {/* Nav links */}
+        <nav className="app-sidebar__nav">
+          {NAV_ITEMS.map(item => {
+            const label = t(item.labelKey);
+            const active = currentPage === item.page;
+            return (
+              <button
+                key={item.page}
+                className={`app-sidebar__item${active ? ' app-sidebar__item--active' : ''}`}
+                onClick={() => handleNav(item.page)}
+              >
+                <span className="app-sidebar__item-icon">{item.icon}</span>
+                <span className="app-sidebar__item-label">{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div style={{ marginTop: 'auto' }}>
+          <div className="app-sidebar__divider" />
+          <button className="app-sidebar__item app-sidebar__item--logout" onClick={() => { onLogout(); onClose(); }}>
+            <span className="app-sidebar__item-icon">↩</span>
+            <span className="app-sidebar__item-label">{t('nav.logout')}</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}
+
 function AppInner() {
   const t = useT();
   const { lang, setLang } = useLanguage();
@@ -58,6 +171,7 @@ function AppInner() {
   const [aiLoadingText, setAiLoadingText] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
   const [cvData, setCvData] = useState<CVData>(DEFAULT_CV_DATA);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigate = useCallback((p: Page) => {
     setPage(p);
@@ -67,8 +181,8 @@ function AppInner() {
   const openModal = useCallback((m: ModalType) => setModal(m), []);
   const closeModal = useCallback(() => setModal(null), []);
 
-  const handleSelectTemplate = (t: TemplateType) => {
-    setSelectedTemplate(t);
+  const handleSelectTemplate = (tmpl: TemplateType) => {
+    setSelectedTemplate(tmpl);
     setTimeout(() => navigate('builder-step2'), 150);
   };
 
@@ -92,11 +206,37 @@ function AppInner() {
 
   return (
     <>
+      {/* ChatGPT-style sidebar (auth only) */}
+      {isAuthenticated && user && (
+        <AppSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          currentPage={page}
+          onNavigate={navigate}
+          onLogout={logout}
+          user={user}
+        />
+      )}
+
       <nav>
-        <div className="logo" onClick={() => navigate('home')}>
-          <div className="logo-icon">P</div>
-          <span className="logo-text">Pronto<span>Curriculum</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Hamburger — only for auth users */}
+          {isAuthenticated && !isLoading && (
+            <button
+              className="sidebar-toggle"
+              onClick={() => setSidebarOpen(v => !v)}
+              title="Menu"
+              aria-label="Apri menu"
+            >
+              <span /><span /><span />
+            </button>
+          )}
+          <div className="logo" onClick={() => navigate('home')}>
+            <div className="logo-icon">P</div>
+            <span className="logo-text">Pronto<span>Curriculum</span></span>
+          </div>
         </div>
+
         <div className="nav-actions">
           {/* Language switcher */}
           <select
@@ -127,29 +267,19 @@ function AppInner() {
                 <img
                   src={user.profileImageUrl}
                   alt="avatar"
-                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)' }}
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)', cursor: 'pointer' }}
+                  onClick={() => setSidebarOpen(v => !v)}
+                  title="Menu"
                 />
               ) : (
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>
+                <div
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--navy)', cursor: 'pointer' }}
+                  onClick={() => setSidebarOpen(v => !v)}
+                  title="Menu"
+                >
                   {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
                 </div>
               )}
-              <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.firstName ?? user.email ?? 'Utente'}
-              </span>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('dashboard')}>
-                {t('nav.dashboard')}
-              </button>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('tailor')}>
-                {t('nav.tailorCV')}
-              </button>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('candidature')}>
-                {t('nav.applications')}
-              </button>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('archivio')}>
-                {t('nav.experiences')}
-              </button>
-              <button className="btn btn-outline" style={{ fontSize: 13 }} onClick={logout}>{t('nav.logout')}</button>
             </>
           ) : (
             <button className="btn btn-outline" onClick={login}>{t('nav.login')}</button>
