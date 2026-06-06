@@ -55,18 +55,19 @@ router.post("/translate-cv", async (req: Request, res: Response) => {
 
 LINGUA TARGET: ${langName} (codice: ${lang})
 
-COSA TRADURRE — traduci SOLO questi campi:
+COSA TRADURRE — traduci TUTTI questi campi:
 - "title" (titolo professionale)
 - "summary" (profilo professionale)
 - "experiences" → ogni elemento: "desc" (descrizione) e "role" (ruolo/titolo)
 - "education" → ogni elemento: "degree" (titolo di studio)
+- "skills" → ogni stringa nell'array (traduci nella lingua target)
+- "languages" → ogni elemento: "name" (nome della lingua) e "level" (livello CEFR nella lingua target)
 
 COSA NON TRADURRE — lascia INVARIATO:
 - firstName, lastName, email, phone, city, linkedin, photo
 - "company" (nome aziende), "institution" (nome università/scuole)
 - "from", "to", "startDate", "endDate" (date)
-- "skills" (competenze, spesso in inglese per CV internazionali)
-- "languages", "grade"
+- "grade" (voti numerici)
 
 STILE OBBLIGATORIO:
 - Mantieni la forma impersonale professionale (zero prima persona: no "I have", no "J'ai", no "Ich habe")
