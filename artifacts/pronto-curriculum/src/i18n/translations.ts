@@ -60,6 +60,23 @@ export const translations: Tr = {
   'home.perMonth':     { IT: '/mese · CV illimitati', EN: '/month · Unlimited CVs', FR: '/mois · CV illimités', DE: '/Monat · Unbegrenzte Lebensläufe', ES: '/mes · CVs ilimitados', PT: '/mês · CVs ilimitados' },
   'home.allIncluded':  { IT: '/mese · Tutto incluso', EN: '/month · All included', FR: '/mois · Tout inclus', DE: '/Monat · Alles inklusive', ES: '/mes · Todo incluido', PT: '/mês · Tudo incluído' },
 
+  'home.free.feat1':   { IT: '1 curriculum con filigrana', EN: '1 CV with watermark', FR: '1 CV avec filigrane', DE: '1 Lebenslauf mit Wasserzeichen', ES: '1 CV con marca de agua', PT: "1 CV com marca d'água" },
+  'home.free.feat2':   { IT: 'Tutti i template', EN: 'All templates', FR: 'Tous les modèles', DE: 'Alle Vorlagen', ES: 'Todas las plantillas', PT: 'Todos os modelos' },
+  'home.free.feat3':   { IT: 'AI di base', EN: 'Basic AI', FR: 'IA de base', DE: 'Basis-KI', ES: 'IA básica', PT: 'IA básica' },
+  'home.free.feat4':   { IT: 'ATS Score', EN: 'ATS Score', FR: 'Score ATS', DE: 'ATS-Score', ES: 'ATS Score', PT: 'ATS Score' },
+
+  'home.std.feat1':    { IT: 'CV illimitati senza filigrana', EN: 'Unlimited CVs without watermark', FR: 'CV illimités sans filigrane', DE: 'Unbegrenzte Lebensläufe ohne Wasserzeichen', ES: 'CVs ilimitados sin marca de agua', PT: "CVs ilimitados sem marca d'água" },
+  'home.std.feat2':    { IT: 'AI avanzata + rigenerazione', EN: 'Advanced AI + regeneration', FR: 'IA avancée + régénération', DE: 'Erweiterte KI + Regenerierung', ES: 'IA avanzada + regeneración', PT: 'IA avançada + regeneração' },
+  'home.std.feat3':    { IT: 'Cover letter AI inclusa', EN: 'AI cover letter included', FR: 'Lettre de motivation IA incluse', DE: 'KI-Anschreiben inklusive', ES: 'Carta de presentación IA incluida', PT: 'Carta de apresentação IA incluída' },
+  'home.std.feat4':    { IT: 'Import LinkedIn / PDF', EN: 'LinkedIn / PDF import', FR: 'Import LinkedIn / PDF', DE: 'LinkedIn / PDF-Import', ES: 'Importar LinkedIn / PDF', PT: 'Importar LinkedIn / PDF' },
+  'home.std.feat5':    { IT: 'Analisi ATS avanzata', EN: 'Advanced ATS analysis', FR: 'Analyse ATS avancée', DE: 'Erweiterte ATS-Analyse', ES: 'Análisis ATS avanzado', PT: 'Análise ATS avançada' },
+
+  'home.pro.feat1':    { IT: 'Tutto di Standard', EN: 'Everything in Standard', FR: 'Tout de Standard', DE: 'Alles aus Standard', ES: 'Todo de Standard', PT: 'Tudo do Standard' },
+  'home.pro.feat2':    { IT: 'CV tailored per offerta di lavoro', EN: 'CV tailored to job offer', FR: "CV adapté à l'offre d'emploi", DE: 'Lebenslauf auf Stellenangebot zugeschnitten', ES: 'CV adaptado a la oferta de trabajo', PT: 'CV adaptado à oferta de emprego' },
+  'home.pro.feat3':    { IT: 'Offerte da Indeed, Areajob, JobRapido', EN: 'Jobs from Indeed, Areajob, JobRapido', FR: 'Offres de Indeed, Areajob, JobRapido', DE: 'Jobs von Indeed, Areajob, JobRapido', ES: 'Ofertas de Indeed, Areajob, JobRapido', PT: 'Vagas do Indeed, Areajob, JobRapido' },
+  'home.pro.feat4':    { IT: 'Match CV ↔ posizione', EN: 'CV ↔ position match', FR: 'Correspondance CV ↔ poste', DE: 'Lebenslauf ↔ Stelle abgleichen', ES: 'Match CV ↔ puesto', PT: 'Correspondência CV ↔ vaga' },
+  'home.pro.feat5':    { IT: 'Offerte internazionali', EN: 'International job offers', FR: 'Offres internationales', DE: 'Internationale Stellenangebote', ES: 'Ofertas internacionales', PT: 'Vagas internacionais' },
+
   'dash.title':        { IT: 'Dashboard', EN: 'Dashboard', FR: 'Tableau de bord', DE: 'Dashboard', ES: 'Panel', PT: 'Painel' },
   'dash.welcome':      { IT: 'Bentornato', EN: 'Welcome back', FR: 'Bon retour', DE: 'Willkommen zurück', ES: 'Bienvenido de nuevo', PT: 'Bem-vindo de volta' },
   'dash.subtitle':     { IT: 'Tutti i tuoi CV e candidature in un unico posto.', EN: 'All your CVs and applications in one place.', FR: 'Tous vos CV et candidatures en un seul endroit.', DE: 'Alle Ihre Lebensläufe und Bewerbungen an einem Ort.', ES: 'Todos tus CVs y candidaturas en un solo lugar.', PT: 'Todos os seus CVs e candidaturas em um só lugar.' },

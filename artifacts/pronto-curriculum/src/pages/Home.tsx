@@ -168,10 +168,10 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </div>
               <div className="price-sub">{t('home.forever')}</div>
               <hr className="divider" />
-              <div className="feature-item"><div className="check">✓</div>1 curriculum con filigrana</div>
-              <div className="feature-item"><div className="check">✓</div>Tutti i template</div>
-              <div className="feature-item"><div className="check">✓</div>AI di base</div>
-              <div className="feature-item"><div className="check">✓</div>ATS Score</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.free.feat1')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.free.feat2')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.free.feat3')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.free.feat4')}</div>
               <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} onClick={() => onNavigate('builder-step1')}>{t('home.startFreeBtn')}</button>
             </div>
 
@@ -184,11 +184,11 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </div>
               <div className="price-sub">{t('home.perMonth')}</div>
               <hr className="divider" />
-              <div className="feature-item"><div className="check check-gold">✓</div>CV illimitati senza filigrana</div>
-              <div className="feature-item"><div className="check check-gold">✓</div>AI avanzata + rigenerazione</div>
-              <div className="feature-item"><div className="check check-gold">✓</div>Cover letter AI inclusa</div>
-              <div className="feature-item"><div className="check check-gold">✓</div>Import LinkedIn / PDF</div>
-              <div className="feature-item"><div className="check check-gold">✓</div>Analisi ATS avanzata</div>
+              <div className="feature-item"><div className="check check-gold">✓</div>{t('home.std.feat1')}</div>
+              <div className="feature-item"><div className="check check-gold">✓</div>{t('home.std.feat2')}</div>
+              <div className="feature-item"><div className="check check-gold">✓</div>{t('home.std.feat3')}</div>
+              <div className="feature-item"><div className="check check-gold">✓</div>{t('home.std.feat4')}</div>
+              <div className="feature-item"><div className="check check-gold">✓</div>{t('home.std.feat5')}</div>
               <button className="btn btn-gold" style={{ width: '100%', marginTop: 20 }} onClick={() => onModal('pricing')}>{t('home.startNow')}</button>
             </div>
 
@@ -201,11 +201,11 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </div>
               <div className="price-sub">{t('home.allIncluded')}</div>
               <hr className="divider" />
-              <div className="feature-item"><div className="check">✓</div>Tutto di Standard</div>
-              <div className="feature-item"><div className="check">✓</div>CV tailored per offerta di lavoro</div>
-              <div className="feature-item"><div className="check">✓</div>Offerte da Indeed, Areajob, JobRapido</div>
-              <div className="feature-item"><div className="check">✓</div>Match CV ↔ posizione</div>
-              <div className="feature-item"><div className="check">✓</div>Offerte internazionali</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.pro.feat1')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.pro.feat2')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.pro.feat3')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.pro.feat4')}</div>
+              <div className="feature-item"><div className="check">✓</div>{t('home.pro.feat5')}</div>
               <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} disabled>{t('home.waitlist')}</button>
             </div>
           </div>
