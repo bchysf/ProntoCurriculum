@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, inArray, asc, count, and } from "drizzle-orm";
 import { promises as dns } from "dns";
 import OpenAI from "openai";
-import { db, experiencesTable, tailoredCvsTable } from "@workspace/db";
+import { db, experiencesTable, tailoredCvsTable, userProfilesTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -184,6 +184,12 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const user = req.user!;
 
+  // Fetch user profile for richer cvData
+  const [profileRow] = await db
+    .select()
+    .from(userProfilesTable)
+    .where(eq(userProfilesTable.userId, userId));
+
   // Validate and normalise experienceIds (optional filter)
   const filteredIds: string[] | null =
     Array.isArray(experienceIds) && experienceIds.length > 0
@@ -299,9 +305,9 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       lastName: userInfo.lastName,
       title: aiResult.title ?? "",
       email: userInfo.email,
-      phone: "",
-      city: "",
-      linkedin: "",
+      phone: profileRow?.phone ?? "",
+      city: profileRow?.city ?? "",
+      linkedin: profileRow?.linkedin ?? "",
       summary: aiResult.summary ?? "",
       experiences: (aiResult.experiences ?? []).map((e) => ({
         id: e.id ?? "",
@@ -312,9 +318,9 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
         to: e.to ?? "",
         desc: e.desc ?? "",
       })),
-      education: [],
+      education: profileRow?.education ?? [],
       skills: aiResult.skills ?? [],
-      languages: [],
+      languages: profileRow?.languages ?? [],
     };
 
     res.json({ cvData });
