@@ -5,10 +5,13 @@ import BuilderStep2 from './pages/BuilderStep2';
 import Archivio from './pages/Archivio';
 import TailorCv from './pages/TailorCv';
 import Candidature from './pages/Candidature';
+import Dashboard from './pages/Dashboard';
 import Modals from './components/Modals';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from '@workspace/replit-auth-web';
+import { LanguageProvider, useLanguage, useT } from './i18n/LanguageContext';
+import { LANG_OPTIONS } from './i18n/translations';
 
 const DEFAULT_CV_DATA: CVData = {
   firstName: 'Mario',
@@ -46,7 +49,9 @@ const BLANK_CV: CVData = {
   experiences: [], education: [], skills: [], languages: [],
 };
 
-export default function App() {
+function AppInner() {
+  const t = useT();
+  const { lang, setLang } = useLanguage();
   const { user, isLoading, isAuthenticated, login, logout } = useAuth();
   const [page, setPage] = useState<Page>('home');
   const [modal, setModal] = useState<ModalType>(null);
@@ -59,13 +64,8 @@ export default function App() {
     window.scrollTo(0, 0);
   }, []);
 
-  const openModal = useCallback((m: ModalType) => {
-    setModal(m);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModal(null);
-  }, []);
+  const openModal = useCallback((m: ModalType) => setModal(m), []);
+  const closeModal = useCallback(() => setModal(null), []);
 
   const handleSelectTemplate = (t: TemplateType) => {
     setSelectedTemplate(t);
@@ -75,10 +75,7 @@ export default function App() {
   const handleAiAction = (text: string, callback: () => void) => {
     setAiLoadingText(text);
     setModal('ai-loading');
-    setTimeout(() => {
-      setModal(null);
-      callback();
-    }, 2200);
+    setTimeout(() => { setModal(null); callback(); }, 2200);
   };
 
   const handleImportComplete = (extracted: Partial<CVData>) => {
@@ -86,13 +83,12 @@ export default function App() {
     navigate('builder-step2');
   };
 
-  const handleTailoredCV = (generated: CVData) => {
-    setCvData(generated);
-  };
+  const handleCVLoaded = useCallback((data: CVData, template?: string) => {
+    setCvData(data);
+    if (template) setSelectedTemplate(template as TemplateType);
+  }, []);
 
-  const handleSuccess = () => {
-    setModal('success');
-  };
+  const handleSuccess = () => setModal('success');
 
   return (
     <>
@@ -102,6 +98,27 @@ export default function App() {
           <span className="logo-text">Pronto<span>Curriculum</span></span>
         </div>
         <div className="nav-actions">
+          {/* Language switcher */}
+          <select
+            value={lang}
+            onChange={e => setLang(e.target.value as typeof lang)}
+            title="App language"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 7,
+              padding: '5px 8px',
+              fontSize: 13,
+              color: 'var(--gray300)',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            {LANG_OPTIONS.map(l => (
+              <option key={l.code} value={l.code}>{l.flag} {l.code}</option>
+            ))}
+          </select>
+
           {isLoading ? (
             <div style={{ width: 80, height: 36 }} />
           ) : isAuthenticated && user ? (
@@ -117,36 +134,27 @@ export default function App() {
                   {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
                 </div>
               )}
-              <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 14, color: 'var(--gray300)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.firstName ?? user.email ?? 'Utente'}
               </span>
-              <button
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: 13 }}
-                onClick={() => navigate('tailor')}
-              >
-                ✦ CV su misura
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('dashboard')}>
+                {t('nav.dashboard')}
               </button>
-              <button
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: 13 }}
-                onClick={() => navigate('candidature')}
-              >
-                📋 Le mie candidature
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('tailor')}>
+                {t('nav.tailorCV')}
               </button>
-              <button
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: 13 }}
-                onClick={() => navigate('archivio')}
-              >
-                💼 Le mie esperienze
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('candidature')}>
+                {t('nav.applications')}
               </button>
-              <button className="btn btn-outline" style={{ fontSize: 13 }} onClick={logout}>Esci</button>
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 13 }} onClick={() => navigate('archivio')}>
+                {t('nav.experiences')}
+              </button>
+              <button className="btn btn-outline" style={{ fontSize: 13 }} onClick={logout}>{t('nav.logout')}</button>
             </>
           ) : (
-            <button className="btn btn-outline" onClick={login}>Accedi</button>
+            <button className="btn btn-outline" onClick={login}>{t('nav.login')}</button>
           )}
-          <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>Crea il tuo CV →</button>
+          <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>{t('nav.createCV')}</button>
         </div>
       </nav>
 
@@ -179,14 +187,21 @@ export default function App() {
         {page === 'tailor' && (
           <TailorCv
             onNavigate={navigate}
-            onCVLoaded={handleTailoredCV}
+            onCVLoaded={handleCVLoaded}
             onLogin={login}
           />
         )}
         {page === 'candidature' && (
           <Candidature
             onNavigate={navigate}
-            onCVLoaded={handleTailoredCV}
+            onCVLoaded={handleCVLoaded}
+            onLogin={login}
+          />
+        )}
+        {page === 'dashboard' && (
+          <Dashboard
+            onNavigate={navigate}
+            onCVLoaded={handleCVLoaded}
             onLogin={login}
           />
         )}
@@ -203,5 +218,13 @@ export default function App() {
       />
       <Toaster position="bottom-center" richColors />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppInner />
+    </LanguageProvider>
   );
 }

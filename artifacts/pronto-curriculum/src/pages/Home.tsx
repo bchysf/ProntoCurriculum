@@ -1,4 +1,5 @@
 import { Page, ModalType } from '../types';
+import { useT } from '../i18n/LanguageContext';
 
 interface HomeProps {
   onNavigate: (page: Page) => void;
@@ -6,59 +7,58 @@ interface HomeProps {
 }
 
 export default function Home({ onNavigate, onModal }: HomeProps) {
+  const t = useT();
   return (
     <div>
       {/* HERO */}
       <div className="hero">
         <div className="hero-badge">
           <div className="trust-dot" />
-          Ottimizzato per sistemi ATS italiani ed europei
+          {t('home.badge')}
         </div>
-        <h1>Il curriculum che<br /><em>apre le porte</em></h1>
-        <p className="hero-desc">
-          Crea un CV professionale in minuti grazie all'AI. Scegli il template, rispondi alle domande, scarica il risultato.
-        </p>
+        <h1>{t('home.headline1')}<br /><em>{t('home.headline2')}</em></h1>
+        <p className="hero-desc">{t('home.subtitle')}</p>
         <div className="hero-cta">
           <button className="btn btn-gold btn-lg" onClick={() => onNavigate('builder-step1')}>
-            Inizia gratis →
+            {t('home.startFree')}
           </button>
           <button className="btn btn-outline btn-lg" onClick={() => onNavigate('builder-step1')}>
-            Vedi i template
+            {t('home.viewTemplates')}
           </button>
         </div>
         <div className="trust-row">
-          <div className="trust-item"><div className="trust-dot" />Nessuna registrazione richiesta</div>
-          <div className="trust-item"><div className="trust-dot" />ATS Score incluso</div>
-          <div className="trust-item"><div className="trust-dot" />Formato europeo & italiano</div>
-          <div className="trust-item"><div className="trust-dot" />AI integrata</div>
+          <div className="trust-item"><div className="trust-dot" />{t('home.trust.noReg')}</div>
+          <div className="trust-item"><div className="trust-dot" />{t('home.trust.ats')}</div>
+          <div className="trust-item"><div className="trust-dot" />{t('home.trust.format')}</div>
+          <div className="trust-item"><div className="trust-dot" />{t('home.trust.ai')}</div>
         </div>
       </div>
 
       {/* HOW IT WORKS */}
       <div className="section">
-        <div className="section-label">Come funziona</div>
-        <div className="section-title">Pronto in 4 passi</div>
-        <p className="section-sub">Niente da installare, niente da imparare. Il nostro assistente AI ti guida in ogni fase.</p>
+        <div className="section-label">{t('home.howLabel')}</div>
+        <div className="section-title">{t('home.4steps')}</div>
+        <p className="section-sub">{t('home.noInstall')}</p>
         <div className="steps-grid">
           <div className="step-card">
             <div className="step-num">1</div>
-            <h3>Scegli il template</h3>
-            <p>4 modelli professionali ottimizzati ATS per il mercato italiano ed europeo</p>
+            <h3>{t('home.s1.title')}</h3>
+            <p>{t('home.s1.desc')}</p>
           </div>
           <div className="step-card">
             <div className="step-num">2</div>
-            <h3>Inserisci le informazioni</h3>
-            <p>Rispondi alle domande guidate o importa da LinkedIn / curriculum precedente</p>
+            <h3>{t('home.s2.title')}</h3>
+            <p>{t('home.s2.desc')}</p>
           </div>
           <div className="step-card">
             <div className="step-num">3</div>
-            <h3>L'AI ottimizza tutto</h3>
-            <p>Rigenera testi, ottimizza per parole chiave ATS, suggerisce miglioramenti</p>
+            <h3>{t('home.s3.title')}</h3>
+            <p>{t('home.s3.desc')}</p>
           </div>
           <div className="step-card">
             <div className="step-num">4</div>
-            <h3>Scarica o condividi</h3>
-            <p>PDF professionale pronto. Versione gratuita con filigrana, Pro senza</p>
+            <h3>{t('home.s4.title')}</h3>
+            <p>{t('home.s4.desc')}</p>
           </div>
         </div>
       </div>
@@ -66,8 +66,8 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
       {/* TEMPLATES */}
       <div className="templates-section">
         <div className="templates-inner">
-          <div className="section-label">Template</div>
-          <div className="section-title">4 modelli professionali</div>
+          <div className="section-label">{t('home.templatesLabel')}</div>
+          <div className="section-title">{t('home.templates4')}</div>
           <div className="template-grid">
             <div className="template-card" onClick={() => onNavigate('builder-step1')}>
               <div className="template-preview">
@@ -89,7 +89,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
                   <div className="t-line" style={{ width: '80%' }} />
                 </div>
               </div>
-              <div className="template-name">Moderno <span className="badge badge-gold">🏆 Più scelto</span></div>
+              <div className="template-name">Moderno <span className="badge badge-gold">{t('home.mostChosen')}</span></div>
             </div>
 
             <div className="template-card" onClick={() => onNavigate('builder-step1')}>
@@ -155,65 +155,65 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
       <div className="pricing-section">
         <div className="pricing-inner">
           <div style={{ textAlign: 'center', marginBottom: 0 }}>
-            <div className="section-label" style={{ textAlign: 'center' }}>Prezzi</div>
-            <div className="section-title" style={{ textAlign: 'center' }}>Semplice e trasparente</div>
-            <p className="section-sub" style={{ margin: '0 auto' }}>Inizia gratis, aggiorna quando sei pronto.</p>
+            <div className="section-label" style={{ textAlign: 'center' }}>{t('home.pricingLabel')}</div>
+            <div className="section-title" style={{ textAlign: 'center' }}>{t('home.pricingTitle')}</div>
+            <p className="section-sub" style={{ margin: '0 auto' }}>{t('home.pricingSub')}</p>
           </div>
           <div className="pricing-grid">
             <div className="pricing-card">
-              <div className="plan-name">Gratuito</div>
+              <div className="plan-name">{t('home.planFree')}</div>
               <div className="price">
                 <span className="price-currency">€</span>
                 <span className="price-amount">0</span>
               </div>
-              <div className="price-sub">Per sempre</div>
+              <div className="price-sub">{t('home.forever')}</div>
               <hr className="divider" />
               <div className="feature-item"><div className="check">✓</div>1 curriculum con filigrana</div>
               <div className="feature-item"><div className="check">✓</div>Tutti i template</div>
               <div className="feature-item"><div className="check">✓</div>AI di base</div>
               <div className="feature-item"><div className="check">✓</div>ATS Score</div>
-              <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} onClick={() => onNavigate('builder-step1')}>Inizia gratis</button>
+              <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} onClick={() => onNavigate('builder-step1')}>{t('home.startFreeBtn')}</button>
             </div>
 
             <div className="pricing-card featured">
-              <div className="popular-badge">⚡ Più popolare</div>
+              <div className="popular-badge">{t('home.mostPopular')}</div>
               <div className="plan-name">Standard</div>
               <div className="price">
                 <span className="price-currency" style={{ color: 'var(--white)' }}>€</span>
                 <span className="price-amount" style={{ color: 'var(--white)' }}>25</span>
               </div>
-              <div className="price-sub">/mese · CV illimitati</div>
+              <div className="price-sub">{t('home.perMonth')}</div>
               <hr className="divider" />
               <div className="feature-item"><div className="check check-gold">✓</div>CV illimitati senza filigrana</div>
               <div className="feature-item"><div className="check check-gold">✓</div>AI avanzata + rigenerazione</div>
               <div className="feature-item"><div className="check check-gold">✓</div>Cover letter AI inclusa</div>
               <div className="feature-item"><div className="check check-gold">✓</div>Import LinkedIn / PDF</div>
               <div className="feature-item"><div className="check check-gold">✓</div>Analisi ATS avanzata</div>
-              <button className="btn btn-gold" style={{ width: '100%', marginTop: 20 }} onClick={() => onModal('pricing')}>Inizia ora</button>
+              <button className="btn btn-gold" style={{ width: '100%', marginTop: 20 }} onClick={() => onModal('pricing')}>{t('home.startNow')}</button>
             </div>
 
             <div className="pricing-card">
-              <div className="coming-soon-badge">Presto</div>
+              <div className="coming-soon-badge">{t('home.comingSoon')}</div>
               <div className="plan-name">Pro</div>
               <div className="price">
                 <span className="price-currency">€</span>
                 <span className="price-amount">50</span>
               </div>
-              <div className="price-sub">/mese · Tutto incluso</div>
+              <div className="price-sub">{t('home.allIncluded')}</div>
               <hr className="divider" />
               <div className="feature-item"><div className="check">✓</div>Tutto di Standard</div>
               <div className="feature-item"><div className="check">✓</div>CV tailored per offerta di lavoro</div>
               <div className="feature-item"><div className="check">✓</div>Offerte da Indeed, Areajob, JobRapido</div>
               <div className="feature-item"><div className="check">✓</div>Match CV ↔ posizione</div>
               <div className="feature-item"><div className="check">✓</div>Offerte internazionali</div>
-              <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} disabled>Lista d'attesa →</button>
+              <button className="btn btn-ghost" style={{ width: '100%', marginTop: 20 }} disabled>{t('home.waitlist')}</button>
             </div>
           </div>
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--gray500)' }}>
-              Hai solo 1 CV da fare?{' '}
+              {t('home.singleCV')}{' '}
               <a href="#" onClick={(e) => { e.preventDefault(); onModal('pricing'); }} style={{ color: 'var(--navy)', fontWeight: 600 }}>
-                Acquista singolo per 10€ →
+                {t('home.singleLink')}
               </a>
             </p>
           </div>

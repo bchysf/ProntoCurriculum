@@ -6,6 +6,7 @@ import optimizeCvRouter from "./optimizeCv";
 import experiencesRouter from "./experiences";
 import tailorCvRouter from "./tailorCv";
 import translateCvRouter from "./translateCv";
+import cvsRouter from "./cvs";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(optimizeCvRouter);
 router.use(experiencesRouter);
 router.use(tailorCvRouter);
 router.use(translateCvRouter);
+router.use(cvsRouter);
 
 export default router;

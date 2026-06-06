@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { CVData, TemplateType, ModalType } from '../types';
+import { CVData, TemplateType, ModalType, SavedCV } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
@@ -7,6 +7,8 @@ import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } fr
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
 import { useAuth } from '@workspace/replit-auth-web';
+import { useT } from '../i18n/LanguageContext';
+import { toast } from 'sonner';
 
 interface StoredExp {
   id: string;
@@ -137,6 +139,7 @@ function AccordionSection({
 
 export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, onNavigate, onModal, onAiAction, onGoToArchivio }: BuilderStep2Props) {
   const { isAuthenticated } = useAuth();
+  const t = useT();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -154,6 +157,15 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('IT');
   const [translating, setTranslating] = useState(false);
   const [translateError, setTranslateError] = useState('');
+
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedCVsForImport, setSavedCVsForImport] = useState<SavedCV[]>([]);
+  const [savedCVsLoading, setSavedCVsLoading] = useState(false);
+  const [showSavedCVsTab, setShowSavedCVsTab] = useState(false);
+  const [expandedImportCVId, setExpandedImportCVId] = useState<string | null>(null);
+  const [importedFromCVExpIds, setImportedFromCVExpIds] = useState<Set<string>>(new Set());
 
   const openImportPanel = async () => {
     setShowImportPanel(true);
@@ -181,6 +193,51 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     };
     onCVChange({ ...cvData, experiences: [...cvData.experiences, cvExp] });
     setImportedIds(prev => new Set([...prev, exp.id]));
+  };
+
+  const handleSaveCV = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const name = saveName.trim() || `${cvData.firstName || ''} ${cvData.lastName || ''}`.trim() || 'Il mio CV';
+      const res = await fetch('/api/cvs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, cvData, template: selectedTemplate }),
+      });
+      if (res.ok) {
+        toast.success(t('builder.saved'));
+        setShowSaveForm(false);
+        setSaveName('');
+      } else {
+        const err = await res.json() as { error?: string };
+        toast.error(err.error ?? 'Errore nel salvataggio');
+      }
+    } catch {
+      toast.error('Errore di rete');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const loadSavedCVsForImport = async () => {
+    setSavedCVsLoading(true);
+    try {
+      const res = await fetch('/api/cvs', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json() as { cvs: SavedCV[] };
+        setSavedCVsForImport(data.cvs ?? []);
+      }
+    } finally {
+      setSavedCVsLoading(false);
+    }
+  };
+
+  const importExpFromSavedCV = (exp: { id: string; role: string; company: string; city: string; from: string; to: string; desc: string }) => {
+    const cvExp = { ...exp, id: Date.now().toString() + Math.random().toString(36).slice(-4) };
+    onCVChange({ ...cvData, experiences: [...cvData.experiences, cvExp] });
+    setImportedFromCVExpIds(prev => new Set([...prev, exp.id]));
   };
 
   const [jobDescription, setJobDescription] = useState('');
@@ -441,11 +498,48 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)' }}>Costruisci il tuo CV</div>
               <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 2 }}>Anteprima live in tempo reale</div>
             </div>
-            <button className="btn-optimize-all" onClick={handleOptimizeAll} disabled={optimizing}>
-              <span>✦</span>
-              {optimizing ? 'Ottimizzazione...' : 'AI ottimizza'}
-            </button>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {isAuthenticated && (
+                <button
+                  title={t('builder.saveCV')}
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 16, padding: '5px 9px' }}
+                  onClick={() => setShowSaveForm(v => !v)}
+                >
+                  💾
+                </button>
+              )}
+              <button className="btn-optimize-all" onClick={handleOptimizeAll} disabled={optimizing}>
+                <span>✦</span>
+                {optimizing ? 'Ottimizzazione...' : 'AI ottimizza'}
+              </button>
+            </div>
           </div>
+
+          {/* Save CV form */}
+          {showSaveForm && isAuthenticated && (
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'rgba(201,168,76,0.05)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 7 }}>{t('builder.saveCV')}</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  value={saveName}
+                  onChange={e => setSaveName(e.target.value)}
+                  placeholder={`${cvData.firstName || 'Mario'} ${cvData.lastName || 'Rossi'} CV`}
+                  onKeyDown={e => { if (e.key === 'Enter') void handleSaveCV(); if (e.key === 'Escape') setShowSaveForm(false); }}
+                  style={{ flex: 1, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontFamily: 'inherit', fontSize: 12, color: 'var(--navy)', outline: 'none' }}
+                />
+                <button
+                  className="btn btn-gold btn-sm"
+                  style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+                  onClick={() => void handleSaveCV()}
+                  disabled={isSaving}
+                >
+                  {isSaving ? '...' : 'Salva'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="sidebar-scroll">
             {/* CV SU MISURA BANNER */}
@@ -689,58 +783,140 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
 
               {showImportPanel && (
-                <div style={{ marginTop: 12, background: 'var(--gray50)', border: '1.5px solid var(--gray100)', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>📥 Il tuo archivio</span>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: 11 }}
-                      onClick={onGoToArchivio}
-                    >
-                      Gestisci archivio →
-                    </button>
+                <div style={{ marginTop: 12, background: 'var(--gray50)', border: '1.5px solid var(--gray100)', borderRadius: 10, overflow: 'hidden' }}>
+                  {/* Tab bar */}
+                  <div style={{ display: 'flex', borderBottom: '1px solid var(--gray100)' }}>
+                    {[
+                      { key: false, label: '📥 Archivio' },
+                      { key: true, label: t('builder.fromSaved') },
+                    ].map(tab => (
+                      <button
+                        key={String(tab.key)}
+                        onClick={() => {
+                          setShowSavedCVsTab(tab.key);
+                          if (tab.key && savedCVsForImport.length === 0) void loadSavedCVsForImport();
+                        }}
+                        style={{
+                          flex: 1, padding: '9px 4px', fontSize: 11, fontWeight: 700,
+                          background: showSavedCVsTab === tab.key ? '#fff' : 'transparent',
+                          border: 'none', borderBottom: showSavedCVsTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
+                          color: showSavedCVsTab === tab.key ? 'var(--navy)' : 'var(--gray500)',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
-                  {importLoading ? (
-                    <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
-                  ) : savedExps.length === 0 ? (
-                    <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
-                      Nessuna esperienza salvata.{' '}
-                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline' }} onClick={onGoToArchivio}>Aggiungine una →</button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {savedExps.map(exp => {
-                        const alreadyImported = importedIds.has(exp.id);
-                        return (
-                          <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--gray100)' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
-                              </div>
-                              {(exp.startDate || exp.endDate || exp.isCurrent) && (
-                                <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 1 }}>
-                                  {exp.startDate ?? ''}{exp.startDate ? ' → ' : ''}{exp.isCurrent ? 'Presente' : (exp.endDate ?? '')}
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              className="btn btn-sm"
-                              style={{
-                                fontSize: 11,
-                                background: alreadyImported ? 'var(--gray100)' : 'var(--gold)',
-                                color: alreadyImported ? 'var(--gray500)' : 'var(--navy)',
-                                border: 'none',
-                                flexShrink: 0,
-                              }}
-                              onClick={() => !alreadyImported && importExperience(exp)}
-                            >
-                              {alreadyImported ? '✓ Aggiunto' : '+ Aggiungi'}
-                            </button>
+
+                  <div style={{ padding: '12px 14px' }}>
+                    {!showSavedCVsTab ? (
+                      /* ── ARCHIVIO TAB ── */
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>Le mie esperienze</span>
+                          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={onGoToArchivio}>Gestisci →</button>
+                        </div>
+                        {importLoading ? (
+                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
+                        ) : savedExps.length === 0 ? (
+                          <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
+                            Nessuna esperienza salvata.{' '}
+                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline' }} onClick={onGoToArchivio}>Aggiungine una →</button>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {savedExps.map(exp => {
+                              const alreadyImported = importedIds.has(exp.id);
+                              return (
+                                <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--gray100)' }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
+                                    </div>
+                                    {(exp.startDate || exp.endDate || exp.isCurrent) && (
+                                      <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 1 }}>
+                                        {exp.startDate ?? ''}{exp.startDate ? ' → ' : ''}{exp.isCurrent ? 'Presente' : (exp.endDate ?? '')}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    className="btn btn-sm"
+                                    style={{ fontSize: 11, background: alreadyImported ? 'var(--gray100)' : 'var(--gold)', color: alreadyImported ? 'var(--gray500)' : 'var(--navy)', border: 'none', flexShrink: 0 }}
+                                    onClick={() => !alreadyImported && importExperience(exp)}
+                                  >
+                                    {alreadyImported ? '✓ Aggiunto' : '+ Aggiungi'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      /* ── DA CV SALVATI TAB ── */
+                      <>
+                        <div style={{ marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>I miei CV salvati</span>
+                        </div>
+                        {savedCVsLoading ? (
+                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
+                        ) : savedCVsForImport.length === 0 ? (
+                          <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
+                            Nessun CV salvato. Usa 💾 per salvare questo CV.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {savedCVsForImport.map(cv => (
+                              <div key={cv.id}>
+                                <button
+                                  onClick={() => setExpandedImportCVId(expandedImportCVId === cv.id ? null : cv.id)}
+                                  style={{ width: '100%', textAlign: 'left', background: '#fff', border: '1px solid var(--gray100)', borderRadius: 8, padding: '9px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                >
+                                  <div>
+                                    <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--navy)' }}>{cv.name}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--gray500)', marginTop: 1 }}>{cv.cvData.experiences.length} esperienze</div>
+                                  </div>
+                                  <span style={{ color: 'var(--gray400)', fontSize: 12 }}>{expandedImportCVId === cv.id ? '▲' : '▼'}</span>
+                                </button>
+                                {expandedImportCVId === cv.id && cv.cvData.experiences.length > 0 && (
+                                  <div style={{ marginTop: 4, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {cv.cvData.experiences.map(exp => {
+                                      const alreadyDone = importedFromCVExpIds.has(exp.id);
+                                      return (
+                                        <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(201,168,76,0.05)', borderRadius: 7, padding: '8px 10px', border: '1px solid rgba(201,168,76,0.15)' }}>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                              {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
+                                            </div>
+                                            {(exp.from || exp.to) && (
+                                              <div style={{ fontSize: 10, color: 'var(--gray500)', marginTop: 1 }}>
+                                                {exp.from}{exp.from && exp.to ? ' → ' : ''}{exp.to}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <button
+                                            className="btn btn-sm"
+                                            style={{ fontSize: 10, background: alreadyDone ? 'var(--gray100)' : 'var(--gold)', color: alreadyDone ? 'var(--gray500)' : 'var(--navy)', border: 'none', flexShrink: 0 }}
+                                            onClick={() => !alreadyDone && importExpFromSavedCV(exp)}
+                                          >
+                                            {alreadyDone ? '✓' : '+'}
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {expandedImportCVId === cv.id && cv.cvData.experiences.length === 0 && (
+                                  <div style={{ fontSize: 11, color: 'var(--gray500)', padding: '6px 12px' }}>Nessuna esperienza in questo CV.</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </AccordionSection>
