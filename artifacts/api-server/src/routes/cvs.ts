@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { userCvsTable } from "@workspace/db/schema";
+import { userCvsTable, experiencesTable } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -13,6 +13,79 @@ function getUserId(req: Request, res: Response): string | null {
     return null;
   }
   return userId;
+}
+
+interface CVExperience {
+  company?: string;
+  role?: string;
+  city?: string;
+  from?: string;
+  to?: string;
+  desc?: string;
+}
+
+function normalizeStr(s: string | null | undefined): string {
+  return (s ?? "").trim().toLowerCase();
+}
+
+async function syncExperiencesFromCV(
+  userId: string,
+  cvData: unknown,
+  log: { error: (obj: object, msg: string) => void }
+): Promise<void> {
+  try {
+    const data = cvData as Record<string, unknown>;
+    const experiences = data?.experiences as CVExperience[] | undefined;
+    if (!Array.isArray(experiences) || experiences.length === 0) return;
+
+    const existing = await db
+      .select({
+        company: experiencesTable.company,
+        role: experiencesTable.role,
+        startDate: experiencesTable.startDate,
+      })
+      .from(experiencesTable)
+      .where(eq(experiencesTable.userId, userId));
+
+    for (const exp of experiences) {
+      if (!exp.company?.trim() || !exp.role?.trim()) continue;
+
+      const c = normalizeStr(exp.company);
+      const r = normalizeStr(exp.role);
+      const s = normalizeStr(exp.from);
+
+      const isDuplicate = existing.some(
+        (e) =>
+          normalizeStr(e.company) === c &&
+          normalizeStr(e.role) === r &&
+          normalizeStr(e.startDate) === s
+      );
+      if (isDuplicate) continue;
+
+      const isCurrent = /presente|present|heute|actuel|actual/i.test(exp.to ?? "");
+
+      const inserted = await db
+        .insert(experiencesTable)
+        .values({
+          userId,
+          company: exp.company.trim(),
+          role: exp.role.trim(),
+          city: exp.city?.trim() || null,
+          startDate: exp.from?.trim() || null,
+          endDate: isCurrent ? null : (exp.to?.trim() || null),
+          isCurrent,
+          description: exp.desc?.trim() || null,
+          skills: [],
+        })
+        .returning({ company: experiencesTable.company, role: experiencesTable.role, startDate: experiencesTable.startDate });
+
+      if (inserted[0]) {
+        existing.push(inserted[0]);
+      }
+    }
+  } catch (err) {
+    log.error({ err }, "syncExperiencesFromCV error");
+  }
 }
 
 router.get("/cvs", async (req: Request, res: Response) => {
@@ -67,6 +140,9 @@ router.post("/cvs", async (req: Request, res: Response) => {
         template: template ?? "modern",
       })
       .returning();
+
+    await syncExperiencesFromCV(userId, cvData, req.log);
+
     res.json({ cv: inserted });
   } catch (err) {
     req.log.error({ err }, "POST /cvs error");
@@ -98,6 +174,11 @@ router.put("/cvs/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) { res.status(404).json({ error: "CV non trovato" }); return; }
+
+    if (cvData !== undefined) {
+      await syncExperiencesFromCV(userId, cvData, req.log);
+    }
+
     res.json({ cv: updated });
   } catch (err) {
     req.log.error({ err }, "PUT /cvs/:id error");
