@@ -11,7 +11,23 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
-const TAILOR_SYSTEM_PROMPT = `Sei il miglior executive resume writer al mondo. Il tuo compito è creare un CV su misura per una specifica offerta di lavoro.
+const LANG_NAMES: Record<string, string> = {
+  IT: "italiano",
+  EN: "inglese (English)",
+  FR: "francese (Français)",
+  DE: "tedesco (Deutsch)",
+  ES: "spagnolo (Español)",
+  PT: "portoghese (Português)",
+};
+
+function buildTailorSystemPrompt(lang: string): string {
+  const langName = LANG_NAMES[lang] ?? "italiano";
+  return `Sei il miglior executive resume writer al mondo. Il tuo compito è creare un CV su misura per una specifica offerta di lavoro.
+
+LINGUA DI OUTPUT OBBLIGATORIA: ${langName}.
+Tutto il testo che generi deve essere ESCLUSIVAMENTE in ${langName}.
+Termini tecnici universali (React, Python, Kubernetes, Scrum, KPI) sono accettati invariati.
+Soft skill, titoli di categoria e competenze trasversali devono essere in ${langName}.
 
 REGOLE ASSOLUTE:
 1. Mai usare la prima persona ("Ho", "Sono", "Ho gestito"). SEMPRE participio passato o sostantivo d'azione.
@@ -19,15 +35,14 @@ REGOLE ASSOLUTE:
 3. Ogni bullet: verbo forte (participio passato) + risultato misurabile
 4. Se ci sono numeri nelle esperienze originali, usali. Se non ci sono, usa la portata qualitativa.
 5. Il summary: max 3 frasi, assertivo, con il titolo del ruolo target come apertura
-6. Le skill: estrai le tecnologie/competenze più richieste dall'offerta e incrociale con quelle dell'utente
+6. Skill: estrai le tecnologie/competenze più richieste dall'offerta, organizzate in categorie
 
 SELEZIONE DELLE ESPERIENZE:
 - Seleziona MAX 4 esperienze tra quelle disponibili
 - Dai priorità a quelle più rilevanti per l'offerta di lavoro
 - Riscrivi le descrizioni integrando le keyword chiave dell'offerta
-- Se un'esperienza non è rilevante, escludila
-
-LINGUA: Italiano preciso e compresso.`;
+- Se un'esperienza non è rilevante, escludila`;
+}
 
 function stripHtml(html: string): string {
   return html
@@ -170,10 +185,11 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
     return;
   }
 
-  const { jobDescription, experienceIds, excludeExperienceIds } = req.body as {
+  const { jobDescription, experienceIds, excludeExperienceIds, lang = "IT" } = req.body as {
     jobDescription?: unknown;
     experienceIds?: unknown;
     excludeExperienceIds?: unknown;
+    lang?: string;
   };
 
   if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
@@ -248,12 +264,12 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
       messages: [
         {
           role: "system",
-          content: `${TAILOR_SYSTEM_PROMPT}
+          content: `${buildTailorSystemPrompt(lang)}
 
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
-  "title": "titolo professionale ottimale per questa offerta (es. 'Senior Backend Engineer')",
-  "summary": "profilo professionale su misura per l'offerta, max 550 caratteri, 3 frasi",
+  "title": "titolo professionale ottimale per questa offerta",
+  "summary": "profilo professionale su misura per l'offerta in ${LANG_NAMES[lang] ?? "italiano"}, max 550 caratteri, 3 frasi",
   "experiences": [
     {
       "id": "1",
@@ -261,14 +277,16 @@ Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
       "role": "ruolo",
       "city": "città o stringa vuota",
       "from": "data inizio o stringa vuota",
-      "to": "data fine o 'Presente' o stringa vuota",
-      "desc": "2-3 bullet point con '• ', riscritti per l'offerta, max 450 caratteri"
+      "to": "data fine o stringa vuota",
+      "desc": "2-3 bullet point con '• ', riscritti per l'offerta in ${LANG_NAMES[lang] ?? "italiano"}, max 450 caratteri"
     }
   ],
-  "skills": ["skill1", "skill2", "skill3", "max 10 skill rilevanti per l'offerta"]
+  "skillCategories": [
+    { "name": "nome categoria in ${LANG_NAMES[lang] ?? "italiano"}", "skills": ["skill1", "skill2"] }
+  ]
 }
 
-VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio.`,
+VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio. Organizza le skill in 2-3 categorie rilevanti.`,
         },
         {
           role: "user",
@@ -297,8 +315,15 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
         to: string;
         desc: string;
       }>;
-      skills: string[];
+      skillCategories?: Array<{ name: string; skills: string[] }>;
+      skills?: string[];
     };
+
+    const skillCategories = aiResult.skillCategories ?? (
+      aiResult.skills?.length
+        ? [{ name: "Competenze", skills: aiResult.skills }]
+        : []
+    );
 
     const cvData = {
       firstName: userInfo.firstName,
@@ -319,7 +344,8 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
         desc: e.desc ?? "",
       })),
       education: profileRow?.education ?? [],
-      skills: aiResult.skills ?? [],
+      skills: skillCategories.flatMap(c => c.skills),
+      skillCategories,
       languages: profileRow?.languages ?? [],
     };
 

@@ -25,7 +25,10 @@ function RenderDesc({ text, className }: { text: string; className: string }) {
 
 export default function CVPreview({ cvData, template }: CVPreviewProps) {
   const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'Il tuo nome';
-  const skillsText = cvData.skills.join(' · ');
+  const effectiveSkills = cvData.skillCategories?.length
+    ? cvData.skillCategories.flatMap(c => c.skills)
+    : cvData.skills;
+  const skillsText = effectiveSkills.join(' · ');
   const hasPhoto = !!cvData.photo;
 
   if (template === 'executive') {
@@ -46,13 +49,22 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
           {cvData.phone && <div className="cve-contact-item">✆ {cvData.phone}</div>}
           {cvData.city && <div className="cve-contact-item">◎ {cvData.city}</div>}
           {cvData.linkedin && <div className="cve-contact-item">in {cvData.linkedin}</div>}
-          {cvData.skills.length > 0 && (
-            <>
-              <div className="cve-divider" />
-              <div className="cve-contact-label">Competenze</div>
-              {cvData.skills.map(s => <div key={s} className="cve-skill">{s}</div>)}
-            </>
-          )}
+          {cvData.skillCategories?.length
+            ? cvData.skillCategories.map(cat => (
+                <div key={cat.name}>
+                  <div className="cve-divider" />
+                  <div className="cve-contact-label">{cat.name}</div>
+                  {cat.skills.map(s => <div key={s} className="cve-skill">{s}</div>)}
+                </div>
+              ))
+            : effectiveSkills.length > 0 && (
+                <>
+                  <div className="cve-divider" />
+                  <div className="cve-contact-label">Competenze</div>
+                  {effectiveSkills.map(s => <div key={s} className="cve-skill">{s}</div>)}
+                </>
+              )
+          }
           {cvData.languages.some(l => l.name) && (
             <>
               <div className="cve-divider" />
@@ -227,12 +239,23 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
           </div>
         )}
         <div className="cvp-bottom-row">
-          {cvData.skills.length > 0 && (
+          {effectiveSkills.length > 0 && (
             <div className="cvp-section" style={{ flex: 1 }}>
               <div className="cvp-section-title">Competenze</div>
-              <div className="cvp-skills">
-                {cvData.skills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
-              </div>
+              {cvData.skillCategories?.length ? (
+                cvData.skillCategories.map(cat => (
+                  <div key={cat.name} style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
+                    <div className="cvp-skills">
+                      {cat.skills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="cvp-skills">
+                  {effectiveSkills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
+                </div>
+              )}
             </div>
           )}
           {cvData.languages.some(l => l.name) && (
@@ -302,12 +325,23 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
           </>
         )}
 
-        {cvData.skills.length > 0 && (
+        {effectiveSkills.length > 0 && (
           <>
             <div className="cv-section-title">Competenze</div>
-            <div className={tagsClass}>
-              {cvData.skills.map(s => <span key={s} className={tagClass}>{s}</span>)}
-            </div>
+            {cvData.skillCategories?.length ? (
+              cvData.skillCategories.map(cat => (
+                <div key={cat.name} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
+                  <div className={tagsClass}>
+                    {cat.skills.map(s => <span key={s} className={tagClass}>{s}</span>)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className={tagsClass}>
+                {effectiveSkills.map(s => <span key={s} className={tagClass}>{s}</span>)}
+              </div>
+            )}
           </>
         )}
 
@@ -379,7 +413,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
           </>
         )}
 
-        {cvData.skills.length > 0 && (
+        {effectiveSkills.length > 0 && (
           <>
             <div className="cv-section-title">Competenze</div>
             <div className="cv-exp-desc">{skillsText}</div>
@@ -461,7 +495,7 @@ export default function CVPreview({ cvData, template }: CVPreviewProps) {
         </>
       )}
 
-      {cvData.skills.length > 0 && (
+      {effectiveSkills.length > 0 && (
         <>
           <div className="cv-section-title">Competenze</div>
           <div className="cv-exp-desc">{skillsText}</div>

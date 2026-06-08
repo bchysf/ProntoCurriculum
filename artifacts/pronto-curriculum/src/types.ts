@@ -27,6 +27,11 @@ export interface Language {
   level: string;
 }
 
+export interface SkillCategory {
+  name: string;
+  skills: string[];
+}
+
 export interface CVData {
   firstName: string;
   lastName: string;
@@ -39,6 +44,7 @@ export interface CVData {
   experiences: Experience[];
   education: Education[];
   skills: string[];
+  skillCategories?: SkillCategory[];
   languages: Language[];
   photo?: string;
 }

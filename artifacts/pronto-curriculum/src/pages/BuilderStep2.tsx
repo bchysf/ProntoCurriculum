@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CVData, TemplateType, ModalType, SavedCV } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
@@ -34,6 +34,33 @@ interface BuilderStep2Props {
 }
 
 const SUGGESTED_SKILLS = ['Kubernetes', 'CI/CD', 'Agile/Scrum', 'PostgreSQL', 'TypeScript', 'Redis'];
+
+const LANG_NAMES: Record<string, string> = {
+  IT: 'italiano', EN: 'inglese', FR: 'francese', DE: 'tedesco', ES: 'spagnolo', PT: 'portoghese',
+};
+
+const MONTH_MAP: Record<string, number> = {
+  gen:1, feb:2, mar:3, apr:4, mag:5, giu:6, lug:7, ago:8, set:9, ott:10, nov:11, dic:12,
+  jan:1, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, dec:12,
+};
+
+function parseYearMonth(s: string): number | null {
+  if (!s) return null;
+  const lower = s.toLowerCase().trim();
+  if (['presente', 'present', 'heute', 'actuel', 'actual'].some(w => lower.includes(w))) return Date.now();
+  const parts = lower.split(/[\s./-]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const monthKey = (parts[0] ?? '').slice(0, 3);
+    const year = parseInt(parts[1] ?? '');
+    const month = MONTH_MAP[monthKey];
+    if (!isNaN(year) && year > 1900 && year < 2100) return new Date(year, (month ?? 1) - 1, 1).getTime();
+  }
+  if (parts.length >= 1) {
+    const year = parseInt(parts[0] ?? '');
+    if (!isNaN(year) && year > 1900 && year < 2100) return new Date(year, 0, 1).getTime();
+  }
+  return null;
+}
 
 const STOPWORDS = new Set(['il','la','lo','i','gli','le','un','una','uno','e','è','a','di','in','con','su','per','tra','fra','che','non','si','da','del','della','dello','dei','degli','delle','al','alla','allo','ai','agli','alle','nel','nella','nello','nei','negli','nelle','sul','sulla','sullo','sui','sugli','sulle','dal','dalla','dallo','dai','dagli','dalle','come','questo','questa','questi','queste','quello','quella','quelli','quelle','ma','o','se','anche','più','sono','ha','ho','hai','abbiamo','avete','hanno','essere','avere','fare','sono','era','the','of','and','to','is','it','you','that','he','was','for','on','are','with','as','at','be','by','this','an','or','but','from','have','not','they','which','will','has','we','our','their','been','were','each','she','do','how','him','his','her','them','then','its','my','these','would','about','up','out','if','who','than','so','your','can','into','could','after','other','new','some','any','time','two','way','what','more','very','when','where','there','all','no','just','able','all','also','been','come','did','does','doing','done','down','find','first','get','give','got','had','here','just','know','let','like','look','made','make','may','most','much','now','only','other','over','own','part','put','see','should','since','some','still','such','take','than','them','then','there','these','they','this','those','through','too','under','use','used','using','very','want','way','well','were','what','when','where','whether','which','while','who','why','will','with','within','without','would','yet']);
 
@@ -157,6 +184,28 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('IT');
   const [translating, setTranslating] = useState(false);
   const [translateError, setTranslateError] = useState('');
+
+  const overlapWarnings = useMemo(() => {
+    const result: Array<{ label1: string; label2: string }> = [];
+    const exps = cvData.experiences.filter(e => e.company || e.role);
+    for (let i = 0; i < exps.length; i++) {
+      for (let j = i + 1; j < exps.length; j++) {
+        const a = exps[i]!;
+        const b = exps[j]!;
+        const aStart = parseYearMonth(a.from);
+        const aEnd = parseYearMonth(a.to || 'Presente');
+        const bStart = parseYearMonth(b.from);
+        const bEnd = parseYearMonth(b.to || 'Presente');
+        if (aStart && aEnd && bStart && bEnd && aStart < bEnd && bStart < aEnd) {
+          result.push({
+            label1: [a.role, a.company].filter(Boolean).join(' @ '),
+            label2: [b.role, b.company].filter(Boolean).join(' @ '),
+          });
+        }
+      }
+    }
+    return result;
+  }, [cvData.experiences]);
 
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState('');
@@ -320,17 +369,17 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     setOptimizing(true);
     setModal('ai-loading-local');
     try {
-      const result = await aiOptimizeCV(cvData);
+      const result = await aiOptimizeCV(cvData, selectedLanguage);
       const updatedExperiences = cvData.experiences.map(exp => {
         const optimized = result.experiences.find((o: { id: string }) => o.id === exp.id);
         return optimized ? { ...exp, desc: optimized.desc } : exp;
       });
-      const newSkillsToAdd = (result.skillsToAdd ?? []).filter((s: string) => !cvData.skills.includes(s));
       onCVChange({
         ...cvData,
         summary: result.summary || cvData.summary,
         experiences: updatedExperiences,
-        skills: [...cvData.skills, ...newSkillsToAdd],
+        skills: result.skillCategories?.flatMap(c => c.skills) ?? cvData.skills,
+        skillCategories: result.skillCategories?.length ? result.skillCategories : cvData.skillCategories,
       });
     } catch {
     } finally {
@@ -378,6 +427,13 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     onCVChange({ ...cvData, skills: cvData.skills.filter(s => s !== skill) });
   };
 
+  const removeSkillFromCategory = (categoryName: string, skill: string) => {
+    const newCategories = (cvData.skillCategories ?? [])
+      .map(cat => cat.name === categoryName ? { ...cat, skills: cat.skills.filter(s => s !== skill) } : cat)
+      .filter(cat => cat.skills.length > 0);
+    onCVChange({ ...cvData, skillCategories: newCategories });
+  };
+
   const handleSuggestSkills = () => {
     onAiAction('Analizzando il tuo profilo e suggerendo competenze...', () => {
       const toAdd = SUGGESTED_SKILLS.filter(s => !cvData.skills.includes(s));
@@ -389,7 +445,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     setOptimizing(true);
     setModal('ai-loading-local');
     try {
-      const result = await aiOptimizeSummary(cvData);
+      const result = await aiOptimizeSummary(cvData, selectedLanguage);
       onCVChange({ ...cvData, summary: result });
     } catch {
     } finally {
@@ -451,7 +507,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     setOptimizing(true);
     setModal('ai-loading-local');
     try {
-      const result = await aiOptimizeExp({ id: exp.id, role: exp.role, company: exp.company, desc: exp.desc });
+      const result = await aiOptimizeExp({ id: exp.id, role: exp.role, company: exp.company, desc: exp.desc }, selectedLanguage);
       const updated = [...cvData.experiences];
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
@@ -715,6 +771,16 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
             {/* ESPERIENZE */}
             <AccordionSection title="💼 Esperienze lavorative" open={openSections.has('experiences')} onToggle={() => toggleSection('experiences')}>
+              {overlapWarnings.length > 0 && (
+                <div style={{ background: 'rgba(201,168,76,0.08)', border: '1.5px solid var(--gold)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 5 }}>⚠ Sovrapposizione temporale rilevata</div>
+                  {overlapWarnings.map((w, i) => (
+                    <div key={i} style={{ color: 'var(--gray600)', marginBottom: 3, lineHeight: 1.5 }}>
+                      <strong>{w.label1}</strong> e <strong>{w.label2}</strong> si sovrappongono — specifica se si trattava di consulenza, part-time o freelancing.
+                    </div>
+                  ))}
+                </div>
+              )}
               {cvData.experiences.map((exp, idx) => (
                 <div key={exp.id} className="exp-block">
                   <div className="exp-block-header">
@@ -965,14 +1031,46 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <AccordionSection title="⚡ Competenze" open={openSections.has('skills')} onToggle={() => toggleSection('skills')}>
               <div className="form-group">
                 <label>Competenze tecniche e trasversali</label>
-                <div className="skills-container">
-                  {cvData.skills.map(skill => (
-                    <div key={skill} className="skill-tag">
-                      {skill}
-                      <button onClick={() => removeSkill(skill)}>×</button>
-                    </div>
-                  ))}
-                </div>
+                {cvData.skillCategories?.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {cvData.skillCategories.map(cat => (
+                      <div key={cat.name}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 5 }}>{cat.name}</div>
+                        <div className="skills-container">
+                          {cat.skills.map(skill => (
+                            <div key={skill} className="skill-tag">
+                              {skill}
+                              <button onClick={() => removeSkillFromCategory(cat.name, skill)}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {(() => {
+                      const catSkillSet = new Set((cvData.skillCategories ?? []).flatMap(c => c.skills));
+                      const uncategorized = cvData.skills.filter(s => !catSkillSet.has(s));
+                      return uncategorized.length > 0 ? (
+                        <div className="skills-container">
+                          {uncategorized.map(skill => (
+                            <div key={skill} className="skill-tag">
+                              {skill}
+                              <button onClick={() => removeSkill(skill)}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                ) : (
+                  <div className="skills-container">
+                    {cvData.skills.map(skill => (
+                      <div key={skill} className="skill-tag">
+                        {skill}
+                        <button onClick={() => removeSkill(skill)}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="skill-input-row" style={{ marginTop: 10 }}>
                   <input
                     type="text"

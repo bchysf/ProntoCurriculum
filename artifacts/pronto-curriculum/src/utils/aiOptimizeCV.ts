@@ -1,16 +1,16 @@
-import { CVData } from '../types';
+import { CVData, SkillCategory } from '../types';
 
 export interface OptimizeResult {
   summary: string;
   experiences: { id: string; desc: string }[];
-  skillsToAdd: string[];
+  skillCategories: SkillCategory[];
 }
 
-export async function aiOptimizeCV(cvData: CVData): Promise<OptimizeResult> {
+export async function aiOptimizeCV(cvData: CVData, lang = 'IT'): Promise<OptimizeResult> {
   const response = await fetch('/api/optimize-cv', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cvData }),
+    body: JSON.stringify({ cvData, lang }),
   });
 
   if (!response.ok) {
