@@ -148,14 +148,15 @@ VINCOLI ASSOLUTI: mantieni le id originali delle esperienze. Non inventare fatti
 });
 
 router.post("/optimize-field", async (req, res) => {
-  const { field, value, context, lang = "IT" } = req.body as {
-    field?: "summary" | "exp";
+  const { field, value, context, lang = "IT", mode } = req.body as {
+    field?: "summary" | "exp" | "exp-tips";
     value?: string;
     context?: Record<string, unknown>;
     lang?: string;
+    mode?: string;
   };
 
-  if (!field || !value) {
+  if (!field || (!value && field !== "exp-tips")) {
     res.status(400).json({ error: "Parametri mancanti" });
     return;
   }
@@ -163,6 +164,40 @@ router.post("/optimize-field", async (req, res) => {
   const langName = LANG_NAMES[lang] ?? "italiano";
 
   try {
+    // ── exp-tips: return actionable improvement suggestions ──────────────────
+    if (field === "exp-tips") {
+      const role = (context?.role as string) ?? "non specificato";
+      const company = (context?.company as string) ?? "azienda";
+      const desc = (value ?? "").trim();
+
+      const systemContent = `Sei un HR Director senior. Hai appena letto la descrizione di un'esperienza lavorativa su un CV.
+Il tuo compito è dare 3 suggerimenti SPECIFICI e AZIONABILI per migliorarla.
+I suggerimenti devono riguardare: dati mancanti (numeri, %, budget, team size), risultati non quantificati, keyword di settore assenti, o formulazioni deboli.
+Ogni suggerimento è una frase breve e diretta, in ${langName}, che dice esattamente cosa aggiungere o cambiare.
+Restituisci SOLO un array JSON con 3 stringhe. Zero testo prima o dopo. Zero markdown.
+Esempio: ["Aggiungi il numero di persone gestite — es. 'Coordinati 8 specialisti'","Specifica il risparmio o budget — es. 'Budget operativo €1.2M'","Cita il risultato finale — es. 'Progetto completato 2 mesi prima della scadenza'"]`;
+
+      const userContent = `Ruolo: ${role} presso ${company}
+Descrizione attuale: "${desc}"
+
+Dammi 3 suggerimenti specifici per migliorare questa descrizione con dati verificabili e risultati concreti.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5.1",
+        max_completion_tokens: 400,
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: userContent },
+        ],
+      });
+
+      const raw = completion.choices[0]?.message?.content?.trim() ?? "[]";
+      const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const tips = JSON.parse(jsonStr) as string[];
+      res.json({ tips });
+      return;
+    }
+
     let systemContent: string;
     let userContent: string;
 
@@ -179,16 +214,31 @@ Profilo attuale (da migliorare radicalmente): "${value}"
 ${context?.experiences ? `Esperienze reali: ${JSON.stringify(context.experiences).slice(0, 800)}` : ""}
 
 Riscrivi con massimo impatto in ${langName}. Taglia tutto ciò che non è essenziale.`;
+    } else if (mode === "rephrase") {
+      // ── rephrase: produce a variation of an already-optimized description ──
+      systemContent = `${buildMasterPrompt(lang)}
+
+Questa descrizione di esperienza è già stata ottimizzata. Scrivi una VARIAZIONE in ${langName}:
+- Usa parole diverse, diversa enfasi, diverso ordine dei bullet
+- Mantieni gli stessi fatti, numeri e risultati — non inventarne di nuovi
+- Stesso livello di impatto, stesso stile impersonale
+- Max 2-3 bullet con "• ", max 380 caratteri totali
+Restituisci SOLO il testo alternativo. Niente JSON, niente virgolette esterne.`;
+
+      userContent = `Ruolo: ${(context?.role as string) ?? "non specificato"} presso ${(context?.company as string) ?? "azienda"}
+Versione attuale (da variare): "${value ?? ""}"
+
+Scrivi una variazione diversa ma ugualmente efficace in ${langName}.`;
     } else {
       systemContent = `${buildMasterPrompt(lang)}
 
 Riscrivi questa descrizione di esperienza lavorativa in ${langName}.
-Regole RIGIDE: max 2-3 frasi, verbo forte all'inizio, impatto concreto, zero verbosità.
+Regole RIGIDE: max 2-3 bullet con "• ", verbo forte al participio, impatto concreto, zero verbosità.
 Tutto il testo deve essere in ${langName}.
 Restituisci SOLO il testo riscritto. Niente JSON, niente virgolette esterne. Max 380 caratteri.`;
 
       userContent = `Ruolo: ${(context?.role as string) ?? "non specificato"} presso ${(context?.company as string) ?? "azienda"}
-Descrizione attuale (da riscrivere): "${value}"
+Descrizione attuale (da riscrivere): "${value ?? ""}"
 
 Riscrivila in ${langName}. Sii spietato con le parole inutili. Solo impatto.`;
     }
@@ -202,7 +252,7 @@ Riscrivila in ${langName}. Sii spietato con le parole inutili. Solo impatto.`;
       ],
     });
 
-    const result = completion.choices[0]?.message?.content?.trim() ?? value;
+    const result = completion.choices[0]?.message?.content?.trim() ?? (value ?? "");
     res.json({ result });
   } catch (err) {
     req.log.error({ err }, "optimize-field error");

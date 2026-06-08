@@ -47,3 +47,52 @@ export async function aiOptimizeExp(
   const data = await response.json() as { result: string };
   return data.result;
 }
+
+export async function aiRephraseExp(
+  exp: { id: string; role: string; company: string; desc: string },
+  lang = 'IT',
+): Promise<string> {
+  const response = await fetch('/api/optimize-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      field: 'exp',
+      mode: 'rephrase',
+      lang,
+      value: exp.desc,
+      context: { role: exp.role, company: exp.company },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? 'Errore rigenerazione esperienza');
+  }
+
+  const data = await response.json() as { result: string };
+  return data.result;
+}
+
+export async function aiExpTips(
+  exp: { role: string; company: string; desc: string },
+  lang = 'IT',
+): Promise<string[]> {
+  const response = await fetch('/api/optimize-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      field: 'exp-tips',
+      lang,
+      value: exp.desc,
+      context: { role: exp.role, company: exp.company },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? 'Errore suggerimenti');
+  }
+
+  const data = await response.json() as { tips: string[] };
+  return Array.isArray(data.tips) ? data.tips : [];
+}

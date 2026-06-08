@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CVData, TemplateType, ModalType, SavedCV } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
-import { aiOptimizeSummary, aiOptimizeExp } from '../utils/aiOptimizeField';
+import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips } from '../utils/aiOptimizeField';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
@@ -183,6 +183,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('IT');
   const [translating, setTranslating] = useState(false);
+  const [rephrasingExpId, setRephrasingExpId] = useState<string | null>(null);
+  const [expTips, setExpTips] = useState<Record<string, string[]>>({});
+  const [tipsLoadingId, setTipsLoadingId] = useState<string | null>(null);
+  const [openTipsId, setOpenTipsId] = useState<string | null>(null);
   const [translateError, setTranslateError] = useState('');
 
   const overlapWarnings = useMemo(() => {
@@ -518,6 +522,43 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     }
   };
 
+  const handleRephraseExp = async (idx: number) => {
+    const exp = cvData.experiences[idx];
+    if (!exp?.desc?.trim()) return;
+    setRephrasingExpId(exp.id);
+    try {
+      const result = await aiRephraseExp({ id: exp.id, role: exp.role, company: exp.company, desc: exp.desc }, selectedLanguage);
+      const updated = [...cvData.experiences];
+      updated[idx] = { ...updated[idx], desc: result };
+      onCVChange({ ...cvData, experiences: updated });
+    } catch {
+      toast.error('Errore durante la rigenerazione');
+    } finally {
+      setRephrasingExpId(null);
+    }
+  };
+
+  const handleExpTips = async (idx: number) => {
+    const exp = cvData.experiences[idx];
+    if (!exp) return;
+    if (openTipsId === exp.id && expTips[exp.id]) {
+      setOpenTipsId(null);
+      return;
+    }
+    setOpenTipsId(exp.id);
+    if (expTips[exp.id]) return;
+    setTipsLoadingId(exp.id);
+    try {
+      const tips = await aiExpTips({ role: exp.role, company: exp.company, desc: exp.desc }, selectedLanguage);
+      setExpTips(prev => ({ ...prev, [exp.id]: tips }));
+    } catch {
+      toast.error('Errore durante il caricamento dei suggerimenti');
+      setOpenTipsId(null);
+    } finally {
+      setTipsLoadingId(null);
+    }
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -788,7 +829,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta su" disabled={idx === 0} onClick={() => moveExperience(idx, -1)}>↑</button>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta giù" disabled={idx === cvData.experiences.length - 1} onClick={() => moveExperience(idx, 1)}>↓</button>
-                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating} onClick={() => handleOptimizeExp(idx)}>✦ AI</button>
+                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating || rephrasingExpId === exp.id} onClick={() => handleOptimizeExp(idx)} title="Ottimizza con AI">✦ AI</button>
+                      {exp.desc?.trim() && (
+                        <button
+                          className="ai-btn"
+                          style={{ padding: '4px 9px', fontSize: 11, background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
+                          title="Rigenera variazione"
+                          disabled={optimizing || translating || rephrasingExpId != null}
+                          onClick={() => void handleRephraseExp(idx)}
+                        >
+                          {rephrasingExpId === exp.id ? '⏳' : '🔄'}
+                        </button>
+                      )}
                       {selectedLanguage !== 'IT' && (
                         <button
                           className="ai-btn"
@@ -828,8 +880,61 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     </div>
                   </div>
                   <div className="form-group" style={{ marginTop: 12 }}>
-                    <label>Descrizione</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label style={{ marginBottom: 0 }}>Descrizione</label>
+                      <button
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: 11, color: 'var(--gold)', fontWeight: 700,
+                          padding: '2px 6px', borderRadius: 5,
+                          opacity: tipsLoadingId === exp.id ? 0.6 : 1,
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                        onClick={() => void handleExpTips(idx)}
+                        disabled={tipsLoadingId === exp.id}
+                        title="Suggerimenti AI per migliorare questa esperienza"
+                      >
+                        {tipsLoadingId === exp.id ? '⏳' : '💡'}
+                        {openTipsId === exp.id && expTips[exp.id] ? ' Nascondi' : ' Suggerimenti'}
+                      </button>
+                    </div>
                     <textarea rows={3} placeholder="Descrivi le tue responsabilità e risultati..." value={exp.desc} onChange={e => updateExp(exp.id, 'desc', e.target.value)} />
+                    {openTipsId === exp.id && (
+                      <div style={{
+                        marginTop: 8, padding: '10px 12px',
+                        background: 'linear-gradient(135deg, rgba(201,168,76,0.07) 0%, rgba(201,168,76,0.03) 100%)',
+                        border: '1.5px solid rgba(201,168,76,0.25)',
+                        borderRadius: 8,
+                      }}>
+                        {tipsLoadingId === exp.id ? (
+                          <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '4px 0' }}>
+                            ✦ Analisi in corso…
+                          </div>
+                        ) : expTips[exp.id] ? (
+                          <>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', marginBottom: 7, letterSpacing: 0.3 }}>
+                              💡 COME MIGLIORARE QUESTA ESPERIENZA
+                            </div>
+                            {expTips[exp.id].map((tip, ti) => (
+                              <div key={ti} style={{ display: 'flex', gap: 8, marginBottom: ti < (expTips[exp.id]?.length ?? 0) - 1 ? 6 : 0 }}>
+                                <span style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 12, flexShrink: 0, marginTop: 1 }}>→</span>
+                                <span style={{ fontSize: 12, color: 'var(--navy)', lineHeight: 1.5 }}>{tip}</span>
+                              </div>
+                            ))}
+                            <div style={{ marginTop: 8, borderTop: '1px solid rgba(201,168,76,0.15)', paddingTop: 7 }}>
+                              <button
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--gray500)', padding: 0 }}
+                                onClick={() => {
+                                  setExpTips(prev => { const n = { ...prev }; delete n[exp.id]; return n; });
+                                }}
+                              >
+                                🔁 Rigenera suggerimenti
+                              </button>
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
