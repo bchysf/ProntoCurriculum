@@ -1257,7 +1257,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
           <div className="preview-canvas" ref={previewRef}>
             <div className="cv-sheet" style={{ zoom: cvScale }}>
-              <CVPreview cvData={cvData} template={selectedTemplate} />
+              <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
             </div>
           </div>
         </main>
