@@ -1,15 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, inArray, asc, count, and } from "drizzle-orm";
 import { promises as dns } from "dns";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db, experiencesTable, tailoredCvsTable, userProfilesTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
 const LANG_NAMES: Record<string, string> = {
   IT: "italiano",
@@ -258,18 +255,13 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
   };
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.1",
-      max_completion_tokens: 4000,
-      messages: [
-        {
-          role: "system",
-          content: `${buildTailorSystemPrompt(lang)}
+    const tailor_langName = LANG_NAMES[lang] ?? "italiano";
+    const tailor_prompt = `${buildTailorSystemPrompt(lang)}
 
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
   "title": "titolo professionale ottimale per questa offerta",
-  "summary": "profilo professionale su misura per l'offerta in ${LANG_NAMES[lang] ?? "italiano"}, max 550 caratteri, 3 frasi",
+  "summary": "profilo professionale su misura per l'offerta in ${tailor_langName}, max 550 caratteri, 3 frasi",
   "experiences": [
     {
       "id": "1",
@@ -278,30 +270,27 @@ Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
       "city": "città o stringa vuota",
       "from": "data inizio o stringa vuota",
       "to": "data fine o stringa vuota",
-      "desc": "2-3 bullet point con '• ', riscritti per l'offerta in ${LANG_NAMES[lang] ?? "italiano"}, max 450 caratteri"
+      "desc": "2-3 bullet point con '• ', riscritti per l'offerta in ${tailor_langName}, max 450 caratteri"
     }
   ],
   "skillCategories": [
-    { "name": "nome categoria in ${LANG_NAMES[lang] ?? "italiano"}", "skills": ["skill1", "skill2"] }
+    { "name": "nome categoria in ${tailor_langName}", "skills": ["skill1", "skill2"] }
   ]
 }
 
-VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio. Organizza le skill in 2-3 categorie rilevanti.`,
-        },
-        {
-          role: "user",
-          content: `OFFERTA DI LAVORO:
+VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio. Organizza le skill in 2-3 categorie rilevanti.
+
+OFFERTA DI LAVORO:
 ${jobDescription.trim().slice(0, 5000)}
 
 ARCHIVIO ESPERIENZE DELL'UTENTE:
 ${experiencesText}
 
-Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le descrizioni per matchare le keyword dell'offerta.`,
-        },
-      ],
-    });
+Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le descrizioni per matchare le keyword dell'offerta.`;
 
-    const raw = completion.choices[0]?.message?.content?.trim() ?? "";
+    const tailor_model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
+    const tailor_result = await tailor_model.generateContent(tailor_prompt);
+    const raw = tailor_result.response.text().trim();
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     const aiResult = JSON.parse(jsonStr) as {
       title: string;

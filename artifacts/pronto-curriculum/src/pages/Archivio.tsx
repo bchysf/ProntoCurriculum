@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth } from '../hooks/use-firebase-auth';
 
 interface StoredExp {
   id: string;

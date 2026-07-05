@@ -1,12 +1,9 @@
-import { Router, type IRouter } from "express";
-import OpenAI from "openai";
+import { Router, type IRouter } from 'express';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router: IRouter = Router();
 
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
 const SYSTEM_PROMPT = `Sei un assistente specializzato nell'analisi di CV italiani ed europei.
 Estrai le informazioni dal testo del CV fornito e restituisci SOLO un oggetto JSON valido con questa struttura esatta:
@@ -60,33 +57,25 @@ Regole:
 - Per le lingue usa id univoci come "lang1", "lang2" ecc.
 - Il campo "title" deve essere solo il titolo professionale, NON includere il nome della persona`;
 
-router.post("/parse-cv", async (req, res) => {
+router.post('/parse-cv', async (req, res) => {
   const { text } = req.body as { text?: string };
 
   if (!text || text.trim().length < 20) {
-    res.status(400).json({ error: "Testo CV mancante o troppo corto" });
+    res.status(400).json({ error: 'Testo CV mancante o troppo corto' });
     return;
   }
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.1",
-      max_completion_tokens: 4096,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Estrai le informazioni da questo CV:\n\n${text.slice(0, 8000)}` },
-      ],
-    });
-
-    const raw = completion.choices[0]?.message?.content?.trim() ?? "";
-
-    // Strip markdown code fences if present
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
+    const result = await model.generateContent(
+      SYSTEM_PROMPT + '\n\nEstrai le informazioni da questo CV:\n\n' + text.slice(0, 8000)
+    );
+    const raw = result.response.text().trim();
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     const parsed = JSON.parse(jsonStr);
     res.json(parsed);
   } catch (err) {
-    req.log.error({ err }, "parse-cv error");
+    req.log.error({ err }, 'parse-cv error');
     res.status(500).json({ error: "Errore durante l'analisi del CV" });
   }
 });

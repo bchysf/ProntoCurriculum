@@ -6,7 +6,8 @@ import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips } from '../u
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
-import { useAuth } from '@workspace/replit-auth-web';
+import { Icon, IC } from '../components/StrokeIcon';
+import { useAuth } from '../hooks/use-firebase-auth';
 import { useT } from '../i18n/LanguageContext';
 import { toast } from 'sonner';
 
@@ -580,8 +581,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         <div className="modal-overlay" style={{ zIndex: 300 }}>
           <div className="modal-box" style={{ textAlign: 'center', padding: 48 }}>
             <div className="ai-pulse-ring" />
-            <div style={{ fontSize: 36, marginBottom: 16 }}>✦</div>
-            <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>AI sta ottimizzando...</div>
+            <div style={{ color: '#2F2AE5', marginBottom: 16 }}><Icon d={IC.spark} size={32} /></div>
+            <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, fontWeight: 560, marginBottom: 8 }}>L'AI sta ottimizzando…</div>
             <div style={{ color: 'var(--gray500)', fontSize: 14 }}>Sommario, esperienze e competenze in un click</div>
           </div>
         </div>
@@ -592,7 +593,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         <aside className="editor-sidebar" style={{ width: sidebarWidth }}>
           <div className="sidebar-header">
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)' }}>Costruisci il tuo CV</div>
+              <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 16, fontWeight: 560, color: 'var(--navy)' }}>Costruisci il tuo CV</div>
               <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 2 }}>Anteprima live in tempo reale</div>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -600,14 +601,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 <button
                   title={t('builder.saveCV')}
                   className="btn btn-ghost btn-sm"
-                  style={{ fontSize: 16, padding: '5px 9px' }}
+                  style={{ padding: '7px 10px' }}
                   onClick={() => setShowSaveForm(v => !v)}
                 >
-                  💾
+                  <Icon d={IC.save} size={14} />
                 </button>
               )}
               <button className="btn-optimize-all" onClick={handleOptimizeAll} disabled={optimizing}>
-                <span>✦</span>
+                <Icon d={IC.spark} size={14} />
                 {optimizing ? 'Ottimizzazione...' : 'AI ottimizza'}
               </button>
             </div>
@@ -615,7 +616,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
           {/* Save CV form */}
           {showSaveForm && isAuthenticated && (
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'rgba(201,168,76,0.05)' }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: '#FBFAF7' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 7 }}>{t('builder.saveCV')}</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <input
@@ -624,7 +625,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   onChange={e => setSaveName(e.target.value)}
                   placeholder={`${cvData.firstName || 'Mario'} ${cvData.lastName || 'Rossi'} CV`}
                   onKeyDown={e => { if (e.key === 'Enter') void handleSaveCV(); if (e.key === 'Escape') setShowSaveForm(false); }}
-                  style={{ flex: 1, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontFamily: 'inherit', fontSize: 12, color: 'var(--navy)', outline: 'none' }}
+                  style={{ flex: 1, padding: '6px 10px', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, color: 'var(--navy)', outline: 'none', background: '#fff' }}
                 />
                 <button
                   className="btn btn-gold btn-sm"
@@ -645,8 +646,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 style={{
                   margin: '0 0 8px 0',
                   padding: '12px 16px',
-                  background: 'linear-gradient(135deg, var(--navy) 0%, #1a3a6b 100%)',
-                  borderRadius: 10,
+                  background: '#EEF0FD',
+                  border: '1px solid rgba(47, 42, 229, 0.16)',
+                  borderRadius: 12,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -656,10 +658,12 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 onClick={() => onNavigate('tailor')}
               >
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)', marginBottom: 2 }}>✦ CV su misura</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>L'AI adatta il CV a una specifica offerta</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#221FB4', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icon d={IC.spark} size={13} /> CV su misura
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--gray500)' }}>L'AI adatta il CV a una specifica offerta</div>
                 </div>
-                <div style={{ fontSize: 18, color: 'var(--gold)', flexShrink: 0 }}>→</div>
+                <div style={{ color: '#2F2AE5', flexShrink: 0, display: 'flex' }}><Icon d={IC.arrowRight} size={16} /></div>
               </div>
             )}
 
@@ -672,7 +676,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               borderRadius: 10,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>🌐 Lingua del CV</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon d={IC.globe} size={13} style={{ color: '#2F2AE5' }} /> Lingua del CV
+                </div>
                 {selectedLanguage !== 'IT' && (
                   <button
                     className="ai-btn"
@@ -680,7 +686,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     onClick={() => void handleTranslateCV()}
                     disabled={translating || optimizing}
                   >
-                    ✦ {translating ? 'Traduzione...' : `Traduci tutto in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label ?? selectedLanguage}`}
+                    {translating ? 'Traduzione...' : `Traduci tutto in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label ?? selectedLanguage}`}
                   </button>
                 )}
               </div>
@@ -692,9 +698,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     style={{
                       padding: '5px 10px',
                       borderRadius: 20,
-                      border: `1.5px solid ${selectedLanguage === lang.code ? 'var(--gold)' : 'var(--border)'}`,
-                      background: selectedLanguage === lang.code ? 'rgba(201,168,76,0.12)' : 'transparent',
-                      color: selectedLanguage === lang.code ? 'var(--navy)' : 'var(--gray500)',
+                      border: `1.5px solid ${selectedLanguage === lang.code ? '#2F2AE5' : 'var(--border)'}`,
+                      background: selectedLanguage === lang.code ? '#EEF0FD' : 'transparent',
+                      color: selectedLanguage === lang.code ? '#221FB4' : 'var(--gray500)',
                       fontSize: 12,
                       fontWeight: selectedLanguage === lang.code ? 700 : 400,
                       cursor: 'pointer',
@@ -706,7 +712,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 ))}
               </div>
               {translateError && (
-                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--danger)' }}>⚠ {translateError}</div>
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--danger)' }}>{translateError}</div>
               )}
               {selectedLanguage === 'IT' && (
                 <div style={{ marginTop: 8, fontSize: 11, color: 'var(--gray500)' }}>
@@ -716,23 +722,25 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </div>
 
             {/* DATI PERSONALI */}
-            <AccordionSection title="📋 Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
+            <AccordionSection title="Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
               <div className="photo-section">
                 {cvData.photo ? (
                   <div className="photo-has-photo">
                     <img src={cvData.photo} alt="foto profilo" className="photo-existing" />
                     <div className="photo-has-info">
-                      <span className="photo-has-label">✅ Foto profilo caricata</span>
+                      <span className="photo-has-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Icon d={IC.check} size={13} style={{ color: 'var(--success)' }} /> Foto profilo caricata
+                      </span>
                       {hasPhotoTemplate
                         ? <span className="photo-has-sub">Verrà usata nel template selezionato</span>
-                        : <span className="photo-has-sub" style={{ color: 'var(--gold)' }}>⚠ Il template attuale non include foto</span>
+                        : <span className="photo-has-sub" style={{ color: '#B45309' }}>Il template attuale non include foto</span>
                       }
                       <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => photoInputRef.current?.click()}>
-                          🔄 Cambia foto
+                          Cambia foto
                         </button>
                         <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => update('photo', undefined)}>
-                          🗑 Elimina
+                          Elimina
                         </button>
                       </div>
                     </div>
@@ -740,7 +748,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 ) : (
                   <div className={`photo-upload-area ${hasPhotoTemplate ? 'photo-upload-highlighted' : ''}`} onClick={() => photoInputRef.current?.click()}>
                     <div className="photo-upload-placeholder">
-                      <span style={{ fontSize: 24 }}>👤</span>
+                      <span style={{ color: '#2F2AE5' }}><Icon d={IC.user} size={24} /></span>
                       <span style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
                         {hasPhotoTemplate ? 'Carica foto profilo' : 'Aggiungi foto profilo'}
                       </span>
@@ -800,21 +808,20 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 {selectedLanguage !== 'IT' && (
                   <button
                     className="ai-btn"
-                    style={{ background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
                     onClick={() => void handleTranslateSummary()}
                     disabled={optimizing || translating || !cvData.summary.trim()}
                   >
-                    🌐 Traduci in {LANGUAGES.find(l => l.code === selectedLanguage)?.label}
+                    <Icon d={IC.globe} size={13} /> Traduci in {LANGUAGES.find(l => l.code === selectedLanguage)?.label}
                   </button>
                 )}
               </div>
             </AccordionSection>
 
             {/* ESPERIENZE */}
-            <AccordionSection title="💼 Esperienze lavorative" open={openSections.has('experiences')} onToggle={() => toggleSection('experiences')}>
+            <AccordionSection title="Esperienze lavorative" open={openSections.has('experiences')} onToggle={() => toggleSection('experiences')}>
               {overlapWarnings.length > 0 && (
-                <div style={{ background: 'rgba(201,168,76,0.08)', border: '1.5px solid var(--gold)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12 }}>
-                  <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 5 }}>⚠ Sovrapposizione temporale rilevata</div>
+                <div style={{ background: '#FBF7EE', border: '1px solid #EAD9B0', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12 }}>
+                  <div style={{ fontWeight: 700, color: '#8A6A1F', marginBottom: 5 }}>Sovrapposizione temporale rilevata</div>
                   {overlapWarnings.map((w, i) => (
                     <div key={i} style={{ color: 'var(--gray600)', marginBottom: 3, lineHeight: 1.5 }}>
                       <strong>{w.label1}</strong> e <strong>{w.label2}</strong> si sovrappongono — specifica se si trattava di consulenza, part-time o freelancing.
@@ -829,27 +836,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta su" disabled={idx === 0} onClick={() => moveExperience(idx, -1)}>↑</button>
                       <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta giù" disabled={idx === cvData.experiences.length - 1} onClick={() => moveExperience(idx, 1)}>↓</button>
-                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating || rephrasingExpId === exp.id} onClick={() => handleOptimizeExp(idx)} title="Ottimizza con AI">✦ AI</button>
+                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating || rephrasingExpId === exp.id} onClick={() => handleOptimizeExp(idx)} title="Ottimizza con AI">
+                        <Icon d={IC.spark} size={11} /> AI
+                      </button>
                       {exp.desc?.trim() && (
                         <button
                           className="ai-btn"
-                          style={{ padding: '4px 9px', fontSize: 11, background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
+                          style={{ padding: '4px 9px', fontSize: 11 }}
                           title="Rigenera variazione"
                           disabled={optimizing || translating || rephrasingExpId != null}
                           onClick={() => void handleRephraseExp(idx)}
                         >
-                          {rephrasingExpId === exp.id ? '⏳' : '🔄'}
+                          {rephrasingExpId === exp.id ? '…' : <Icon d={IC.refresh} size={12} />}
                         </button>
                       )}
                       {selectedLanguage !== 'IT' && (
                         <button
                           className="ai-btn"
-                          style={{ padding: '4px 9px', fontSize: 11, background: 'rgba(201,168,76,0.08)', borderColor: 'var(--gold)' }}
+                          style={{ padding: '4px 9px', fontSize: 11 }}
                           title={`Traduci in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label}`}
                           disabled={optimizing || translating || !exp.desc?.trim()}
                           onClick={() => void handleTranslateExp(idx)}
                         >
-                          🌐
+                          <Icon d={IC.globe} size={12} />
                         </button>
                       )}
                       <button className="btn btn-danger btn-sm" onClick={() => removeExperience(exp.id)}>×</button>
@@ -885,7 +894,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       <button
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer',
-                          fontSize: 11, color: 'var(--gold)', fontWeight: 700,
+                          fontSize: 11, color: '#2F2AE5', fontWeight: 700,
                           padding: '2px 6px', borderRadius: 5,
                           opacity: tipsLoadingId === exp.id ? 0.6 : 1,
                           display: 'flex', alignItems: 'center', gap: 4,
@@ -894,7 +903,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                         disabled={tipsLoadingId === exp.id}
                         title="Suggerimenti AI per migliorare questa esperienza"
                       >
-                        {tipsLoadingId === exp.id ? '⏳' : '💡'}
+                        {tipsLoadingId === exp.id ? '…' : <Icon d={IC.bulb} size={12} />}
                         {openTipsId === exp.id && expTips[exp.id] ? ' Nascondi' : ' Suggerimenti'}
                       </button>
                     </div>
@@ -902,33 +911,33 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     {openTipsId === exp.id && (
                       <div style={{
                         marginTop: 8, padding: '10px 12px',
-                        background: 'linear-gradient(135deg, rgba(201,168,76,0.07) 0%, rgba(201,168,76,0.03) 100%)',
-                        border: '1.5px solid rgba(201,168,76,0.25)',
-                        borderRadius: 8,
+                        background: '#EEF0FD',
+                        border: '1px solid rgba(47, 42, 229, 0.18)',
+                        borderRadius: 10,
                       }}>
                         {tipsLoadingId === exp.id ? (
                           <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '4px 0' }}>
-                            ✦ Analisi in corso…
+                            Analisi in corso…
                           </div>
                         ) : expTips[exp.id] ? (
                           <>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', marginBottom: 7, letterSpacing: 0.3 }}>
-                              💡 COME MIGLIORARE QUESTA ESPERIENZA
+                            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#221FB4', marginBottom: 7, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                              Come migliorare questa esperienza
                             </div>
                             {expTips[exp.id].map((tip, ti) => (
                               <div key={ti} style={{ display: 'flex', gap: 8, marginBottom: ti < (expTips[exp.id]?.length ?? 0) - 1 ? 6 : 0 }}>
-                                <span style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 12, flexShrink: 0, marginTop: 1 }}>→</span>
+                                <span style={{ color: '#2F2AE5', fontWeight: 700, fontSize: 12, flexShrink: 0, marginTop: 1 }}>→</span>
                                 <span style={{ fontSize: 12, color: 'var(--navy)', lineHeight: 1.5 }}>{tip}</span>
                               </div>
                             ))}
-                            <div style={{ marginTop: 8, borderTop: '1px solid rgba(201,168,76,0.15)', paddingTop: 7 }}>
+                            <div style={{ marginTop: 8, borderTop: '1px solid rgba(47, 42, 229, 0.14)', paddingTop: 7 }}>
                               <button
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--gray500)', padding: 0 }}
                                 onClick={() => {
                                   setExpTips(prev => { const n = { ...prev }; delete n[exp.id]; return n; });
                                 }}
                               >
-                                🔁 Rigenera suggerimenti
+                                Rigenera suggerimenti
                               </button>
                             </div>
                           </>
@@ -945,10 +954,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 {isAuthenticated && (
                   <button
                     className="btn btn-ghost btn-sm"
-                    style={{ flex: 1, color: 'var(--gold)', borderColor: 'var(--gold)' }}
+                    style={{ flex: 1, color: '#2F2AE5', borderColor: 'rgba(47, 42, 229, 0.35)' }}
                     onClick={showImportPanel ? () => setShowImportPanel(false) : openImportPanel}
                   >
-                    📥 {showImportPanel ? 'Chiudi archivio' : 'Importa dal mio archivio'}
+                    {showImportPanel ? 'Chiudi archivio' : 'Importa dal mio archivio'}
                   </button>
                 )}
               </div>
@@ -958,7 +967,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   {/* Tab bar */}
                   <div style={{ display: 'flex', borderBottom: '1px solid var(--gray100)' }}>
                     {[
-                      { key: false, label: '📥 Archivio' },
+                      { key: false, label: 'Archivio' },
                       { key: true, label: t('builder.fromSaved') },
                     ].map(tab => (
                       <button
@@ -970,7 +979,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                         style={{
                           flex: 1, padding: '9px 4px', fontSize: 11, fontWeight: 700,
                           background: showSavedCVsTab === tab.key ? '#fff' : 'transparent',
-                          border: 'none', borderBottom: showSavedCVsTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
+                          border: 'none', borderBottom: showSavedCVsTab === tab.key ? '2px solid #2F2AE5' : '2px solid transparent',
                           color: showSavedCVsTab === tab.key ? 'var(--navy)' : 'var(--gray500)',
                           cursor: 'pointer', transition: 'all 0.15s',
                         }}
@@ -1003,7 +1012,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                 <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--gray100)' }}>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
+                                      {exp.role} <span style={{ color: 'var(--gray500)', fontWeight: 400 }}>· {exp.company}</span>
                                     </div>
                                     {(exp.startDate || exp.endDate || exp.isCurrent) && (
                                       <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 1 }}>
@@ -1013,7 +1022,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                   </div>
                                   <button
                                     className="btn btn-sm"
-                                    style={{ fontSize: 11, background: alreadyImported ? 'var(--gray100)' : 'var(--gold)', color: alreadyImported ? 'var(--gray500)' : 'var(--navy)', border: 'none', flexShrink: 0 }}
+                                    style={{ fontSize: 11, background: alreadyImported ? 'var(--gray100)' : '#2F2AE5', color: alreadyImported ? 'var(--gray500)' : '#fff', border: 'none', flexShrink: 0 }}
                                     onClick={() => !alreadyImported && importExperience(exp)}
                                   >
                                     {alreadyImported ? '✓ Aggiunto' : '+ Aggiungi'}
@@ -1034,7 +1043,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                           <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
                         ) : savedCVsForImport.length === 0 ? (
                           <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
-                            Nessun CV salvato. Usa 💾 per salvare questo CV.
+                            Nessun CV salvato. Usa "Salva" per salvare questo CV.
                           </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1055,10 +1064,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                     {cv.cvData.experiences.map(exp => {
                                       const alreadyDone = importedFromCVExpIds.has(exp.id);
                                       return (
-                                        <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(201,168,76,0.05)', borderRadius: 7, padding: '8px 10px', border: '1px solid rgba(201,168,76,0.15)' }}>
+                                        <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(47, 42, 229, 0.04)', borderRadius: 8, padding: '8px 10px', border: '1px solid rgba(47, 42, 229, 0.14)' }}>
                                           <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                              {exp.role} <span style={{ color: 'var(--gold)', fontWeight: 400 }}>@ {exp.company}</span>
+                                              {exp.role} <span style={{ color: 'var(--gray500)', fontWeight: 400 }}>· {exp.company}</span>
                                             </div>
                                             {(exp.from || exp.to) && (
                                               <div style={{ fontSize: 10, color: 'var(--gray500)', marginTop: 1 }}>
@@ -1068,7 +1077,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                           </div>
                                           <button
                                             className="btn btn-sm"
-                                            style={{ fontSize: 10, background: alreadyDone ? 'var(--gray100)' : 'var(--gold)', color: alreadyDone ? 'var(--gray500)' : 'var(--navy)', border: 'none', flexShrink: 0 }}
+                                            style={{ fontSize: 10, background: alreadyDone ? 'var(--gray100)' : '#2F2AE5', color: alreadyDone ? 'var(--gray500)' : '#fff', border: 'none', flexShrink: 0 }}
                                             onClick={() => !alreadyDone && importExpFromSavedCV(exp)}
                                           >
                                             {alreadyDone ? '✓' : '+'}
@@ -1093,7 +1102,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </AccordionSection>
 
             {/* FORMAZIONE */}
-            <AccordionSection title="🎓 Formazione" open={openSections.has('education')} onToggle={() => toggleSection('education')}>
+            <AccordionSection title="Formazione" open={openSections.has('education')} onToggle={() => toggleSection('education')}>
               {cvData.education.map(edu => (
                 <div key={edu.id} className="exp-block">
                   <div className="exp-block-header">
@@ -1133,14 +1142,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </AccordionSection>
 
             {/* COMPETENZE */}
-            <AccordionSection title="⚡ Competenze" open={openSections.has('skills')} onToggle={() => toggleSection('skills')}>
+            <AccordionSection title="Competenze" open={openSections.has('skills')} onToggle={() => toggleSection('skills')}>
               <div className="form-group">
                 <label>Competenze tecniche e trasversali</label>
                 {cvData.skillCategories?.length ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {cvData.skillCategories.map(cat => (
                       <div key={cat.name}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 5 }}>{cat.name}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#2F2AE5', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 5 }}>{cat.name}</div>
                         <div className="skills-container">
                           {cat.skills.map(skill => (
                             <div key={skill} className="skill-tag">
@@ -1183,7 +1192,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     value={newSkill}
                     onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') addSkill(); }}
-                    style={{ padding: '9px 12px', border: '1.5px solid var(--gray100)', borderRadius: 'var(--radius)', fontFamily: 'inherit', fontSize: 13, color: 'var(--navy)', outline: 'none', flex: 1 }}
+                    style={{ padding: '9px 12px', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 10, fontFamily: 'inherit', fontSize: 13, color: 'var(--navy)', outline: 'none', flex: 1, background: '#FDFDFB' }}
                   />
                   <button className="btn btn-ghost btn-sm" onClick={addSkill}>Aggiungi</button>
                 </div>
@@ -1197,7 +1206,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </AccordionSection>
 
             {/* ATS */}
-            <AccordionSection title="🎯 Analisi ATS" open={openSections.has('ats')} onToggle={() => toggleSection('ats')}>
+            <AccordionSection title="Analisi ATS" open={openSections.has('ats')} onToggle={() => toggleSection('ats')}>
               <div style={{ fontSize: 12, color: 'var(--gray500)', marginBottom: 12, lineHeight: 1.5 }}>
                 Incolla l'annuncio di lavoro per calcolare la compatibilità con i sistemi ATS e scoprire le keyword mancanti.
               </div>
@@ -1213,7 +1222,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
               {!ats.keywords.hasJD && (
                 <div style={{ fontSize: 12, color: 'var(--gray500)', background: 'var(--gray50)', borderRadius: 8, padding: '10px 12px' }}>
-                  ⚠ Senza job description il punteggio keyword è 0/50. Incolla l'annuncio per un'analisi completa.
+                  Senza job description il punteggio keyword è 0/50. Incolla l'annuncio per un'analisi completa.
                 </div>
               )}
               {ats.keywords.hasJD && ats.keywords.missing.length > 0 && (
@@ -1239,7 +1248,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </AccordionSection>
 
             {/* LINGUE */}
-            <AccordionSection title="🌐 Lingue" open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
+            <AccordionSection title="Lingue" open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
               {cvData.languages.map(lang => (
                 <div key={lang.id} className="exp-block">
                   <div className="form-row">
@@ -1273,8 +1282,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           </div>
 
           <div className="sidebar-footer">
-            <button className="btn btn-gold btn-lg" style={{ width: '100%' }} onClick={handleDownload} disabled={downloading}>
-              {downloading ? '⏳ Generando PDF...' : '⬇ Scarica il tuo CV in PDF →'}
+            <button className="btn btn-gold btn-lg" style={{ width: '100%', gap: 8 }} onClick={handleDownload} disabled={downloading}>
+              {downloading ? 'Generazione PDF…' : <><Icon d={IC.download} size={15} /> Scarica il tuo CV in PDF</>}
             </button>
           </div>
         </aside>
@@ -1299,11 +1308,11 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 <span className="ats-score-chevron">{showATSDetails ? '▲' : '▼'}</span>
               </button>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 'auto' }}>
-                <button className="btn btn-ghost btn-sm" onClick={handlePreview} disabled={previewing} title="Anteprima PDF in nuova scheda">
-                  {previewing ? '⏳' : '👁'} Anteprima
+                <button className="btn btn-ghost btn-sm" style={{ gap: 6 }} onClick={handlePreview} disabled={previewing} title="Anteprima PDF in nuova scheda">
+                  {previewing ? '…' : <Icon d={IC.eye} size={13} />} Anteprima
                 </button>
-                <button className="btn btn-gold btn-sm" onClick={handleDownload} disabled={downloading}>
-                  {downloading ? '⏳ Generando...' : '⬇ PDF'}
+                <button className="btn btn-gold btn-sm" style={{ gap: 6 }} onClick={handleDownload} disabled={downloading}>
+                  {downloading ? 'Generando...' : <><Icon d={IC.download} size={13} /> PDF</>}
                 </button>
               </div>
             </div>
@@ -1315,7 +1324,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 onClick={() => setShowTemplateModal(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600 }}
               >
-                🎨 Seleziona Modello
+                <Icon d={IC.palette} size={14} /> Seleziona modello
               </button>
               <span style={{ fontSize: 12, color: 'var(--gray500)', fontWeight: 500 }}>
                 Template attivo: <strong style={{ color: 'var(--navy)' }}>{selectedTemplate.charAt(0).toUpperCase() + selectedTemplate.slice(1)}</strong>
@@ -1340,7 +1349,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   </div>
                   <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.keywords.score / ats.keywords.max) * 100}%`, background: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? 'var(--gold)' : 'var(--danger)' }} /></div>
                   {!ats.keywords.hasJD
-                    ? <div className="ats-issue">⚠ Incolla la job description nella sezione "Analisi ATS" per calcolare il match</div>
+                    ? <div className="ats-issue">Incolla la job description nella sezione "Analisi ATS" per calcolare il match</div>
                     : <>
                         {ats.keywords.matched.length > 0 && <div className="ats-issue" style={{ color: 'var(--success)' }}>✓ {ats.keywords.matched.length} keyword trovate: {ats.keywords.matched.join(', ')}</div>}
                         {ats.keywords.missing.length > 0 && <div className="ats-issue" style={{ color: 'var(--danger)' }}>✗ Mancanti: {ats.keywords.missing.join(', ')}</div>}

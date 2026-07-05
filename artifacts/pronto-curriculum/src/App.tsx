@@ -7,9 +7,10 @@ import TailorCv from './pages/TailorCv';
 import Candidature from './pages/Candidature';
 import Dashboard from './pages/Dashboard';
 import Modals from './components/Modals';
+import WorkspaceShell from './components/WorkspaceShell';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth } from './hooks/use-firebase-auth';
 import { LanguageProvider, useLanguage, useT } from './i18n/LanguageContext';
 import { LANG_OPTIONS } from './i18n/translations';
 
@@ -204,10 +205,15 @@ function AppInner() {
 
   const handleSuccess = () => setModal('success');
 
+  // The Home page (RedesignV3) has its own sticky topbar.
+  // Dashboard (DashboardV3) has its own sidebar.
+  // For inner workspace pages, we keep the drawer sidebar + a minimal header.
+  const showInnerNav = page !== 'home' && page !== 'dashboard';
+
   return (
     <>
-      {/* ChatGPT-style sidebar (auth only) */}
-      {isAuthenticated && user && (
+      {/* Drawer sidebar — only for inner pages when authenticated */}
+      {isAuthenticated && user && showInnerNav && (
         <AppSidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -218,98 +224,102 @@ function AppInner() {
         />
       )}
 
-      <nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Hamburger — only for auth users */}
-          {isAuthenticated && !isLoading && (
-            <button
-              className="sidebar-toggle"
-              onClick={() => setSidebarOpen(v => !v)}
-              title="Menu"
-              aria-label="Apri menu"
-            >
-              <span /><span /><span />
-            </button>
-          )}
-          <div className="logo" onClick={() => navigate('home')}>
-            <div className="logo-icon">P</div>
-            <span className="logo-text">Pronto<span>Curriculum</span></span>
+      {/* Minimal top bar — only for inner workspace pages */}
+      {showInnerNav && (
+        <nav className="app-nav">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {isAuthenticated && !isLoading && (
+              <button
+                className="sidebar-toggle"
+                onClick={() => setSidebarOpen(v => !v)}
+                title="Menu"
+                aria-label="Apri menu"
+              >
+                <span /><span /><span />
+              </button>
+            )}
+            <div className="logo" onClick={() => navigate('home')}>
+              <div className="logo-icon">P</div>
+              <span className="logo-text">Pronto<span>Curriculum</span></span>
+            </div>
           </div>
-        </div>
 
-        <div className="nav-actions">
-          {/* Language switcher */}
-          <select
-            value={lang}
-            onChange={e => setLang(e.target.value as typeof lang)}
-            title="App language"
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 7,
-              padding: '5px 8px',
-              fontSize: 13,
-              color: 'var(--gray300)',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            {LANG_OPTIONS.map(l => (
-              <option key={l.code} value={l.code}>{l.flag} {l.code}</option>
-            ))}
-          </select>
+          <div className="nav-actions">
+            <select
+              value={lang}
+              onChange={e => setLang(e.target.value as typeof lang)}
+              title="App language"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 7,
+                padding: '5px 8px',
+                fontSize: 13,
+                color: 'var(--gray300)',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {LANG_OPTIONS.map(l => (
+                <option key={l.code} value={l.code}>{l.flag} {l.code}</option>
+              ))}
+            </select>
+            {isLoading ? (
+              <div style={{ width: 80, height: 36 }} />
+            ) : isAuthenticated && user ? (
+              <>
+                {user.profileImageUrl ? (
+                  <img
+                    src={user.profileImageUrl}
+                    alt="avatar"
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)', cursor: 'pointer' }}
+                    onClick={() => setSidebarOpen(v => !v)}
+                    title="Menu"
+                  />
+                ) : (
+                  <div
+                    style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--navy)', cursor: 'pointer' }}
+                    onClick={() => setSidebarOpen(v => !v)}
+                    title="Menu"
+                  >
+                    {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
+                  </div>
+                )}
+              </>
+            ) : (
+              <button className="btn btn-outline" onClick={login}>{t('nav.login')}</button>
+            )}
+            <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>{t('nav.createCV')}</button>
+          </div>
+        </nav>
+      )}
 
-          {isLoading ? (
-            <div style={{ width: 80, height: 36 }} />
-          ) : isAuthenticated && user ? (
-            <>
-              {user.profileImageUrl ? (
-                <img
-                  src={user.profileImageUrl}
-                  alt="avatar"
-                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)', cursor: 'pointer' }}
-                  onClick={() => setSidebarOpen(v => !v)}
-                  title="Menu"
-                />
-              ) : (
-                <div
-                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--navy)', cursor: 'pointer' }}
-                  onClick={() => setSidebarOpen(v => !v)}
-                  title="Menu"
-                >
-                  {(user.firstName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()}
-                </div>
-              )}
-            </>
-          ) : (
-            <button className="btn btn-outline" onClick={login}>{t('nav.login')}</button>
-          )}
-          <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>{t('nav.createCV')}</button>
-        </div>
-      </nav>
-
-      <main style={{ minHeight: 'calc(100vh - 64px)' }}>
+      <main style={{ minHeight: showInnerNav ? 'calc(100vh - 64px)' : undefined }}>
         {page === 'home' && (
           <Home onNavigate={navigate} onModal={openModal} />
         )}
         {page === 'builder-step1' && (
-          <BuilderStep1
-            selectedTemplate={selectedTemplate}
-            onSelectTemplate={handleSelectTemplate}
-            onModal={openModal}
-          />
+          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={login}>
+            <BuilderStep1
+              selectedTemplate={selectedTemplate}
+              onSelectTemplate={handleSelectTemplate}
+              onModal={openModal}
+            />
+          </WorkspaceShell>
         )}
         {page === 'builder-step2' && (
-          <BuilderStep2
-            cvData={cvData}
-            onCVChange={setCvData}
-            selectedTemplate={selectedTemplate}
-            onTemplateChange={setSelectedTemplate}
-            onNavigate={navigate}
-            onModal={openModal}
-            onAiAction={handleAiAction}
-            onGoToArchivio={() => navigate('archivio')}
-          />
+          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={login}>
+            <BuilderStep2
+              cvData={cvData}
+              onCVChange={setCvData}
+              selectedTemplate={selectedTemplate}
+              onTemplateChange={setSelectedTemplate}
+              onNavigate={navigate}
+              onModal={openModal}
+              onAiAction={handleAiAction}
+              onGoToArchivio={() => navigate('archivio')}
+            />
+          </WorkspaceShell>
         )}
         {page === 'archivio' && (
           <Archivio onNavigate={navigate} />

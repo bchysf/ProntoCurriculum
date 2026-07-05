@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Page, ModalType } from '../types';
 
-// "Carta & Inchiostro" v3 — RedesignV3 integrated into the main app.
-// Switzer + Satoshi + IBM Plex Mono, white + aurora bg.
-
-interface HomeProps {
-  onNavigate: (page: Page) => void;
-  onModal: (modal: ModalType) => void;
-}
+// "Carta & Inchiostro" v3 - Switzer + Satoshi, 3D hero, white + aurora bg.
+// Display: Switzer (modern Helvetica-style grotesk, tight tracking)
+// Body/UI: Satoshi - Data/labels: IBM Plex Mono
+// Hero: full-width staggered headline with blue-to-violet gradient accent,
+// 3D sheet stack with mouse tilt, self-writing CV loop, orbit ring,
+// floating chips at depth. Flowing aurora blobs across the whole page.
 
 const CYCLE = 9000;
 
@@ -188,7 +186,7 @@ ${Array.from({ length: 7 }, (_, i) => `.pc3 .wl:nth-of-type(${i + 1})::after { -
 .pc3 .score-big { font-family: var(--f-display); font-weight: 700; letter-spacing: -0.04em; font-size: 58px; line-height: 1; background: linear-gradient(120deg, #6FA5FF, #BE9CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .pc3 .score-sub { font-family: var(--f-mono); font-size: 11px; color: var(--ink-40); }
 
-/* EXPLAINER PLAYERS */
+/* EXPLAINER PLAYERS - animated product-tour "videos" */
 .pc3 .player { background: #14171F; border-radius: 18px; overflow: hidden; box-shadow: 0 34px 80px -34px rgba(20,23,31,.5); }
 .pc3 .pl-chrome { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .pc3 .pl-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.16); }
@@ -204,6 +202,7 @@ ${Array.from({ length: 7 }, (_, i) => `.pc3 .wl:nth-of-type(${i + 1})::after { -
 .pc3 .pl-step-label { color: #6A707E; font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
 .pc3 .pl-step.active .pl-step-label { color: #9DB6FF; }
 .pc3 .pl-step-title { color: #F3F1EA; font-weight: 700; font-size: 14.5px; margin-top: 4px; }
+/* Heights stay constant across step changes — no layout shift, no scroll jumps */
 .pc3 .pl-step-desc { color: #565B66; font-size: 12.5px; line-height: 1.5; margin-top: 3px; transition: color .35s; }
 .pc3 .pl-step.active .pl-step-desc { color: #A6ACBA; }
 .pc3 .pl-prog { display: block; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); margin-top: 11px; overflow: hidden; opacity: 0; transition: opacity .3s; }
@@ -262,7 +261,7 @@ ${Array.from({ length: 7 }, (_, i) => `.pc3 .wl:nth-of-type(${i + 1})::after { -
 .pc3 .mini-cal b { font-family: var(--f-display); font-size: 16px; letter-spacing: -0.01em; }
 .pc3 .mini-cal span { display: block; font-size: 12px; color: var(--ink-60); margin-top: 3px; }
 
-/* GUIDE */
+/* GUIDE - editorial SEO copy */
 .pc3 .guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px; }
 .pc3 .guide h3 { font-family: var(--f-display); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; margin-bottom: 12px; }
 .pc3 .guide p { font-size: 14px; color: var(--ink-60); line-height: 1.75; margin-bottom: 10px; }
@@ -287,7 +286,7 @@ ${Array.from({ length: 7 }, (_, i) => `.pc3 .wl:nth-of-type(${i + 1})::after { -
 .pc3 .foot-col a:hover { color: var(--accent); }
 .pc3 .foot-col a:hover::after { right: 0; }
 
-/* FINALE */
+/* FINALE - white, airy, orbit + aurora glow */
 .pc3 .night { background: transparent; color: var(--ink); padding: 140px 0; text-align: center; position: relative; overflow: hidden; border-top: 1px solid var(--hair-soft); }
 .pc3 .night .orbit { width: 900px; height: 900px; top: 118%; opacity: .8; animation-duration: 30s; animation-direction: reverse; }
 .pc3 .night .halo { width: 780px; height: 780px; top: 100%; }
@@ -352,6 +351,7 @@ function useAtsCounter() {
   return ref;
 }
 
+// Numbers that count up the first time they scroll into view
 function useCountUp() {
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>('.pc3 [data-count]');
@@ -376,6 +376,7 @@ function useCountUp() {
   }, []);
 }
 
+// 3D mouse tilt on the hero stack, spring-smoothed
 function useTilt() {
   const stageRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
@@ -413,6 +414,8 @@ function useTilt() {
 
 const MARQUEE = ['Moderno', 'Minimal', 'Milano', 'Elegante', 'Classico', 'Nordico', 'Tecnico', 'Corporate', 'Europass'];
 
+// Animated product-tour "video": auto-advancing steps with synced screens,
+// progress bar per step, pauses on hover, steps are clickable.
 interface PlayerStep { title: string; desc: string; screen: ReactNode; }
 
 function ExplainerPlayer({ title, steps, dur = 4600 }: { title: string; steps: PlayerStep[]; dur?: number }) {
@@ -582,6 +585,8 @@ const FAQ_SCHEMA = {
   })),
 };
 
+// Orbit ring: SVG circle with gradient stroke, rotated via CSS.
+// Soft wide stroke underneath + crisp thin stroke on top.
 function Ring({ id }: { id: string }) {
   return (
     <svg className="orbit" viewBox="0 0 100 100" aria-hidden="true">
@@ -599,7 +604,7 @@ function Ring({ id }: { id: string }) {
   );
 }
 
-export default function Home({ onNavigate, onModal }: HomeProps) {
+export default function RedesignV3() {
   useReveal();
   useCountUp();
   const atsRef = useAtsCounter();
@@ -619,8 +624,8 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               <span>Come funziona</span><span>Template</span><span>Prezzi</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-line btn-sm" onClick={() => onNavigate('dashboard')}>Accedi</button>
-              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>Crea il tuo CV</button>
+              <button className="btn btn-line btn-sm">Accedi</button>
+              <button className="btn btn-ink btn-sm">Crea il tuo CV</button>
             </div>
           </nav>
         </div>
@@ -637,8 +642,8 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
             <div>
               <p className="sub rv on d2">Rispondi a qualche domanda. L'AI scrive con te, il punteggio ATS sale, il PDF è pronto per l'invio.</p>
               <div className="cta-row rv on d2">
-                <button className="btn btn-ink" onClick={() => onNavigate('builder-step1')}>Inizia gratis</button>
-                <button className="btn btn-line" onClick={() => onNavigate('builder-step1')}>Guarda i template</button>
+                <button className="btn btn-ink">Inizia gratis</button>
+                <button className="btn btn-line">Guarda i template</button>
               </div>
               <div className="trust rv on d3"><b data-count="2400">0</b> CV creati questo mese — nessuna registrazione richiesta</div>
             </div>
@@ -706,6 +711,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
             ))}
           </div>
 
+          {/* Animated walkthrough "video" */}
           <div className="rv" style={{ marginTop: 64 }}>
             <ExplainerPlayer title="prontocurriculum.it — Tour del prodotto" steps={TOUR_STEPS} />
           </div>
@@ -758,7 +764,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
           </div>
         </section>
 
-        {/* GUIDA EDITORIALE */}
+        {/* GUIDA EDITORIALE (SEO) */}
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Guida al curriculum perfetto">
           <div className="sec-head rv">
             <h2>La piccola guida al <span className="ac">curriculum perfetto.</span></h2>
@@ -807,7 +813,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         <div className="shell">
           <span className="mono rv">Nessuna carta di credito · Gratis per sempre</span>
           <h2 className="rv d1">Il tuo prossimo lavoro<br />comincia da <span className="grad">una pagina.</span></h2>
-          <button className="btn btn-ink rv d2" style={{ fontSize: 15, padding: '15px 32px' }} onClick={() => onNavigate('builder-step1')}>Crea il tuo CV — è gratis</button>
+          <button className="btn btn-ink rv d2" style={{ fontSize: 15, padding: '15px 32px' }}>Crea il tuo CV — è gratis</button>
         </div>
       </div>
       </main>
@@ -828,10 +834,10 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </div>
               <nav className="foot-col" aria-label="Prodotto">
                 <h4>Prodotto</h4>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Crea il tuo CV</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Template ATS</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>CV su misura</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onModal('pricing'); }}>Prezzi</a>
+                <a href="#">Crea il tuo CV</a>
+                <a href="#">Template ATS</a>
+                <a href="#">CV su misura</a>
+                <a href="#">Prezzi</a>
               </nav>
               <nav className="foot-col" aria-label="Risorse">
                 <h4>Risorse</h4>
@@ -849,7 +855,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </nav>
             </div>
             <div className="foot-bottom">
-              <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — Fatto a mano in Italia</span>
+              <span className="mono">© 2026 ProntoCurriculum — Fatto a mano in Italia</span>
               <span className="mono">P.IVA 00000000000</span>
             </div>
           </div>

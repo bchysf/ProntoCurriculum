@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pronto-curriculum",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@workspace/pronto-curriculum", "dev"],
+      "port": 5180,
+      "autoPort": true
+    },
+    {
+      "name": "mockup-sandbox",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@workspace/mockup-sandbox", "dev"],
+      "port": 5174,
+      "autoPort": true
+    }
+  ]
+}
