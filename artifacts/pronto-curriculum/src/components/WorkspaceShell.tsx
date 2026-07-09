@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Page } from '../types';
 import { useT } from '../i18n/LanguageContext';
+import { CARTA_INCHIOSTRO_CSS } from '../styles/carta-inchiostro';
 
 // Minimal stroke icon set (lucide-style paths, pipe-separated)
 function Icon({ d, size = 17, className }: { d: string; size?: number; className?: string }) {
@@ -51,37 +52,39 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
   ];
 
   return (
-    <div className="ws">
-      <aside className="ws-rail">
-        <div className="ws-rail-label">{t('ws.workspace')}</div>
+    <div className="dv3">
+      <style>{CARTA_INCHIOSTRO_CSS}</style>
+      <aside className="side">
+        <div className="brand">Pronto<i>Curriculum</i></div>
+        <div className="mono">{t('ws.workspace')}</div>
         {items.map(item => {
           const active = item.activeOn.includes(page);
           return (
             <button
               key={item.key}
-              className={`ws-item${active ? ' ws-item--active' : ''}${item.locked ? ' ws-item--locked' : ''}`}
+              className={`nav-item${active ? ' active' : ''}${item.locked ? ' locked' : ''}`}
               title={item.locked ? t('ws.lockedHint') : undefined}
               onClick={() => item.locked ? onLogin() : onNavigate(item.page)}
             >
-              <Icon d={item.icon} />
+              <Icon d={item.icon} size={16} />
               <span>{item.label}</span>
-              {item.locked && <Icon d={IC.lock} size={13} className="ws-lock" />}
+              {item.locked && <Icon d={IC.lock} size={13} className="nav-badge" />}
             </button>
           );
         })}
 
         {!isAuthenticated && (
-          <div className="ws-upsell">
-            <div className="ws-upsell-title">{t('ws.unlockTitle')}</div>
-            <p className="ws-upsell-sub">{t('ws.unlockSub')}</p>
-            <button className="btn btn-solid btn-sm" style={{ width: '100%' }} onClick={onLogin}>
+          <div className="panel panel-cta" style={{ marginTop: 'auto' }}>
+            <h3 style={{ fontSize: 13.5 }}>{t('ws.unlockTitle')}</h3>
+            <p className="psub" style={{ marginBottom: 12 }}>{t('ws.unlockSub')}</p>
+            <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onLogin}>
               {t('nav.login')}
             </button>
           </div>
         )}
       </aside>
 
-      <div className="ws-main">
+      <div className="main" style={{ paddingTop: 28 }}>
         {children}
       </div>
     </div>

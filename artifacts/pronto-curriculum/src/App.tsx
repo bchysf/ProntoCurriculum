@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import Home from './pages/Home';
-import BuilderStep1 from './pages/BuilderStep1';
+import CreateCvWizard from './pages/CreateCvWizard';
 import BuilderStep2 from './pages/BuilderStep2';
 import Archivio from './pages/Archivio';
 import TailorCv from './pages/TailorCv';
@@ -10,9 +10,10 @@ import Modals from './components/Modals';
 import WorkspaceShell from './components/WorkspaceShell';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
-import { useAuth } from './hooks/use-firebase-auth';
+import { useAuth } from './hooks/use-auth';
 import { LanguageProvider, useLanguage, useT } from './i18n/LanguageContext';
 import { LANG_OPTIONS } from './i18n/translations';
+import type { SupportedLanguage } from './utils/aiTranslate';
 
 const DEFAULT_CV_DATA: CVData = {
   firstName: 'Mario',
@@ -42,12 +43,6 @@ const DEFAULT_CV_DATA: CVData = {
   }],
   skills: ['JavaScript', 'Python', 'React', 'Node.js', 'AWS', 'Docker'],
   languages: [{ id: '1', name: 'Inglese', level: 'C1 - Avanzato' }],
-};
-
-const BLANK_CV: CVData = {
-  firstName: '', lastName: '', title: '', email: '', phone: '',
-  city: '', linkedin: '', summary: '',
-  experiences: [], education: [], skills: [], languages: [],
 };
 
 const NAV_ITEMS: { page: Page; icon: string; labelKey: string }[] = [
@@ -172,6 +167,7 @@ function AppInner() {
   const [aiLoadingText, setAiLoadingText] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
   const [cvData, setCvData] = useState<CVData>(DEFAULT_CV_DATA);
+  const [initialLanguage, setInitialLanguage] = useState<SupportedLanguage>('IT');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigate = useCallback((p: Page) => {
@@ -182,20 +178,17 @@ function AppInner() {
   const openModal = useCallback((m: ModalType) => setModal(m), []);
   const closeModal = useCallback(() => setModal(null), []);
 
-  const handleSelectTemplate = (tmpl: TemplateType) => {
-    setSelectedTemplate(tmpl);
-    setTimeout(() => navigate('builder-step2'), 150);
+  const handleWizardComplete = (data: CVData, template: TemplateType, language: SupportedLanguage) => {
+    setCvData(data);
+    setSelectedTemplate(template);
+    setInitialLanguage(language);
+    navigate('builder-step2');
   };
 
   const handleAiAction = (text: string, callback: () => void) => {
     setAiLoadingText(text);
     setModal('ai-loading');
     setTimeout(() => { setModal(null); callback(); }, 2200);
-  };
-
-  const handleImportComplete = (extracted: Partial<CVData>) => {
-    setCvData({ ...BLANK_CV, ...extracted });
-    navigate('builder-step2');
   };
 
   const handleCVLoaded = useCallback((data: CVData, template?: string) => {
@@ -208,7 +201,7 @@ function AppInner() {
   // The Home page (RedesignV3) has its own sticky topbar.
   // Dashboard (DashboardV3) has its own sidebar.
   // For inner workspace pages, we keep the drawer sidebar + a minimal header.
-  const showInnerNav = page !== 'home' && page !== 'dashboard';
+  const showInnerNav = page !== 'home' && page !== 'dashboard' && page !== 'builder-step1' && page !== 'builder-step2';
 
   return (
     <>
@@ -300,11 +293,7 @@ function AppInner() {
         )}
         {page === 'builder-step1' && (
           <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={login}>
-            <BuilderStep1
-              selectedTemplate={selectedTemplate}
-              onSelectTemplate={handleSelectTemplate}
-              onModal={openModal}
-            />
+            <CreateCvWizard onComplete={handleWizardComplete} />
           </WorkspaceShell>
         )}
         {page === 'builder-step2' && (
@@ -314,6 +303,7 @@ function AppInner() {
               onCVChange={setCvData}
               selectedTemplate={selectedTemplate}
               onTemplateChange={setSelectedTemplate}
+              initialLanguage={initialLanguage}
               onNavigate={navigate}
               onModal={openModal}
               onAiAction={handleAiAction}
@@ -352,7 +342,6 @@ function AppInner() {
         aiLoadingText={aiLoadingText}
         onClose={closeModal}
         onSuccess={handleSuccess}
-        onImportComplete={handleImportComplete}
         isAuthenticated={isAuthenticated}
         onLogin={login}
       />

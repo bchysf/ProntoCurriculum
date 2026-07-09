@@ -73,6 +73,32 @@ export async function aiRephraseExp(
   return data.result;
 }
 
+export async function aiApplyTip(
+  exp: { role: string; company: string; desc: string },
+  tip: string,
+  lang = 'IT',
+): Promise<string> {
+  const response = await fetch('/api/optimize-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      field: 'exp',
+      mode: 'apply-tip',
+      lang,
+      value: exp.desc,
+      context: { role: exp.role, company: exp.company, tip },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? 'Errore applicazione suggerimento');
+  }
+
+  const data = await response.json() as { result: string };
+  return data.result;
+}
+
 export async function aiExpTips(
   exp: { role: string; company: string; desc: string },
   lang = 'IT',

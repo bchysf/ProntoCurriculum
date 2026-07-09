@@ -1,9 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateText } from '../lib/ai';
 
 const router: IRouter = Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
 const LANGUAGE_NAMES: Record<string, string> = {
   IT: 'Italiano',
@@ -81,9 +79,7 @@ router.post('/translate-cv', async (req: Request, res: Response) => {
   const prompt = `Sei un traduttore professionale specializzato in CV e documenti aziendali.\n\nLINGUA TARGET: ${langName} (codice: ${lang})\n\nRicevi un JSON con SOLO i campi da tradurre. Traduci TUTTI i valori stringa non vuoti:\n- "title": titolo professionale\n- "summary": profilo professionale\n- "experiences[].role": titolo del ruolo\n- "experiences[].desc": descrizione mansioni (mantieni bullet point "• " se presenti)\n- "education[].degree": titolo di studio\n- "skills[]": ogni competenza tecnica o soft skill\n- "languages[].name": nome della lingua (es. "Inglese" → "English" in EN, "Anglais" in FR)\n- "languages[].level": livello CEFR nella lingua target (es. "C1 - Avanzato" → "C1 - Advanced" in EN)\n\nSTILE:\n- Forma impersonale professionale (zero prima persona singolare)\n- Per l'inglese: imperativo/participio passato (Led, Managed, Reduced)\n- Per le altre lingue: stile participio passato senza soggetto\n- Mantieni bullet "• " e numeri/percentuali invariati\n\nVINCOLO ASSOLUTO: restituisci SOLO il JSON con la stessa struttura e gli stessi "id". Zero testo extra, zero markdown.\n\nTraduci in ${langName}:\n\n${JSON.stringify(payload)}`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = await generateText(prompt, { maxTokens: 3000 });
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     const translated = JSON.parse(jsonStr) as TranslatablePayload;
 
@@ -162,9 +158,7 @@ router.post('/translate-field', async (req: Request, res: Response) => {
   const prompt = `Sei un traduttore professionale specializzato in CV di alto livello.\nTraduci in ${langName} il seguente ${fieldDescriptions[field] ?? 'testo di un CV'}.\n${styleNotes[field] ?? ''}\nStile: zero prima persona, forma impersonale professionale standard dei CV internazionali.\nRestituisci SOLO il testo tradotto. Niente JSON, niente virgolette esterne, niente spiegazioni.\n\n${contextText}`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
-    const resultText = result.response.text().trim() ?? value;
+    const resultText = (await generateText(prompt)) || value;
     res.json({ result: resultText });
   } catch (err) {
     req.log.error({ err }, 'translate-field error');

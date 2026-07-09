@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CVData, Experience, Page } from '../types';
-import { useAuth } from '../hooks/use-firebase-auth';
+import { useAuth } from '../hooks/use-auth';
 
 interface TailorCvProps {
   onNavigate: (page: Page) => void;

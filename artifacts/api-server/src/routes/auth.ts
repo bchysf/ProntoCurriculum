@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from 'express';
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { createClient } from '@supabase/supabase-js';
 import {
   GetCurrentAuthUserResponse,
   LogoutMobileSessionResponse,
@@ -18,16 +17,11 @@ import {
 
 const router: IRouter = Router();
 
-// Initialize Firebase Admin SDK (singleton)
-if (getApps().length === 0) {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) as object;
-    initializeApp({ credential: cert(serviceAccount as Parameters<typeof cert>[0]) });
-  } else {
-    // In development without service account, init with default credentials
-    initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID });
-  }
-}
+// Supabase Admin client (service role) — used only to verify user access tokens
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL ?? '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+);
 
 function setSessionCookie(res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
@@ -73,30 +67,34 @@ router.get('/auth/user', (req: Request, res: Response) => {
   );
 });
 
-// POST /api/auth/sync — called from frontend after Firebase Google Sign-In
-// Verifies the Firebase ID token and creates/updates a session
+// POST /api/auth/sync — called from frontend after Supabase Google Sign-In
+// Verifies the Supabase access token and creates/updates a session
 router.post('/auth/sync', async (req: Request, res: Response) => {
-  const { idToken } = req.body as { idToken?: string };
+  const { accessToken } = req.body as { accessToken?: string };
 
-  if (!idToken || typeof idToken !== 'string') {
-    res.status(400).json({ error: 'ID token mancante' });
+  if (!accessToken || typeof accessToken !== 'string') {
+    res.status(400).json({ error: 'Access token mancante' });
     return;
   }
 
   try {
-    const firebaseAuth = getAuth();
-    const decoded = await firebaseAuth.verifyIdToken(idToken);
+    const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !data.user) {
+      throw error ?? new Error('Utente non trovato');
+    }
+    const supaUser = data.user;
 
-    const nameParts = (decoded.name ?? '').split(' ');
-    const firstName = nameParts[0] ?? null;
+    const metadata = supaUser.user_metadata as { full_name?: string; name?: string; avatar_url?: string; picture?: string };
+    const nameParts = (metadata.full_name ?? metadata.name ?? '').split(' ');
+    const firstName = nameParts[0] || null;
     const lastName = nameParts.slice(1).join(' ') || null;
 
     const dbUser = await upsertUser({
-      id: decoded.uid,
-      email: decoded.email ?? null,
+      id: supaUser.id,
+      email: supaUser.email ?? null,
       firstName,
       lastName,
-      profileImageUrl: decoded.picture ?? null,
+      profileImageUrl: metadata.avatar_url ?? metadata.picture ?? null,
     });
 
     const now = Math.floor(Date.now() / 1000);
@@ -108,8 +106,8 @@ router.post('/auth/sync', async (req: Request, res: Response) => {
         lastName: dbUser.lastName,
         profileImageUrl: dbUser.profileImageUrl,
       },
-      access_token: idToken,
-      expires_at: decoded.exp ?? now + 3600,
+      access_token: accessToken,
+      expires_at: now + 3600,
     };
 
     const sid = await createSession(sessionData);

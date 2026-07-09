@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Page, CVData, SavedTailoredCv } from '../types';
-import { useAuth } from '../hooks/use-firebase-auth';
+import { useAuth } from '../hooks/use-auth';
 
 interface CandidatureProps {
   onNavigate: (page: Page) => void;

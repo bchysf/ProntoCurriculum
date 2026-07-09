@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/use-firebase-auth';
+import { useAuth } from '../hooks/use-auth';
 
 interface StoredExp {
   id: string;

@@ -2,12 +2,13 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CVData, TemplateType, ModalType, SavedCV } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
-import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips } from '../utils/aiOptimizeField';
+import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
+import { translateDateLabel } from '../utils/dateI18n';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
 import { Icon, IC } from '../components/StrokeIcon';
-import { useAuth } from '../hooks/use-firebase-auth';
+import { useAuth } from '../hooks/use-auth';
 import { useT } from '../i18n/LanguageContext';
 import { toast } from 'sonner';
 
@@ -28,6 +29,7 @@ interface BuilderStep2Props {
   onCVChange: (data: CVData) => void;
   selectedTemplate: TemplateType;
   onTemplateChange: (t: TemplateType) => void;
+  initialLanguage?: SupportedLanguage;
   onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor') => void;
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
@@ -155,17 +157,129 @@ function AccordionSection({
   title: string; open: boolean; onToggle: () => void; children: React.ReactNode;
 }) {
   return (
-    <div className="accordion-section">
-      <button className={`accordion-trigger${open ? ' open' : ''}`} onClick={onToggle}>
+    <div className="acc">
+      <button className={`acc-trigger${open ? ' open' : ''}`} onClick={onToggle}>
         <span>{title}</span>
-        <span className="accordion-chevron">{open ? '▲' : '▼'}</span>
+        <span className="acc-chevron">{open ? '▲' : '▼'}</span>
       </button>
-      {open && <div className="accordion-content fade-in">{children}</div>}
+      {open && <div className="acc-content fade-in">{children}</div>}
     </div>
   );
 }
 
-export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, onNavigate, onModal, onAiAction, onGoToArchivio }: BuilderStep2Props) {
+function AIAssistantPanel({
+  experiences, expTips, analyzing, onAnalyzeAll, onApplyTip, applyingTipKey,
+}: {
+  experiences: { id: string; role: string; company: string }[];
+  expTips: Record<string, string[]>;
+  analyzing: boolean;
+  onAnalyzeAll: () => void;
+  onApplyTip: (expId: string, tipIndex: number) => void;
+  applyingTipKey: string | null;
+}) {
+  const [open, setOpen] = useState(true);
+  const [minimized, setMinimized] = useState(false);
+  const [pos, setPos] = useState(() => ({
+    x: Math.max(24, window.innerWidth - 344),
+    y: 96,
+  }));
+  const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
+
+  const named = experiences.filter(e => e.role || e.company);
+  const withTips = named.filter(e => expTips[e.id]?.length);
+  const pendingCount = named.length - withTips.length;
+
+  const onHeadPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return; // let minimize/close buttons receive their click
+    dragOffset.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onHeadPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragOffset.current) return;
+    const maxX = window.innerWidth - 60;
+    const maxY = window.innerHeight - 44;
+    setPos({
+      x: Math.min(Math.max(0, e.clientX - dragOffset.current.dx), maxX),
+      y: Math.min(Math.max(0, e.clientY - dragOffset.current.dy), maxY),
+    });
+  };
+  const onHeadPointerUp = () => { dragOffset.current = null; };
+
+  if (!open) {
+    return (
+      <button className="ai-float-reopen" style={{ right: 28, bottom: 28 }} onClick={() => setOpen(true)}>
+        <Icon d={IC.bulb} size={15} /> Assistente AI
+      </button>
+    );
+  }
+
+  return (
+    <div className="ai-float" style={{ left: pos.x, top: pos.y }}>
+      <div
+        className="ai-float-head"
+        onPointerDown={onHeadPointerDown}
+        onPointerMove={onHeadPointerMove}
+        onPointerUp={onHeadPointerUp}
+      >
+        <span className="ico"><Icon d={IC.bulb} size={13} /></span>
+        <span className="title">Assistente AI</span>
+        <div className="ai-float-actions">
+          <button title={minimized ? 'Espandi' : 'Riduci'} onClick={() => setMinimized(v => !v)}>{minimized ? '▢' : '—'}</button>
+          <button title="Chiudi" onClick={() => setOpen(false)}><Icon d={IC.x} size={13} /></button>
+        </div>
+      </div>
+
+      {!minimized && (
+        <div className="ai-float-body">
+          <p className="ai-float-sub">Suggerimenti per rendere le tue esperienze più incisive e superare i filtri ATS.</p>
+
+          {named.length === 0 ? (
+            <div className="ai-panel-empty">Aggiungi un'esperienza lavorativa per ricevere suggerimenti.</div>
+          ) : withTips.length === 0 ? (
+            <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onAnalyzeAll} disabled={analyzing}>
+              {analyzing ? 'Analisi in corso…' : <><Icon d={IC.spark} size={13} /> Analizza esperienze</>}
+            </button>
+          ) : (
+            <>
+              {withTips.map(exp => (
+                <div key={exp.id} style={{ marginBottom: 6 }}>
+                  <div className="mono" style={{ marginBottom: 2 }}>{exp.role || exp.company}</div>
+                  {expTips[exp.id]!.map((tip, i) => {
+                    const key = `${exp.id}:${i}`;
+                    const applying = applyingTipKey === key;
+                    return (
+                      <div key={i} className="ai-tip" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 9 }}>
+                          <span className="dot" style={{ marginTop: 6 }} />
+                          <span>{tip}</span>
+                        </div>
+                        <button
+                          className="btn btn-line btn-sm"
+                          style={{ alignSelf: 'flex-end', padding: '4px 10px', fontSize: 11 }}
+                          onClick={() => onApplyTip(exp.id, i)}
+                          disabled={applying || applyingTipKey !== null}
+                        >
+                          {applying ? 'Applico…' : <><Icon d={IC.check} size={11} /> Applica</>}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              {pendingCount > 0 && (
+                <button className="btn btn-line btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={onAnalyzeAll} disabled={analyzing}>
+                  {analyzing ? 'Analisi in corso…' : `Analizza altre ${pendingCount} esperienze`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, initialLanguage, onNavigate, onModal, onAiAction, onGoToArchivio }: BuilderStep2Props) {
   const { isAuthenticated } = useAuth();
   const t = useT();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
@@ -182,13 +296,15 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [importLoading, setImportLoading] = useState(false);
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
-  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('IT');
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(initialLanguage ?? 'IT');
   const [translating, setTranslating] = useState(false);
   const [rephrasingExpId, setRephrasingExpId] = useState<string | null>(null);
   const [expTips, setExpTips] = useState<Record<string, string[]>>({});
   const [tipsLoadingId, setTipsLoadingId] = useState<string | null>(null);
   const [openTipsId, setOpenTipsId] = useState<string | null>(null);
   const [translateError, setTranslateError] = useState('');
+  const [analyzingAll, setAnalyzingAll] = useState(false);
+  const [applyingTipKey, setApplyingTipKey] = useState<string | null>(null);
 
   const overlapWarnings = useMemo(() => {
     const result: Array<{ label1: string; label2: string }> = [];
@@ -466,9 +582,25 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     setModal('ai-loading-local');
     try {
       const translated = await aiTranslateCV(cvData, selectedLanguage);
-      onCVChange({ ...cvData, ...translated, photo: cvData.photo });
+      onCVChange({
+        ...cvData,
+        ...translated,
+        photo: cvData.photo,
+        experiences: translated.experiences.map(exp => ({
+          ...exp,
+          from: translateDateLabel(exp.from, selectedLanguage),
+          to: translateDateLabel(exp.to, selectedLanguage),
+        })),
+        education: translated.education.map(edu => ({
+          ...edu,
+          from: translateDateLabel(edu.from, selectedLanguage),
+          to: translateDateLabel(edu.to, selectedLanguage),
+        })),
+      });
     } catch (err) {
-      setTranslateError(err instanceof Error ? err.message : 'Errore traduzione');
+      const msg = err instanceof Error ? err.message : 'Errore traduzione';
+      setTranslateError(msg);
+      toast.error(`Traduzione fallita: ${msg}`);
     } finally {
       setTranslating(false);
       setModal(null);
@@ -557,6 +689,45 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       setOpenTipsId(null);
     } finally {
       setTipsLoadingId(null);
+    }
+  };
+
+  const handleAnalyzeAll = async () => {
+    const pending = cvData.experiences.filter(exp => (exp.role || exp.company) && !expTips[exp.id]);
+    if (pending.length === 0) return;
+    setAnalyzingAll(true);
+    try {
+      for (const exp of pending) {
+        try {
+          const tips = await aiExpTips({ role: exp.role, company: exp.company, desc: exp.desc }, selectedLanguage);
+          setExpTips(prev => ({ ...prev, [exp.id]: tips }));
+        } catch {
+          // Skip this experience, keep going with the rest.
+        }
+      }
+    } finally {
+      setAnalyzingAll(false);
+    }
+  };
+
+  const handleApplyTip = async (expId: string, tipIndex: number) => {
+    const exp = cvData.experiences.find(e => e.id === expId);
+    const tip = expTips[expId]?.[tipIndex];
+    if (!exp || !tip) return;
+    const key = `${expId}:${tipIndex}`;
+    setApplyingTipKey(key);
+    try {
+      const rewritten = await aiApplyTip({ role: exp.role, company: exp.company, desc: exp.desc }, tip, selectedLanguage);
+      onCVChange({
+        ...cvData,
+        experiences: cvData.experiences.map(e => e.id === expId ? { ...e, desc: rewritten } : e),
+      });
+      setExpTips(prev => ({ ...prev, [expId]: (prev[expId] ?? []).filter((_, i) => i !== tipIndex) }));
+      toast.success('Suggerimento applicato al CV');
+    } catch {
+      toast.error('Errore durante l\'applicazione del suggerimento');
+    } finally {
+      setApplyingTipKey(null);
     }
   };
 
@@ -690,24 +861,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   </button>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {LANGUAGES.map(lang => (
                   <button
                     key={lang.code}
+                    title={lang.label}
+                    aria-label={lang.label}
                     onClick={() => { setSelectedLanguage(lang.code); setTranslateError(''); }}
                     style={{
-                      padding: '5px 10px',
-                      borderRadius: 20,
+                      width: 34,
+                      height: 34,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 17,
+                      lineHeight: 1,
+                      borderRadius: '50%',
                       border: `1.5px solid ${selectedLanguage === lang.code ? '#2F2AE5' : 'var(--border)'}`,
                       background: selectedLanguage === lang.code ? '#EEF0FD' : 'transparent',
-                      color: selectedLanguage === lang.code ? '#221FB4' : 'var(--gray500)',
-                      fontSize: 12,
-                      fontWeight: selectedLanguage === lang.code ? 700 : 400,
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                     }}
                   >
-                    {lang.flag} {lang.code}
+                    {lang.flag}
                   </button>
                 ))}
               </div>
@@ -1368,6 +1544,15 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
             )}
           </div>
+
+          <AIAssistantPanel
+            experiences={cvData.experiences}
+            expTips={expTips}
+            analyzing={analyzingAll}
+            onAnalyzeAll={() => void handleAnalyzeAll()}
+            onApplyTip={(expId, tipIndex) => void handleApplyTip(expId, tipIndex)}
+            applyingTipKey={applyingTipKey}
+          />
 
           <div className="preview-canvas" ref={previewRef}>
             <div className="cv-sheet" style={{ zoom: cvScale }}>

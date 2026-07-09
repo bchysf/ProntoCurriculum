@@ -1,9 +1,7 @@
 import { Router, type IRouter } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateText } from '../lib/ai';
 
 const router: IRouter = Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
 const SYSTEM_PROMPT = `Sei un assistente specializzato nell'analisi di CV italiani ed europei.
 Estrai le informazioni dal testo del CV fornito e restituisci SOLO un oggetto JSON valido con questa struttura esatta:
@@ -66,11 +64,10 @@ router.post('/parse-cv', async (req, res) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
-    const result = await model.generateContent(
-      SYSTEM_PROMPT + '\n\nEstrai le informazioni da questo CV:\n\n' + text.slice(0, 8000)
+    const raw = await generateText(
+      SYSTEM_PROMPT + '\n\nEstrai le informazioni da questo CV:\n\n' + text.slice(0, 8000),
+      { maxTokens: 3000 },
     );
-    const raw = result.response.text().trim();
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     const parsed = JSON.parse(jsonStr);
     res.json(parsed);

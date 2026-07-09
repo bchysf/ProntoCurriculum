@@ -1,12 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, inArray, asc, count, and } from "drizzle-orm";
 import { promises as dns } from "dns";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "../lib/ai";
 import { db, experiencesTable, tailoredCvsTable, userProfilesTable } from "@workspace/db";
 
 const router: IRouter = Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
 const LANG_NAMES: Record<string, string> = {
   IT: "italiano",
@@ -288,9 +286,7 @@ ${experiencesText}
 
 Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le descrizioni per matchare le keyword dell'offerta.`;
 
-    const tailor_model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash' });
-    const tailor_result = await tailor_model.generateContent(tailor_prompt);
-    const raw = tailor_result.response.text().trim();
+    const raw = await generateText(tailor_prompt, { maxTokens: 3000 });
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     const aiResult = JSON.parse(jsonStr) as {
       title: string;

@@ -1,46 +1,48 @@
 @import "tailwindcss";
+@import url('https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&f[]=satoshi@400,500,700&display=swap');
 
 /* ─── RESET ─────────────────────────────────────────────────── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ─── DESIGN TOKENS ──────────────────────────────────────────── */
+/* ─── DESIGN TOKENS (Carta & Inchiostro) ───────────────────────── */
 :root {
-  /* Core palette */
-  --navy:    #0F172A;
-  --navy2:   #1E293B;
-  --gold:    #6366F1; /* Indigo */
-  --gold2:   #8B5CF6; /* Violet */
+  /* Core palette — matches dashboard's .dv3 tokens */
+  --navy:    #14171F; /* ink */
+  --navy2:   #0B0D12; /* darker ink */
+  --gold:    #2F2AE5; /* accent indigo */
+  --gold2:   #221FB4; /* accent hover */
   --white:   #FFFFFF;
 
   /* Neutral scale */
-  --bg:       #FFFFFF;
+  --bg:       #FAFAFC;
   --surface:  #FFFFFF;
-  --border:   rgba(15, 23, 42, 0.08);
-  --gray50:   #F8FAFC;
-  --gray100:  #F1F5F9;
-  --gray300:  #CBD5E1;
-  --gray400:  #94A3B8;
-  --gray500:  #64748B;
-  --gray700:  #334155;
-  --text:     #0F172A;
+  --border:   rgba(20, 23, 31, 0.12);
+  --border-soft: rgba(20, 23, 31, 0.07);
+  --gray50:   #FAFAFC;
+  --gray100:  #F4F4F8;
+  --gray300:  #C7C9D1;
+  --gray400:  #9297A1;
+  --gray500:  #565B66;
+  --gray700:  #33363E;
+  --text:     #14171F;
 
   /* Status */
-  --success: #10B981;
+  --success: #12805C;
   --danger:  #EF4444;
 
   /* Spacing & shape */
-  --radius:    12px;
-  --radius-lg: 16px;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow:    0 8px 30px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.02);
-  --shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.02);
+  --radius:    10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(20, 23, 31, 0.04);
+  --shadow:    0 8px 30px rgba(20, 23, 31, 0.04), 0 2px 8px rgba(20, 23, 31, 0.02);
+  --shadow-lg: 0 20px 40px rgba(20, 23, 31, 0.08), 0 1px 3px rgba(20, 23, 31, 0.02);
 }
 
 /* ─── BASE ───────────────────────────────────────────────────── */
 html { font-size: 14px; scroll-behavior: smooth; }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -154,7 +156,7 @@ nav.app-nav {
 }
 
 .logo-text {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Switzer', sans-serif;
   color: var(--navy);
   font-size: 17px;
   font-weight: 700;
@@ -168,12 +170,12 @@ nav.app-nav {
 /* ─── BUTTONS ────────────────────────────────────────────────── */
 .btn {
   padding: 10px 22px;
-  border-radius: 100px;
+  border-radius: 10px;
   border: 1px solid transparent;
   cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Satoshi', sans-serif;
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 700;
   transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
@@ -311,10 +313,12 @@ nav.app-nav {
 /* ═══ EDITOR LAYOUT ═══ */
 .editor-layout {
   display: flex;
-  width: 100vw;
-  height: calc(100vh - 56px);
+  width: 100%;
+  height: calc(100vh - 84px);
   overflow: hidden;
   background: var(--gray50);
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
 }
 
 
@@ -2177,108 +2181,3 @@ nav.app-nav {
 }
 .btn-solid:active { transform: translateY(0); }
 
-/* ─── WORKSPACE SHELL — builder wrapped in a SaaS workspace ──── */
-.ws {
-  display: flex;
-  align-items: stretch;
-  background: #FCFBF8;
-  min-height: calc(100vh - 68px);
-}
-
-.ws-rail {
-  width: 236px;
-  flex-shrink: 0;
-  background: #FFFFFF;
-  border-right: 1px solid rgba(15, 23, 42, 0.07);
-  padding: 20px 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: sticky;
-  top: 68px;
-  height: calc(100vh - 68px);
-  overflow-y: auto;
-}
-
-.ws-rail-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 1.6px;
-  text-transform: uppercase;
-  color: var(--gray400);
-  padding: 0 10px;
-  margin-bottom: 10px;
-}
-
-.ws-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  padding: 10px 12px;
-  border: none;
-  background: transparent;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--gray500);
-  cursor: pointer;
-  text-align: left;
-  transition: background .15s, color .15s;
-}
-.ws-item > svg:first-child { flex-shrink: 0; }
-.ws-item:hover { background: #F6F5F0; color: var(--navy); }
-.ws-item--active { background: #EEF0FD; color: #2F2AE5; }
-.ws-item--active:hover { background: #EEF0FD; color: #2F2AE5; }
-.ws-item--locked { color: var(--gray400); font-weight: 500; }
-.ws-item--locked:hover { background: #F6F5F0; color: var(--gray500); }
-.ws-lock { margin-left: auto; color: var(--gray300); flex-shrink: 0; transition: color .15s; }
-.ws-item--locked:hover .ws-lock { color: #2F2AE5; }
-
-.ws-upsell {
-  margin-top: auto;
-  background: #EEF0FD;
-  border: 1px solid rgba(47, 42, 229, 0.16);
-  border-radius: 14px;
-  padding: 16px 15px;
-}
-.ws-upsell-title {
-  font-family: 'Switzer', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--navy);
-}
-.ws-upsell-sub {
-  font-size: 12px;
-  color: var(--gray500);
-  line-height: 1.5;
-  margin: 6px 0 12px;
-}
-
-.ws-main { flex: 1; min-width: 0; }
-.ws-main .editor-layout {
-  width: 100%;
-  height: calc(100vh - 68px);
-}
-
-@media (max-width: 900px) {
-  .ws { flex-direction: column; }
-  .ws-rail {
-    position: static;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-right: none;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
-    overflow-x: auto;
-  }
-  .ws-rail-label { display: none; }
-  .ws-item { width: auto; white-space: nowrap; padding: 8px 12px; }
-  .ws-lock { margin-left: 4px; }
-  .ws-upsell { display: none; }
-  .ws-main .editor-layout { height: auto; }
-}
