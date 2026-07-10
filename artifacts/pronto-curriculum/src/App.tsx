@@ -161,7 +161,7 @@ function AppSidebar({
 function AppInner() {
   const t = useT();
   const { lang, setLang } = useLanguage();
-  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, login, loginWithEmail, signUpWithEmail, logout } = useAuth();
   const [page, setPage] = useState<Page>('home');
   const [modal, setModal] = useState<ModalType>(null);
   const [aiLoadingText, setAiLoadingText] = useState('');
@@ -280,7 +280,7 @@ function AppInner() {
                 )}
               </>
             ) : (
-              <button className="btn btn-outline" onClick={login}>{t('nav.login')}</button>
+              <button className="btn btn-outline" onClick={() => openModal('signup')}>{t('nav.login')}</button>
             )}
             <button className="btn btn-gold" onClick={() => navigate('builder-step1')}>{t('nav.createCV')}</button>
           </div>
@@ -292,12 +292,12 @@ function AppInner() {
           <Home onNavigate={navigate} onModal={openModal} />
         )}
         {page === 'builder-step1' && (
-          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={login}>
+          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={() => openModal('signup')}>
             <CreateCvWizard onComplete={handleWizardComplete} />
           </WorkspaceShell>
         )}
         {page === 'builder-step2' && (
-          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={login}>
+          <WorkspaceShell page={page} isAuthenticated={isAuthenticated} onNavigate={navigate} onLogin={() => openModal('signup')}>
             <BuilderStep2
               cvData={cvData}
               onCVChange={setCvData}
@@ -318,21 +318,21 @@ function AppInner() {
           <TailorCv
             onNavigate={navigate}
             onCVLoaded={handleCVLoaded}
-            onLogin={login}
+            onLogin={() => openModal('signup')}
           />
         )}
         {page === 'candidature' && (
           <Candidature
             onNavigate={navigate}
             onCVLoaded={handleCVLoaded}
-            onLogin={login}
+            onLogin={() => openModal('signup')}
           />
         )}
         {page === 'dashboard' && (
           <Dashboard
             onNavigate={navigate}
             onCVLoaded={handleCVLoaded}
-            onLogin={login}
+            onLogin={() => openModal('signup')}
           />
         )}
       </main>
@@ -344,6 +344,8 @@ function AppInner() {
         onSuccess={handleSuccess}
         isAuthenticated={isAuthenticated}
         onLogin={login}
+        onLoginWithEmail={loginWithEmail}
+        onSignUpWithEmail={signUpWithEmail}
       />
       <Toaster position="bottom-center" richColors />
     </>

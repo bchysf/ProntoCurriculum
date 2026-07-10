@@ -15,6 +15,8 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: () => void;
+  loginWithEmail: (email: string, password: string) => Promise<string | null>;
+  signUpWithEmail: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
 }
 
@@ -82,6 +84,20 @@ export function useAuth(): AuthState {
     // Browser navigates away to Google and back — onAuthStateChange handles the rest.
   }, []);
 
+  const loginWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error?.message ?? null;
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    return error?.message ?? null;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -98,6 +114,8 @@ export function useAuth(): AuthState {
     isLoading,
     isAuthenticated: !!user,
     login,
+    loginWithEmail,
+    signUpWithEmail,
     logout,
   };
 }
