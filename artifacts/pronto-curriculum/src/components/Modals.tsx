@@ -75,86 +75,94 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
 
       {/* SIGNUP / LOGIN */}
       {modal === 'signup' && (
-        <div className="modal-box fade-in" style={{ textAlign: 'center' }}>
+        <div className="modal-box auth-card fade-in">
           <button className="modal-close" onClick={onClose}>×</button>
           {isAuthenticated ? (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-              <div className="modal-title">Hai già effettuato l'accesso</div>
-              <div className="modal-sub">Puoi scaricare il tuo CV e accedere a tutte le funzioni.</div>
-              <button className="btn btn-gold" style={{ width: '100%' }} onClick={onClose}>
+              <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
+              <div className="auth-title">Hai già effettuato l'accesso</div>
+              <div className="auth-sub">Puoi scaricare il tuo CV e accedere a tutte le funzioni.</div>
+              <button className="btn btn-gold auth-submit" onClick={onClose}>
                 Chiudi →
               </button>
             </>
           ) : signupDone ? (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📬</div>
-              <div className="modal-title">Controlla la tua email</div>
-              <div className="modal-sub">Ti abbiamo inviato un link di conferma per attivare l'account.</div>
-              <button className="btn btn-gold" style={{ width: '100%' }} onClick={onClose}>
-                Chiudi →
+              <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
+              <div className="auth-title">Controlla la tua email</div>
+              <div className="auth-sub">Ti abbiamo inviato un link di conferma a <strong>{email}</strong>. Aprilo per attivare il tuo account.</div>
+              <button className="btn btn-gold auth-submit" onClick={onClose}>
+                Ho capito
               </button>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🔐</div>
-              <div className="modal-title">{authTab === 'login' ? 'Accedi per continuare' : 'Crea un account'}</div>
-              <div className="modal-sub">Accedi per salvare i tuoi progressi, scaricare il CV e accedere all'archivio esperienze.</div>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <button
-                  type="button"
-                  className={`btn ${authTab === 'login' ? 'btn-gold' : 'btn-ghost'}`}
-                  style={{ flex: 1, fontSize: 13 }}
-                  onClick={() => { setAuthTab('login'); setAuthError(null); }}
-                >
-                  Accedi
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${authTab === 'signup' ? 'btn-gold' : 'btn-ghost'}`}
-                  style={{ flex: 1, fontSize: 13 }}
-                  onClick={() => { setAuthTab('signup'); setAuthError(null); }}
-                >
-                  Registrati
-                </button>
+              <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
+              <div className="auth-title">{authTab === 'login' ? 'Bentornato' : 'Crea il tuo account'}</div>
+              <div className="auth-sub">
+                {authTab === 'login'
+                  ? 'Accedi per ritrovare i tuoi CV, le candidature e l\'archivio esperienze.'
+                  : 'Salva i tuoi progressi, scarica il CV e gestisci le tue candidature.'}
               </div>
 
-              <form onSubmit={handleEmailAuth} style={{ textAlign: 'left', marginBottom: 12 }}>
-                <input
-                  type="email"
-                  required
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ width: '100%', marginBottom: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--gray200)' }}
-                />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{ width: '100%', marginBottom: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--gray200)' }}
-                />
-                {authError && <div style={{ color: 'var(--red, #d33)', fontSize: 13, marginBottom: 8 }}>{authError}</div>}
-                <button type="submit" className="btn btn-gold" style={{ width: '100%' }} disabled={authLoading}>
-                  {authLoading ? 'Attendi…' : authTab === 'login' ? 'Accedi →' : 'Registrati →'}
+              <button className="btn-google" onClick={() => { onClose(); onLogin(); }}>
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continua con Google
+              </button>
+
+              <div className="auth-divider">oppure</div>
+
+              <form onSubmit={handleEmailAuth}>
+                <div className="form-group">
+                  <label htmlFor="auth-email">Email</label>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="nome@esempio.it"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="auth-password">Password</label>
+                  <input
+                    id="auth-password"
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete={authTab === 'login' ? 'current-password' : 'new-password'}
+                    placeholder={authTab === 'signup' ? 'Minimo 6 caratteri' : '••••••••'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                {authError && <div className="auth-error">⚠ {authError}</div>}
+                <button type="submit" className="btn btn-gold auth-submit" disabled={authLoading}>
+                  {authLoading ? 'Attendi…' : authTab === 'login' ? 'Accedi' : 'Crea account'}
                 </button>
               </form>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0', color: 'var(--gray400)', fontSize: 12 }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--gray200)' }} />
-                oppure
-                <div style={{ flex: 1, height: 1, background: 'var(--gray200)' }} />
+              <div className="auth-switch">
+                {authTab === 'login' ? (
+                  <>Non hai un account?{' '}
+                    <button type="button" onClick={() => { setAuthTab('signup'); setAuthError(null); }}>Registrati</button>
+                  </>
+                ) : (
+                  <>Hai già un account?{' '}
+                    <button type="button" onClick={() => { setAuthTab('login'); setAuthError(null); }}>Accedi</button>
+                  </>
+                )}
               </div>
 
-              <button className="btn btn-outline" style={{ width: '100%', marginBottom: 12 }} onClick={() => { onClose(); onLogin(); }}>
-                Continua con Google →
-              </button>
-              <button className="btn btn-ghost" style={{ width: '100%', fontSize: 13 }} onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
-                ⬇ Continua senza account
+              <button className="auth-skip" onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
+                Continua senza account
               </button>
             </>
           )}
