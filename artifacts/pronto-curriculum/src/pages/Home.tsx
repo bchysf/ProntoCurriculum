@@ -79,8 +79,9 @@ const CSS = `
 /* NAV — sticky, frosted */
 .pc3 .topbar { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hair-soft); }
 .pc3 .topbar nav { display: flex; align-items: center; justify-content: space-between; height: 68px; }
-.pc3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 19px; letter-spacing: -0.03em; }
-.pc3 .brand i { font-style: normal; color: var(--accent); }
+.pc3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 19px; letter-spacing: -0.03em; display: flex; align-items: center; gap: 8px; }
+.pc3 .brand span { background: linear-gradient(90deg, var(--accent), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pc3 .brand img { width: 46px; height: 46px; object-fit: contain; flex-shrink: 0; }
 .pc3 .nav-links { display: flex; gap: 30px; font-size: 13.5px; font-weight: 500; color: var(--ink-60); }
 .pc3 .nav-links span { cursor: pointer; position: relative; transition: color .2s; }
 .pc3 .nav-links span::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1.5px; background: var(--accent); transform: scaleX(0); transform-origin: right; transition: transform .35s var(--ease); }
@@ -614,7 +615,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
       <header className="topbar">
         <div className="shell">
           <nav aria-label="Navigazione principale">
-            <div className="brand">ProntoCurriculum<i>.</i></div>
+            <div className="brand"><img src="/logo-icon.png" alt="" /><span>ProntoCurriculum</span></div>
             <div className="nav-links">
               <span>Come funziona</span><span>Template</span><span>Prezzi</span>
             </div>
@@ -817,7 +818,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
           <div>
             <div className="foot-grid">
               <div>
-                <div className="brand" style={{ fontSize: 17 }}>ProntoCurriculum<i>.</i></div>
+                <div className="brand" style={{ fontSize: 17 }}><img src="/logo-icon.png" alt="" style={{ width: 22, height: 22 }} /><span>ProntoCurriculum</span></div>
                 <p className="foot-about">
                   Il CV builder italiano con AI integrata: template ottimizzati ATS,
                   punteggio in tempo reale, traduzione in sei lingue e candidature tracciate.

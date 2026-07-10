@@ -92,7 +92,7 @@ function AppSidebar({
         {/* Header */}
         <div className="app-sidebar__header">
           <div className="app-sidebar__logo">
-            <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 15 }}>P</div>
+            <img src="/logo-icon.png" alt="" width={30} height={30} />
             <span className="logo-text" style={{ fontSize: 16 }}>Pronto<span>Curriculum</span></span>
           </div>
           <button className="app-sidebar__close" onClick={onClose} title="Chiudi">✕</button>
@@ -232,7 +232,7 @@ function AppInner() {
               </button>
             )}
             <div className="logo" onClick={() => navigate('home')}>
-              <div className="logo-icon">P</div>
+              <img src="/logo-icon.png" alt="" className="logo-icon" />
               <span className="logo-text">Pronto<span>Curriculum</span></span>
             </div>
           </div>

@@ -11,12 +11,36 @@ interface ModalsProps {
 }
 
 export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAuthenticated, onLogin }: ModalsProps) {
-  const [selectedTier, setSelectedTier] = useState<'monthly' | 'single'>('monthly');
+  const [selectedTier, setSelectedTier] = useState<'monthly' | 'annual' | 'single'>('monthly');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   if (!modal) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  const startCheckout = async (plan: 'monthly' | 'annual' | 'single') => {
+    if (!isAuthenticated) {
+      onClose();
+      onLogin();
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch('/api/billing/checkout-session', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   return (
@@ -56,25 +80,44 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
         <div className="modal-box fade-in">
           <button className="modal-close" onClick={onClose}>×</button>
           <div className="modal-title">Scegli il tuo piano</div>
-          <div className="modal-sub">Sblocca il tuo CV professionale senza filigrana.</div>
+          <div className="modal-sub">Sblocca il tuo CV professionale senza filigrana. Sconto -30% permanente.</div>
           <div className="tier-cards">
             <div className={`tier-card ${selectedTier === 'monthly' ? 'selected' : ''}`} onClick={() => setSelectedTier('monthly')}>
               <div className="tier-card-info">
                 <h4>⚡ Piano Mensile</h4>
-                <p>CV illimitati · Cover letter · ATS avanzato</p>
+                <p>100 CV al mese · AI rephrasing · niente filigrana</p>
               </div>
-              <div className="tier-price">€25<span style={{ fontSize: 14, fontWeight: 400 }}>/mese</span></div>
+              <div className="tier-price">
+                <span className="tier-price-old">€9,99</span>
+                €6,99<span style={{ fontSize: 14, fontWeight: 400 }}>/mese</span>
+                <span className="tier-badge">-30%</span>
+              </div>
+            </div>
+            <div className={`tier-card ${selectedTier === 'annual' ? 'selected' : ''}`} onClick={() => setSelectedTier('annual')}>
+              <div className="tier-card-info">
+                <h4>🏆 Piano Annuale</h4>
+                <p>CV illimitati per un anno intero</p>
+              </div>
+              <div className="tier-price">
+                <span className="tier-price-old">€49,99</span>
+                €34,99<span style={{ fontSize: 14, fontWeight: 400 }}>/anno</span>
+                <span className="tier-badge">-30%</span>
+              </div>
             </div>
             <div className={`tier-card ${selectedTier === 'single' ? 'selected' : ''}`} onClick={() => setSelectedTier('single')}>
               <div className="tier-card-info">
                 <h4>📄 Singolo CV</h4>
                 <p>Acquisto una tantum, nessun abbonamento</p>
               </div>
-              <div className="tier-price">€10</div>
+              <div className="tier-price">
+                <span className="tier-price-old">€2,99</span>
+                €1,99
+                <span className="tier-badge">-30%</span>
+              </div>
             </div>
           </div>
-          <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
-            Procedi al pagamento →
+          <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} disabled={checkoutLoading} onClick={() => startCheckout(selectedTier)}>
+            {checkoutLoading ? 'Attendi…' : 'Procedi al pagamento →'}
           </button>
           <button className="btn btn-ghost" style={{ width: '100%', fontSize: 13 }} onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
             ⬇ Continua gratis con filigrana

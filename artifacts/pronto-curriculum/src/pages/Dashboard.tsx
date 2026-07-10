@@ -297,7 +297,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
       {/* SIDEBAR */}
       <aside className="side">
-        <div className="brand" onClick={() => onNavigate('home')}>ProntoCurriculum<i>.</i></div>
+        <div className="brand" onClick={() => onNavigate('home')}><img src="/logo-icon.png" alt="" /><span>ProntoCurriculum</span></div>
         <span className="mono">Menu</span>
         {NAV.map(item => (
           <button key={item.label} className={`nav-item${item.active ? ' active' : ''}`} onClick={() => onNavigate(item.page)}>

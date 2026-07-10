@@ -8,6 +8,7 @@ import tailorCvRouter from "./tailorCv";
 import translateCvRouter from "./translateCv";
 import cvsRouter from "./cvs";
 import profileRouter from "./profile";
+import billingRouter from "./billing";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(tailorCvRouter);
 router.use(translateCvRouter);
 router.use(cvsRouter);
 router.use(profileRouter);
+router.use(billingRouter);
 
 export default router;

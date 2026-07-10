@@ -33,8 +33,9 @@ export const CARTA_INCHIOSTRO_CSS = `
 
 /* SIDEBAR */
 .dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 22px 14px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
-.dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 17px; letter-spacing: -0.03em; padding: 0 10px 22px; cursor: pointer; }
-.dv3 .brand i { font-style: normal; color: var(--accent); }
+.dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 17px; letter-spacing: -0.03em; padding: 0 10px 22px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.dv3 .brand span { background: linear-gradient(90deg, var(--accent), #7C5CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dv3 .brand img { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
 .dv3 .side .mono { padding: 0 10px 10px; display: block; }
 .dv3 .nav-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 12px; border: none; background: transparent; border-radius: 10px; font-family: var(--f-body); font-size: 13.5px; font-weight: 500; color: var(--ink-60); cursor: pointer; text-align: left; transition: background .15s, color .15s; margin-bottom: 2px; }
 .dv3 .nav-item:hover { background: #F4F4F8; color: var(--ink); }
