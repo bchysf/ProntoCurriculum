@@ -1,14 +1,16 @@
 import { CVData, TemplateType } from '../types';
 
-type CvLang = 'IT' | 'EN' | 'FR' | 'DE' | 'ES' | 'PT';
+export type CvLang = 'IT' | 'EN' | 'FR' | 'DE' | 'ES' | 'PT';
 
-const CV_LABELS: Record<CvLang, {
+export const CV_LABELS: Record<CvLang, {
   profile: string; profileShort: string;
   experience: string; experienceShort: string; experienceEuro: string;
   education: string; educationEuro: string;
   skills: string; languages: string; contacts: string;
   namePlaceholder: string; titlePlaceholder: string;
   emailLabel: string; phoneLabel: string; cityLabel: string; professionLabel: string;
+  privacyClause: string;
+  present: string; grade: string;
 }> = {
   IT: {
     profile: 'Profilo professionale', profileShort: 'Profilo',
@@ -17,6 +19,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Competenze', languages: 'Lingue', contacts: 'Contatti',
     namePlaceholder: 'Il tuo nome', titlePlaceholder: 'Titolo professionale',
     emailLabel: 'Indirizzo e-mail', phoneLabel: 'Telefono', cityLabel: 'Residenza', professionLabel: 'Professione',
+    privacyClause: 'Autorizzo il trattamento dei miei dati personali ai sensi del D.Lgs. 196/2003 e del Regolamento UE 2016/679 (GDPR).',
+    present: 'Presente', grade: 'Voto',
   },
   EN: {
     profile: 'Professional Profile', profileShort: 'Profile',
@@ -25,6 +29,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Skills', languages: 'Languages', contacts: 'Contacts',
     namePlaceholder: 'Your name', titlePlaceholder: 'Professional title',
     emailLabel: 'E-mail address', phoneLabel: 'Phone', cityLabel: 'Location', professionLabel: 'Profession',
+    privacyClause: 'I hereby authorize the processing of my personal data pursuant to EU Regulation 2016/679 (GDPR).',
+    present: 'Present', grade: 'Grade',
   },
   FR: {
     profile: 'Profil professionnel', profileShort: 'Profil',
@@ -33,6 +39,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Compétences', languages: 'Langues', contacts: 'Contacts',
     namePlaceholder: 'Votre nom', titlePlaceholder: 'Titre professionnel',
     emailLabel: 'Adresse e-mail', phoneLabel: 'Téléphone', cityLabel: 'Lieu', professionLabel: 'Profession',
+    privacyClause: "J'autorise le traitement de mes données personnelles conformément au Règlement UE 2016/679 (RGPD).",
+    present: "Aujourd'hui", grade: 'Note',
   },
   DE: {
     profile: 'Berufliches Profil', profileShort: 'Profil',
@@ -41,6 +49,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Kompetenzen', languages: 'Sprachen', contacts: 'Kontakt',
     namePlaceholder: 'Ihr Name', titlePlaceholder: 'Berufsbezeichnung',
     emailLabel: 'E-Mail-Adresse', phoneLabel: 'Telefon', cityLabel: 'Wohnort', professionLabel: 'Beruf',
+    privacyClause: 'Ich erkläre mich mit der Verarbeitung meiner personenbezogenen Daten gemäß EU-Verordnung 2016/679 (DSGVO) einverstanden.',
+    present: 'Heute', grade: 'Note',
   },
   ES: {
     profile: 'Perfil profesional', profileShort: 'Perfil',
@@ -49,6 +59,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Competencias', languages: 'Idiomas', contacts: 'Contactos',
     namePlaceholder: 'Tu nombre', titlePlaceholder: 'Título profesional',
     emailLabel: 'Dirección e-mail', phoneLabel: 'Teléfono', cityLabel: 'Ubicación', professionLabel: 'Profesión',
+    privacyClause: 'Autorizo el tratamiento de mis datos personales conforme al Reglamento UE 2016/679 (RGPD).',
+    present: 'Actualidad', grade: 'Nota',
   },
   PT: {
     profile: 'Perfil profissional', profileShort: 'Perfil',
@@ -57,6 +69,8 @@ const CV_LABELS: Record<CvLang, {
     skills: 'Competências', languages: 'Idiomas', contacts: 'Contactos',
     namePlaceholder: 'O seu nome', titlePlaceholder: 'Título profissional',
     emailLabel: 'Endereço e-mail', phoneLabel: 'Telefone', cityLabel: 'Localização', professionLabel: 'Profissão',
+    privacyClause: 'Autorizo o tratamento dos meus dados pessoais nos termos do Regulamento UE 2016/679 (RGPD).',
+    present: 'Atualidade', grade: 'Nota',
   },
 };
 
@@ -168,22 +182,28 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             </div>
           )}
         </div>
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
         <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
       </div>
     );
   }
 
-  if (template === 'europass') {
+  if (template === 'europass' || template === 'europass_pubblico') {
     return (
-      <div className="cv-doc cv-europass">
+      <div className={`cv-doc cv-europass ${template === 'europass_pubblico' ? 'cv-pubblico-mode' : ''}`} style={template === 'europass_pubblico' ? { padding: '24px 32px', fontSize: '95%' } : {}}>
         <div className="cveu-top-bar">
           <div className="cveu-eu-logo">
             <span className="cveu-stars">★ ★ ★ ★ ★</span>
-            <span className="cveu-label">Curriculum Vitae</span>
+            <span className="cveu-label">{template === 'europass_pubblico' ? 'Curriculum Vitae — Formato Pubblico PA' : 'Curriculum Vitae'}</span>
           </div>
           {hasPhoto && <img src={cvData.photo} alt="foto" className="cveu-photo" />}
         </div>
         <div className="cveu-name">{name}</div>
+        {template === 'europass_pubblico' && (
+          <div style={{ fontSize: 10, fontStyle: 'italic', color: '#334155', background: '#F8FAFC', padding: '8px 12px', borderRadius: 6, borderLeft: '3px solid #0F172A', margin: '10px 0 14px', lineHeight: 1.4, border: '1px solid #E2E8F0' }}>
+            <strong>Dichiarazione sostitutiva di certificazione (artt. 46 e 47 D.P.R. 445/2000):</strong> Il/La sottoscritto/a dichiara sotto la propria responsabilità che le informazioni, i titoli di studio e i periodi di servizio riportati nel presente curriculum vitae corrispondono al vero.
+          </div>
+        )}
         <div className="cveu-info-box">
           <div className="cveu-info-row"><span className="cveu-info-label">{t.emailLabel}</span><span>{cvData.email}</span></div>
           {cvData.phone && <div className="cveu-info-row"><span className="cveu-info-label">{t.phoneLabel}</span><span>{cvData.phone}</span></div>}
@@ -238,6 +258,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             <div className="cveu-text">{cvData.languages.filter(l => l.name).map(l => `${l.name}: ${l.level}`).join(' · ')}</div>
           </div>
         )}
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
         <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
       </div>
     );
@@ -329,6 +350,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             </div>
           )}
         </div>
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
         <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
       </div>
     );
@@ -416,6 +438,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
         <div className="cv-watermark">
           <div className="cv-watermark-logo">P</div>
           ProntoCurriculum.it
@@ -491,6 +514,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
         <div className="cv-watermark">
           <div className="cv-watermark-logo">P</div>
           ProntoCurriculum.it
@@ -573,6 +597,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         </>
       )}
 
+      <div className="cv-privacy-clause">{t.privacyClause}</div>
       <div className="cv-watermark">
         <div className="cv-watermark-logo">P</div>
         ProntoCurriculum.it

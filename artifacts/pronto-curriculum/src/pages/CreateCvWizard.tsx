@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { CVData, TemplateType } from '../types';
 import { extractTextFromPDF, extractPhotoFromPDF } from '../utils/parseCV';
-import { aiParseCV } from '../utils/aiParseCV';
+import { aiParseCV, aiParseLinkedInText } from '../utils/aiParseCV';
 import { LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { Icon, IC } from '../components/StrokeIcon';
 import CVPreview from '../components/CVPreview';
@@ -76,6 +76,8 @@ interface CreateCvWizardProps {
 export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
   const [step, setStep] = useState<Step>('source');
   const [source, setSource] = useState<Source | null>(null);
+  const [linkedInTab, setLinkedInTab] = useState<'pdf' | 'paste'>('pdf');
+  const [linkedInText, setLinkedInText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
@@ -115,6 +117,23 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
   };
 
   const extractAndContinue = async () => {
+    if (source === 'linkedin' && linkedInTab === 'paste') {
+      if (!linkedInText.trim()) return;
+      setExtracting(true);
+      setError('');
+      try {
+        const data = await aiParseLinkedInText(linkedInText);
+        setCvData({ ...BLANK_CV, ...data });
+        setStep('language');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
+        setError(`Impossibile convertire il testo LinkedIn: ${msg}`);
+      } finally {
+        setExtracting(false);
+      }
+      return;
+    }
+
     if (!file) return;
     setExtracting(true);
     setError('');
@@ -135,7 +154,7 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
     }
 
     try {
-      const data = await aiParseCV(text);
+      const data = await aiParseCV(text, source === 'linkedin');
       if (photo) data.photo = photo;
       setCvData({ ...BLANK_CV, ...data });
       setStep('language');
@@ -192,38 +211,84 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
 
           {(source === 'cv' || source === 'linkedin') && (
             <div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-              />
-              <div
-                className={`wiz-dropzone${dragOver ? ' drag' : ''}`}
-                onClick={() => fileRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-              >
-                <div className="wiz-dropzone-icon"><Icon d={IC.upload} size={20} /></div>
-                {file ? (
-                  <>
-                    <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>{file.name}</h3>
-                    <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>File caricato · clicca per cambiarlo</p>
-                  </>
-                ) : (
-                  <>
-                    <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>Trascina il file qui</h3>
-                    <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>o clicca per selezionarlo — PDF o Word</p>
-                  </>
-                )}
-              </div>
+              {source === 'linkedin' && (
+                <div style={{ display: 'flex', gap: 10, marginBottom: 20, justifyContent: 'center' }}>
+                  <button
+                    className={`btn btn-sm ${linkedInTab === 'pdf' ? 'btn-gold' : 'btn-ghost'}`}
+                    onClick={() => { setLinkedInTab('pdf'); setError(''); }}
+                    style={{ fontWeight: 700 }}
+                  >
+                    📄 Carica PDF LinkedIn
+                  </button>
+                  <button
+                    className={`btn btn-sm ${linkedInTab === 'paste' ? 'btn-gold' : 'btn-ghost'}`}
+                    onClick={() => { setLinkedInTab('paste'); setError(''); }}
+                    style={{ fontWeight: 700 }}
+                  >
+                    📋 Incolla Testo o URL
+                  </button>
+                </div>
+              )}
+
+              {source === 'linkedin' && linkedInTab === 'paste' ? (
+                <div style={{ marginBottom: 20 }}>
+                  <textarea
+                    rows={8}
+                    className="input"
+                    placeholder="Incolla qui tutto il testo del tuo profilo o della sezione Esperienze (es. copiatutto da LinkedIn con CTRL+A e incolla qui)..."
+                    value={linkedInText}
+                    onChange={(e) => setLinkedInText(e.target.value)}
+                    style={{ width: '100%', fontSize: 13.5, lineHeight: 1.6, padding: 12, borderRadius: 8, border: '1px solid var(--hair-soft)' }}
+                  />
+                  <p style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 6 }}>
+                    💡 Puoi copiare direttamente l'intero testo della tua pagina LinkedIn: l'Intelligenza Artificiale filtrerà ed estrarrà solo ruoli, date e competenze.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                  />
+                  <div
+                    className={`wiz-dropzone${dragOver ? ' drag' : ''}`}
+                    onClick={() => fileRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                  >
+                    <div className="wiz-dropzone-icon"><Icon d={IC.upload} size={20} /></div>
+                    {file ? (
+                      <>
+                        <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>{file.name}</h3>
+                        <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>File caricato · clicca per cambiarlo</p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>
+                          {source === 'linkedin' ? 'Trascina il PDF esportato da LinkedIn' : 'Trascina il file qui'}
+                        </h3>
+                        <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>
+                          {source === 'linkedin' ? 'Da LinkedIn: Il tuo profilo → Altro → Salva come PDF' : 'o clicca per selezionarlo — PDF o Word'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
               {error && <div className="wiz-error">{error}</div>}
               <div className="wiz-footer">
                 <button className="btn btn-ghost" onClick={() => { setSource(null); setFile(null); setError(''); }}>← Indietro</button>
-                <button className="btn btn-ink" disabled={!file || extracting} onClick={() => void extractAndContinue()}>
-                  {extracting ? 'Estrazione con AI…' : 'Continua'} <Icon d={IC.arrowRight} size={15} />
+                <button
+                  className="btn btn-ink"
+                  disabled={(source === 'linkedin' && linkedInTab === 'paste' ? !linkedInText.trim() : !file) || extracting}
+                  onClick={() => void extractAndContinue()}
+                >
+                  {extracting ? 'Analisi LinkedIn in corso…' : 'Continua e Genera'} <Icon d={IC.arrowRight} size={15} />
                 </button>
               </div>
             </div>

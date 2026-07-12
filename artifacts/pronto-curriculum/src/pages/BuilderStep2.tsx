@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { CVData, TemplateType, ModalType, SavedCV } from '../types';
+import { CVData, TemplateType, ModalType, SavedCV, Page } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
+import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
@@ -30,7 +31,7 @@ interface BuilderStep2Props {
   selectedTemplate: TemplateType;
   onTemplateChange: (t: TemplateType) => void;
   initialLanguage?: SupportedLanguage;
-  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio' | 'tailor') => void;
+  onNavigate: (page: Page) => void;
   onModal: (modal: ModalType) => void;
   onAiAction: (text: string, callback: () => void) => void;
   onGoToArchivio: () => void;
@@ -150,6 +151,165 @@ function computeATSScore(cv: CVData, jd: string): ATSResult {
     chronometric: { score: chronoScore, max: 20, details: chronoDetails },
   };
 }
+
+// ── "Studio" builder chrome — resume.io-inspired structure, Carta & Inchiostro skin.
+const RB_CSS = `
+.rb { height: 100vh; display: flex; flex-direction: column; background: #fff; font-family: var(--f-body, 'Satoshi', sans-serif); }
+.rb * { box-sizing: border-box; }
+
+/* topbar */
+.rb-top { height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #fff; border-bottom: 1px solid rgba(20,23,31,.07); position: relative; z-index: 30; }
+.rb-doc { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 0; }
+.rb-doc input { font-family: var(--f-display, 'Switzer', sans-serif); font-weight: 700; font-size: 14.5px; letter-spacing: -0.01em; color: var(--ink, #14171F); border: 1px solid transparent; border-radius: 8px; padding: 6px 9px; min-width: 60px; width: 100%; max-width: 300px; outline: none; background: transparent; }
+.rb-doc input:hover { border-color: rgba(20,23,31,.12); }
+.rb-doc input:focus { border-color: var(--gold, #2F2AE5); background: #fff; }
+.rb-saved { font-size: 11.5px; color: #9297A1; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.rb-saved i { width: 6px; height: 6px; border-radius: 50%; background: #12805C; }
+
+.rb-tabs { display: flex; gap: 2px; background: #F1F2F6; border-radius: 11px; padding: 3px; flex-shrink: 0; }
+.rb-tab { border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; color: #565B66; padding: 8px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; transition: all .15s; }
+.rb-tab:hover { color: var(--ink, #14171F); }
+.rb-tab.on { background: #fff; color: var(--ink, #14171F); box-shadow: 0 1px 4px rgba(20,23,31,.09); }
+.rb-tab .aidot { font-size: 8.5px; font-weight: 800; background: var(--tint, #EEEDFC); color: var(--gold, #2F2AE5); border-radius: 99px; padding: 2px 6px; letter-spacing: .04em; }
+
+.rb-actions { display: flex; align-items: center; gap: 8px; flex: 1 1 0; justify-content: flex-end; }
+.rb-dl-wrap { position: relative; }
+.rb-dl-menu { position: absolute; top: calc(100% + 6px); right: 0; background: #fff; border: 1px solid rgba(20,23,31,.1); border-radius: 12px; box-shadow: 0 16px 40px rgba(20,23,31,.16); padding: 6px; min-width: 230px; z-index: 50; }
+.rb-dl-item { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink, #14171F); padding: 10px 12px; border-radius: 8px; cursor: pointer; text-align: left; }
+.rb-dl-item:hover { background: #F4F4F8; }
+.rb-dl-item:disabled { opacity: .5; cursor: default; }
+.rb-dl-item small { margin-left: auto; font-size: 10.5px; color: #9297A1; font-weight: 500; }
+.rb-dl-sep { border: none; border-top: 1px solid rgba(20,23,31,.07); margin: 5px 8px; }
+
+/* split */
+.rb-split { flex: 1; display: flex; min-height: 0; }
+.rb-form { flex: 1 1 50%; min-width: 0; overflow-y: auto; background: #fff; padding: 26px 34px 90px; position: relative; }
+.rb-form-inner { max-width: 620px; margin: 0 auto; }
+
+/* completeness */
+.rb-comp { margin-bottom: 8px; }
+.rb-comp-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.rb-comp-badge { background: #E7F5EE; color: #12805C; font-weight: 800; font-size: 13px; border-radius: 8px; padding: 4px 9px; }
+.rb-comp-badge.low { background: #FDF3E4; color: #B7791F; }
+.rb-comp-row span { font-size: 13.5px; font-weight: 600; color: #565B66; }
+.rb-comp-bar { height: 6px; background: #EDEDF2; border-radius: 99px; overflow: hidden; }
+.rb-comp-bar i { display: block; height: 100%; border-radius: 99px; background: #12805C; transition: width .5s cubic-bezier(0.16,1,0.3,1); }
+.rb-comp-bar i.low { background: #D99A2B; }
+
+.rb-sugg { margin: 18px 0 26px; display: flex; flex-direction: column; }
+.rb-sugg-item { display: flex; align-items: center; gap: 12px; border: none; background: none; font-family: inherit; text-align: left; padding: 10px 8px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink, #14171F); }
+.rb-sugg-item:hover { background: #F7F7FA; }
+.rb-sugg-badge { min-width: 34px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: #EDEDF2; color: #565B66; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.rb-sugg-badge.ai { background: var(--tint, #EEEDFC); color: var(--gold, #2F2AE5); }
+.rb-sugg-item .go { margin-left: auto; color: #C2C5CC; }
+
+/* accordion & inputs restyle (scoped) */
+.rb .acc { background: #fff; border: none; border-top: 1px solid rgba(20,23,31,.08); border-radius: 0; margin: 0; }
+.rb .acc:last-of-type { border-bottom: 1px solid rgba(20,23,31,.08); }
+.rb .acc-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 18px 4px; font-family: var(--f-display, 'Switzer', sans-serif); font-size: 17px; font-weight: 700; letter-spacing: -0.015em; color: var(--ink, #14171F); cursor: pointer; }
+.rb .acc-chevron { font-size: 10px; color: #9297A1; }
+.rb .acc-content { padding: 2px 4px 22px; }
+.rb .form-group label { font-size: 12px; font-weight: 600; color: #565B66; margin-bottom: 6px; display: block; }
+.rb .form-group input, .rb .form-group textarea, .rb .form-group select {
+  width: 100%; background: #F1F2F6; border: 1px solid transparent; border-radius: 10px;
+  padding: 11px 13px; font-family: inherit; font-size: 13.5px; color: var(--ink, #14171F); outline: none; transition: all .15s;
+}
+.rb .form-group input:focus, .rb .form-group textarea:focus, .rb .form-group select:focus { background: #fff; border-color: var(--gold, #2F2AE5); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+.rb .exp-block { background: #FAFAFC; border: 1px solid rgba(20,23,31,.07); border-radius: 12px; padding: 14px 16px 16px; margin-bottom: 12px; }
+.rb .exp-block .form-group input, .rb .exp-block .form-group textarea, .rb .exp-block .form-group select { background: #fff; border-color: rgba(20,23,31,.08); }
+
+/* floating AI pill */
+.rb-ai-pill { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid var(--gold, #2F2AE5); color: var(--gold, #2F2AE5); font-family: inherit; font-size: 13.5px; font-weight: 800; border-radius: 99px; padding: 11px 20px; cursor: pointer; box-shadow: 0 10px 28px rgba(47,42,229,.18); z-index: 20; }
+.rb-ai-pill:hover { background: var(--tint, #EEEDFC); }
+.rb-form-col { flex: 1 1 50%; min-width: 0; position: relative; display: flex; flex-direction: column; }
+
+/* preview pane */
+.rb-prev { flex: 1 1 50%; min-width: 0; background: #E9EAEF; position: relative; display: flex; flex-direction: column; }
+.rb-prev-scroll { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 26px 18px 70px; }
+.rb-ats-chip { position: absolute; top: 14px; right: 16px; z-index: 10; display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid rgba(20,23,31,.1); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(20,23,31,.08); }
+.rb-ats-chip:hover { border-color: var(--gold, #2F2AE5); }
+.rb-ats-chip .lbl { font-size: 10px; font-weight: 800; letter-spacing: .08em; color: #565B66; }
+.rb-ats-chip .track { width: 64px; height: 5px; background: #EDEDF2; border-radius: 99px; overflow: hidden; }
+.rb-ats-chip .track i { display: block; height: 100%; border-radius: 99px; }
+.rb-ats-chip .num { font-size: 12.5px; font-weight: 800; }
+.rb-tpl-pill { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 9px; background: rgba(20,23,31,.92); color: #fff; border: none; font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 99px; padding: 10px 18px; cursor: pointer; z-index: 10; box-shadow: 0 10px 26px rgba(20,23,31,.3); }
+.rb-tpl-pill:hover { background: var(--ink, #14171F); }
+.rb-tpl-pill em { font-style: normal; color: #BE9CFF; }
+
+/* full-width panes (template / ats) */
+.rb-pane { flex: 1; overflow-y: auto; background: #FAFAFC; padding: 30px 38px 80px; }
+.rb-pane-inner { max-width: 1080px; margin: 0 auto; }
+.rb-pane-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.rb-pane-head h2 { font-family: var(--f-display, 'Switzer', sans-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.rb-pane-head p { font-size: 13.5px; color: #565B66; margin: 5px 0 0; }
+
+.rb-tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.rb-tpl-card { background: none; border: none; padding: 0; cursor: pointer; text-align: left; font-family: inherit; }
+.rb-tpl-shot { aspect-ratio: 210 / 280; background: #fff; border: 1px solid rgba(20,23,31,.08); border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 2px 10px rgba(20,23,31,.05); transition: all .18s; }
+.rb-tpl-card:hover .rb-tpl-shot { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(20,23,31,.13); }
+.rb-tpl-card.on .rb-tpl-shot { outline: 3px solid var(--gold, #2F2AE5); outline-offset: 2px; }
+.rb-tpl-shot .zoomwrap { transform: scale(var(--s)); transform-origin: top left; width: 595px; pointer-events: none; }
+.rb-tpl-meta { display: flex; align-items: center; gap: 8px; padding: 10px 4px 0; }
+.rb-tpl-meta b { font-size: 13.5px; color: var(--ink, #14171F); }
+.rb-tpl-meta .ats-ok { margin-left: auto; font-size: 10px; font-weight: 800; color: #12805C; letter-spacing: .04em; }
+.rb-tpl-onbadge { position: absolute; top: 10px; left: 10px; background: var(--gold, #2F2AE5); color: #fff; font-size: 10px; font-weight: 800; border-radius: 99px; padding: 4px 10px; z-index: 2; }
+
+.rb-panel { background: #fff; border: 1px solid rgba(20,23,31,.07); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+.rb-ring-row { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.rb-ring { width: 104px; height: 104px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rb-ring > div { width: 78px; height: 78px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.rb-ring b { font-family: var(--f-display, 'Switzer', sans-serif); font-size: 24px; font-weight: 700; line-height: 1; }
+.rb-ring small { font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #9297A1; margin-top: 2px; }
+.rb-kpi { flex: 1; min-width: 260px; }
+.rb-kpi-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(20,23,31,.06); }
+.rb-kpi-row:last-child { border-bottom: none; }
+.rb-kpi-row b { font-size: 13px; font-weight: 600; width: 210px; flex-shrink: 0; }
+.rb-kpi-bar { flex: 1; height: 6px; background: #EDEDF2; border-radius: 99px; overflow: hidden; }
+.rb-kpi-bar i { display: block; height: 100%; border-radius: 99px; }
+.rb-kpi-row .v { font-family: var(--f-mono, monospace); font-size: 11px; width: 48px; text-align: right; flex-shrink: 0; }
+.rb-kpi-issues { font-size: 12px; color: #565B66; margin-top: 4px; padding-left: 222px; }
+.rb-kw { display: inline-flex; font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 99px; margin: 0 6px 6px 0; }
+.rb-kw.ok { background: #E7F5EE; color: #12805C; }
+.rb-kw.miss { background: #FDF0F0; color: #B23B3B; }
+
+@media (max-width: 980px) {
+  .rb-prev { display: none; }
+  .rb-tabs { display: none; }
+}
+`;
+
+// Nine concrete checks → completeness % shown above the form (resume.io-style).
+function computeCompleteness(cv: CVData, jd: string): { pct: number; missing: string[] } {
+  const checks: Array<[boolean, string]> = [
+    [!!(cv.firstName && cv.lastName), 'nome'],
+    [!!cv.title, 'titolo'],
+    [!!cv.email, 'email'],
+    [!!(cv.phone || cv.city), 'contatti'],
+    [(cv.summary?.trim().length ?? 0) >= 60, 'profilo'],
+    [cv.experiences.some(e => (e.role || e.company) && (e.desc?.trim().length ?? 0) > 30), 'esperienze'],
+    [cv.education.some(e => e.degree || e.institution), 'formazione'],
+    [cv.skills.length >= 4, 'competenze'],
+    [cv.languages.some(l => l.name), 'lingue'],
+  ];
+  const done = checks.filter(([ok]) => ok).length;
+  return { pct: Math.round((done / checks.length) * 100), missing: checks.filter(([ok]) => !ok).map(([, k]) => k) };
+}
+
+const TPL_LIST: Array<{ id: TemplateType; name: string }> = [
+  { id: 'modern', name: 'Moderno' },
+  { id: 'minimal', name: 'Minimal' },
+  { id: 'executive', name: 'Executive' },
+  { id: 'professionale', name: 'Professionale' },
+  { id: 'europass', name: 'Europass' },
+  { id: 'europass_pubblico', name: 'Europass PA' },
+  { id: 'classico', name: 'Classico' },
+  { id: 'tecnico', name: 'Tecnico' },
+  { id: 'compatto', name: 'Compatto' },
+  { id: 'milano', name: 'Milano' },
+  { id: 'elegante', name: 'Elegante' },
+  { id: 'nordico', name: 'Nordico' },
+  { id: 'corporate', name: 'Corporate' },
+];
 
 function AccordionSection({
   title, open, onToggle, children,
@@ -285,6 +445,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [downloadingDOCX, setDownloadingDOCX] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
@@ -412,6 +573,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const [jobDescription, setJobDescription] = useState('');
   const [showATSDetails, setShowATSDetails] = useState(false);
+  const [rbTab, setRbTab] = useState<'edit' | 'custom' | 'ats'>('edit');
+  const [dlOpen, setDlOpen] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(420);
   const isResizing = useRef(false);
@@ -470,9 +633,21 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     setDownloading(true);
     try {
       const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
-      await downloadCVAsPDF(name, cvData, selectedTemplate);
+      await downloadCVAsPDF(name, cvData, selectedTemplate, selectedLanguage);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadDOCX = async () => {
+    setDownloadingDOCX(true);
+    try {
+      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
+      await downloadCVAsDOCX(name, cvData, selectedTemplate, selectedLanguage);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+    } finally {
+      setDownloadingDOCX(false);
     }
   };
 
@@ -502,7 +677,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         skills: result.skillCategories?.flatMap(c => c.skills) ?? cvData.skills,
         skillCategories: result.skillCategories?.length ? result.skillCategories : cvData.skillCategories,
       });
-    } catch {
+      toast.success('CV ottimizzato con AI');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -568,7 +745,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     try {
       const result = await aiOptimizeSummary(cvData, selectedLanguage);
       onCVChange({ ...cvData, summary: result });
-    } catch {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -614,7 +792,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     try {
       const result = await aiTranslateField('summary', cvData.summary, selectedLanguage);
       onCVChange({ ...cvData, summary: result });
-    } catch {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore durante la traduzione');
     } finally {
       setTranslating(false);
       setModal(null);
@@ -631,7 +810,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       const updated = [...cvData.experiences];
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
-    } catch {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore durante la traduzione');
     } finally {
       setTranslating(false);
       setModal(null);
@@ -648,7 +828,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       const updated = [...cvData.experiences];
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
-    } catch {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -744,7 +925,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const hasPhotoTemplate = selectedTemplate === 'executive' || selectedTemplate === 'professionale' || selectedTemplate === 'modern';
 
   const ats = computeATSScore(cvData, jobDescription);
-  const atsColor = ats.total >= 80 ? 'var(--success)' : ats.total >= 50 ? 'var(--gold)' : 'var(--danger)';
+  const atsColor = ats.total >= 80 ? 'var(--success)' : ats.total >= 50 ? '#D99A2B' : 'var(--danger)';
+  const completeness = computeCompleteness(cvData, jobDescription);
 
   return (
     <>
@@ -759,84 +941,118 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         </div>
       )}
 
-      <div className="editor-layout">
-        {/* ── SIDEBAR ── */}
-        <aside className="editor-sidebar" style={{ width: sidebarWidth }}>
-          <div className="sidebar-header">
-            <div>
-              <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 16, fontWeight: 560, color: 'var(--navy)' }}>Costruisci il tuo CV</div>
-              <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 2 }}>Anteprima live in tempo reale</div>
-            </div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {isAuthenticated && (
-                <button
-                  title={t('builder.saveCV')}
-                  className="btn btn-ghost btn-sm"
-                  style={{ padding: '7px 10px' }}
-                  onClick={() => setShowSaveForm(v => !v)}
-                >
-                  <Icon d={IC.save} size={14} />
-                </button>
-              )}
-              <button className="btn-optimize-all" onClick={handleOptimizeAll} disabled={optimizing}>
-                <Icon d={IC.spark} size={14} />
-                {optimizing ? 'Ottimizzazione...' : 'AI ottimizza'}
+      <div className="rb">
+        <style>{RB_CSS}</style>
+
+        {/* ── TOPBAR ── */}
+        <div className="rb-top">
+          <div className="rb-doc">
+            <input
+              type="text"
+              value={saveName}
+              placeholder={`${cvData.firstName || 'Il mio'} ${cvData.lastName || 'CV'}`.trim()}
+              onChange={e => setSaveName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && isAuthenticated) void handleSaveCV(); }}
+              title="Nome del documento"
+            />
+            {isAuthenticated ? (
+              <button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap', flexShrink: 0 }} onClick={() => void handleSaveCV()} disabled={isSaving}>
+                {isSaving ? 'Salvataggio…' : t('builder.saveCV')}
               </button>
-            </div>
+            ) : (
+              <span className="rb-saved"><i /> Bozza locale</span>
+            )}
           </div>
 
-          {/* Save CV form */}
-          {showSaveForm && isAuthenticated && (
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: '#FBFAF7' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 7 }}>{t('builder.saveCV')}</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <input
-                  type="text"
-                  value={saveName}
-                  onChange={e => setSaveName(e.target.value)}
-                  placeholder={`${cvData.firstName || 'Mario'} ${cvData.lastName || 'Rossi'} CV`}
-                  onKeyDown={e => { if (e.key === 'Enter') void handleSaveCV(); if (e.key === 'Escape') setShowSaveForm(false); }}
-                  style={{ flex: 1, padding: '6px 10px', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, color: 'var(--navy)', outline: 'none', background: '#fff' }}
-                />
-                <button
-                  className="btn btn-gold btn-sm"
-                  style={{ fontSize: 12, whiteSpace: 'nowrap' }}
-                  onClick={() => void handleSaveCV()}
-                  disabled={isSaving}
-                >
-                  {isSaving ? '...' : 'Salva'}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="rb-tabs">
+            <button className={`rb-tab${rbTab === 'edit' ? ' on' : ''}`} onClick={() => setRbTab('edit')}>Modifica</button>
+            <button className={`rb-tab${rbTab === 'custom' ? ' on' : ''}`} onClick={() => setRbTab('custom')}>Template</button>
+            <button className={`rb-tab${rbTab === 'ats' ? ' on' : ''}`} onClick={() => setRbTab('ats')}>Analisi ATS</button>
+            <button className="rb-tab" onClick={() => onNavigate('tailor')}>Su misura <span className="aidot">AI</span></button>
+          </div>
 
-          <div className="sidebar-scroll">
-            {/* CV SU MISURA BANNER */}
-            {isAuthenticated && (
-              <div
-                style={{
-                  margin: '0 0 8px 0',
-                  padding: '12px 16px',
-                  background: '#EEF0FD',
-                  border: '1px solid rgba(47, 42, 229, 0.16)',
-                  borderRadius: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  cursor: 'pointer',
-                }}
-                onClick={() => onNavigate('tailor')}
-              >
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#221FB4', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Icon d={IC.spark} size={13} /> CV su misura
+          <div className="rb-actions">
+            <button className="btn btn-ghost btn-sm" style={{ gap: 6 }} onClick={handlePreview} disabled={previewing}>
+              {previewing ? '…' : <Icon d={IC.eye} size={14} />} Anteprima
+            </button>
+            <div className="rb-dl-wrap">
+              <button className="btn btn-gold btn-sm" style={{ gap: 7 }} onClick={() => setDlOpen(v => !v)}>
+                <Icon d={IC.download} size={14} /> Scarica <span style={{ fontSize: 9, marginLeft: 1 }}>▼</span>
+              </button>
+              {dlOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setDlOpen(false)} />
+                  <div className="rb-dl-menu">
+                    <button className="rb-dl-item" disabled={downloading || downloadingDOCX} onClick={() => { setDlOpen(false); void handleDownload(); }}>
+                      <Icon d={IC.download} size={14} /> Scarica in PDF <small>.pdf</small>
+                    </button>
+                    <button className="rb-dl-item" disabled={downloading || downloadingDOCX} onClick={() => { setDlOpen(false); void handleDownloadDOCX(); }}>
+                      <Icon d={IC.doc} size={14} /> Scarica in Word <small>.docx</small>
+                    </button>
+                    <hr className="rb-dl-sep" />
+                    <button className="rb-dl-item" onClick={() => { setDlOpen(false); onNavigate('cover-letter'); }}>
+                      <Icon d={IC.spark} size={14} /> Lettera di presentazione <small>AI</small>
+                    </button>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--gray500)' }}>L'AI adatta il CV a una specifica offerta</div>
-                </div>
-                <div style={{ color: '#2F2AE5', flexShrink: 0, display: 'flex' }}><Icon d={IC.arrowRight} size={16} /></div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {rbTab === 'edit' && (
+        <div className="rb-split">
+          {/* ── FORM ── */}
+          <div className="rb-form-col">
+          <div className="rb-form">
+            <div className="rb-form-inner">
+            {/* Completezza */}
+            <div className="rb-comp">
+              <div className="rb-comp-row">
+                <span className={`rb-comp-badge${completeness.pct < 60 ? ' low' : ''}`}>{completeness.pct}%</span>
+                <span>Completezza del CV</span>
               </div>
-            )}
+              <div className="rb-comp-bar"><i className={completeness.pct < 60 ? 'low' : ''} style={{ width: `${completeness.pct}%` }} /></div>
+            </div>
+
+            {/* Suggerimenti */}
+            <div className="rb-sugg">
+              {(cvData.summary?.trim().length ?? 0) < 60 && (
+                <button className="rb-sugg-item" onClick={handleOptimizeSummary} disabled={optimizing || translating}>
+                  <span className="rb-sugg-badge ai"><Icon d={IC.spark} size={13} /></span>
+                  Prova il profilo scritto dall'AI
+                  <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
+                </button>
+              )}
+              {cvData.skills.length < 6 && (
+                <button className="rb-sugg-item" onClick={() => setOpenSections(prev => new Set([...prev, 'skills']))}>
+                  <span className="rb-sugg-badge">+{6 - cvData.skills.length}</span>
+                  Aggiungi competenze
+                  <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
+                </button>
+              )}
+              {!cvData.experiences.some(e => (e.desc?.trim().length ?? 0) > 30) && (
+                <button className="rb-sugg-item" onClick={() => setOpenSections(prev => new Set([...prev, 'experiences']))}>
+                  <span className="rb-sugg-badge">+1</span>
+                  Completa le descrizioni delle esperienze
+                  <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
+                </button>
+              )}
+              {hasPhotoTemplate && !cvData.photo && (
+                <button className="rb-sugg-item" onClick={() => photoInputRef.current?.click()}>
+                  <span className="rb-sugg-badge">+1</span>
+                  Aggiungi una foto profilo
+                  <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
+                </button>
+              )}
+              {!jobDescription.trim() && (
+                <button className="rb-sugg-item" onClick={() => setRbTab('ats')}>
+                  <span className="rb-sugg-badge ai"><Icon d={IC.spark} size={13} /></span>
+                  Confronta il CV con un annuncio di lavoro
+                  <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
+                </button>
+              )}
+            </div>
 
             {/* LINGUA DEL CV */}
             <div style={{
@@ -1381,48 +1597,6 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </button>
             </AccordionSection>
 
-            {/* ATS */}
-            <AccordionSection title="Analisi ATS" open={openSections.has('ats')} onToggle={() => toggleSection('ats')}>
-              <div style={{ fontSize: 12, color: 'var(--gray500)', marginBottom: 12, lineHeight: 1.5 }}>
-                Incolla l'annuncio di lavoro per calcolare la compatibilità con i sistemi ATS e scoprire le keyword mancanti.
-              </div>
-              <div className="form-group">
-                <label>Descrizione offerta di lavoro (Job Description)</label>
-                <textarea
-                  rows={5}
-                  placeholder="Incolla qui il testo dell'annuncio di lavoro..."
-                  value={jobDescription}
-                  onChange={e => setJobDescription(e.target.value)}
-                  style={{ fontSize: 12 }}
-                />
-              </div>
-              {!ats.keywords.hasJD && (
-                <div style={{ fontSize: 12, color: 'var(--gray500)', background: 'var(--gray50)', borderRadius: 8, padding: '10px 12px' }}>
-                  Senza job description il punteggio keyword è 0/50. Incolla l'annuncio per un'analisi completa.
-                </div>
-              )}
-              {ats.keywords.hasJD && ats.keywords.missing.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>Keyword mancanti nel CV:</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {ats.keywords.missing.map(kw => (
-                      <span key={kw} style={{ fontSize: 11, background: '#FFF3F3', color: 'var(--danger)', border: '1px solid #FFCECE', borderRadius: 6, padding: '3px 8px' }}>{kw}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {ats.keywords.hasJD && ats.keywords.matched.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>Keyword presenti nel CV:</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {ats.keywords.matched.map(kw => (
-                      <span key={kw} style={{ fontSize: 11, background: '#F0FFF7', color: 'var(--success)', border: '1px solid #B3EECE', borderRadius: 6, padding: '3px 8px' }}>{kw}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </AccordionSection>
-
             {/* LINGUE */}
             <AccordionSection title="Lingue" open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
               {cvData.languages.map(lang => (
@@ -1455,94 +1629,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 + Aggiungi lingua
               </button>
             </AccordionSection>
+            </div>
           </div>
 
-          <div className="sidebar-footer">
-            <button className="btn btn-gold btn-lg" style={{ width: '100%', gap: 8 }} onClick={handleDownload} disabled={downloading}>
-              {downloading ? 'Generazione PDF…' : <><Icon d={IC.download} size={15} /> Scarica il tuo CV in PDF</>}
+          <button className="rb-ai-pill" onClick={handleOptimizeAll} disabled={optimizing || translating}>
+            <Icon d={IC.spark} size={15} /> {optimizing ? 'Ottimizzazione…' : 'Ottimizza tutto con AI'}
+          </button>
+          </div>
+
+          {/* ── ANTEPRIMA ── */}
+          <div className="rb-prev">
+            <button className="rb-ats-chip" onClick={() => setRbTab('ats')} title="Apri l'analisi ATS completa">
+              <span className="lbl">ATS</span>
+              <span className="track"><i style={{ width: `${ats.total}%`, background: atsColor }} /></span>
+              <span className="num" style={{ color: atsColor }}>{ats.total}</span>
             </button>
-          </div>
-        </aside>
-
-        {/* ── RESIZE HANDLE ── */}
-        <div className="resize-handle" onMouseDown={handleResizeStart} />
-
-        {/* ── PREVIEW ── */}
-        <main className="editor-preview">
-          <div className="preview-toolbar" style={{ flexDirection: 'column', gap: 0, padding: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px' }}>
-              <button
-                className="ats-score-btn"
-                onClick={() => setShowATSDetails(v => !v)}
-                style={{ '--ats-color': atsColor } as React.CSSProperties}
-              >
-                <span className="ats-score-label">ATS Score</span>
-                <div className="ats-score-bar-wrap">
-                  <div className="ats-score-bar-fill" style={{ width: `${ats.total}%`, background: atsColor }} />
-                </div>
-                <span className="ats-score-num" style={{ color: atsColor }}>{ats.total}/100</span>
-                <span className="ats-score-chevron">{showATSDetails ? '▲' : '▼'}</span>
-              </button>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 'auto' }}>
-                <button className="btn btn-ghost btn-sm" style={{ gap: 6 }} onClick={handlePreview} disabled={previewing} title="Anteprima PDF in nuova scheda">
-                  {previewing ? '…' : <Icon d={IC.eye} size={13} />} Anteprima
-                </button>
-                <button className="btn btn-gold btn-sm" style={{ gap: 6 }} onClick={handleDownload} disabled={downloading}>
-                  {downloading ? 'Generando...' : <><Icon d={IC.download} size={13} /> PDF</>}
-                </button>
+            <div className="rb-prev-scroll" ref={previewRef}>
+              <div className="cv-sheet" style={{ zoom: cvScale }}>
+                <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
               </div>
             </div>
-
-            {/* Template selector button */}
-            <div style={{ padding: '4px 16px 10px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowTemplateModal(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600 }}
-              >
-                <Icon d={IC.palette} size={14} /> Seleziona modello
-              </button>
-              <span style={{ fontSize: 12, color: 'var(--gray500)', fontWeight: 500 }}>
-                Template attivo: <strong style={{ color: 'var(--navy)' }}>{selectedTemplate.charAt(0).toUpperCase() + selectedTemplate.slice(1)}</strong>
-              </span>
-            </div>
-
-            {showATSDetails && (
-              <div className="ats-details-panel">
-                <div className="ats-indicator">
-                  <div className="ats-indicator-header">
-                    <span className="ats-indicator-title">Parsing Strutturale</span>
-                    <span className="ats-indicator-score" style={{ color: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? 'var(--gold)' : 'var(--danger)' }}>{ats.parsing.score}/{ats.parsing.max}</span>
-                  </div>
-                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.parsing.score / ats.parsing.max) * 100}%`, background: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? 'var(--gold)' : 'var(--danger)' }} /></div>
-                  {ats.parsing.issues.map(i => <div key={i} className="ats-issue">{i}</div>)}
-                </div>
-
-                <div className="ats-indicator">
-                  <div className="ats-indicator-header">
-                    <span className="ats-indicator-title">Keyword Match</span>
-                    <span className="ats-indicator-score" style={{ color: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? 'var(--gold)' : 'var(--danger)' }}>{ats.keywords.score}/{ats.keywords.max}</span>
-                  </div>
-                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.keywords.score / ats.keywords.max) * 100}%`, background: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? 'var(--gold)' : 'var(--danger)' }} /></div>
-                  {!ats.keywords.hasJD
-                    ? <div className="ats-issue">Incolla la job description nella sezione "Analisi ATS" per calcolare il match</div>
-                    : <>
-                        {ats.keywords.matched.length > 0 && <div className="ats-issue" style={{ color: 'var(--success)' }}>✓ {ats.keywords.matched.length} keyword trovate: {ats.keywords.matched.join(', ')}</div>}
-                        {ats.keywords.missing.length > 0 && <div className="ats-issue" style={{ color: 'var(--danger)' }}>✗ Mancanti: {ats.keywords.missing.join(', ')}</div>}
-                      </>
-                  }
-                </div>
-
-                <div className="ats-indicator" style={{ borderBottom: 'none' }}>
-                  <div className="ats-indicator-header">
-                    <span className="ats-indicator-title">Rigore Cronologico e Metrico</span>
-                    <span className="ats-indicator-score" style={{ color: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? 'var(--gold)' : 'var(--danger)' }}>{ats.chronometric.score}/{ats.chronometric.max}</span>
-                  </div>
-                  <div className="ats-mini-bar"><div className="ats-mini-fill" style={{ width: `${(ats.chronometric.score / ats.chronometric.max) * 100}%`, background: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? 'var(--gold)' : 'var(--danger)' }} /></div>
-                  {ats.chronometric.details.map(d => <div key={d} className="ats-issue">{d}</div>)}
-                </div>
-              </div>
-            )}
+            <button className="rb-tpl-pill" onClick={() => setRbTab('custom')}>
+              Template · <em>{TPL_LIST.find(tp => tp.id === selectedTemplate)?.name ?? selectedTemplate}</em> — Cambia
+            </button>
           </div>
 
           <AIAssistantPanel
@@ -1553,22 +1662,118 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             onApplyTip={(expId, tipIndex) => void handleApplyTip(expId, tipIndex)}
             applyingTipKey={applyingTipKey}
           />
+        </div>
+        )}
 
-          <div className="preview-canvas" ref={previewRef}>
-            <div className="cv-sheet" style={{ zoom: cvScale }}>
-              <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
+        {/* ── TAB TEMPLATE ── */}
+        {rbTab === 'custom' && (
+          <div className="rb-pane">
+            <div className="rb-pane-inner">
+              <div className="rb-pane-head">
+                <div>
+                  <h2>Scegli il template</h2>
+                  <p>Anteprime generate con i tuoi contenuti reali. Tutti i modelli superano i controlli ATS: cambi quando vuoi, senza perdere nulla.</p>
+                </div>
+                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>Torna all'editor</button>
+              </div>
+              <div className="rb-tpl-grid">
+                {TPL_LIST.map(tp => (
+                  <button
+                    key={tp.id}
+                    className={`rb-tpl-card${selectedTemplate === tp.id ? ' on' : ''}`}
+                    onClick={() => onTemplateChange(tp.id)}
+                  >
+                    <div className="rb-tpl-shot" style={{ '--s': 0.345 } as React.CSSProperties}>
+                      {selectedTemplate === tp.id && <span className="rb-tpl-onbadge">IN USO</span>}
+                      <div className="zoomwrap">
+                        <CVPreview cvData={cvData} template={tp.id} lang={selectedLanguage} />
+                      </div>
+                    </div>
+                    <div className="rb-tpl-meta">
+                      <b>{tp.name}</b>
+                      <span className="ats-ok">ATS ✓</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </main>
-      </div>
+        )}
 
-      {showTemplateModal && (
-        <TemplateModal
-          current={selectedTemplate}
-          onSelect={onTemplateChange}
-          onClose={() => setShowTemplateModal(false)}
-        />
-      )}
+        {/* ── TAB ANALISI ATS ── */}
+        {rbTab === 'ats' && (
+          <div className="rb-pane">
+            <div className="rb-pane-inner" style={{ maxWidth: 860 }}>
+              <div className="rb-pane-head">
+                <div>
+                  <h2>Analisi ATS</h2>
+                  <p>Quanto il tuo CV supera i filtri automatici dei recruiter. Il punteggio si aggiorna in tempo reale a ogni modifica.</p>
+                </div>
+                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>Torna all'editor</button>
+              </div>
+
+              <div className="rb-panel">
+                <div className="rb-ring-row">
+                  <div className="rb-ring" style={{ background: `conic-gradient(${atsColor} 0 ${ats.total}%, #EDEDF2 ${ats.total}% 100%)` }}>
+                    <div><b style={{ color: atsColor }}>{ats.total}</b><small>SU 100</small></div>
+                  </div>
+                  <div className="rb-kpi">
+                    <div className="rb-kpi-row">
+                      <b>Parsing strutturale</b>
+                      <div className="rb-kpi-bar"><i style={{ width: `${(ats.parsing.score / ats.parsing.max) * 100}%`, background: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? '#D99A2B' : 'var(--danger)' }} /></div>
+                      <span className="v" style={{ color: ats.parsing.score >= 25 ? 'var(--success)' : '#B7791F' }}>{ats.parsing.score}/{ats.parsing.max}</span>
+                    </div>
+                    <div className="rb-kpi-row">
+                      <b>Keyword match con l'annuncio</b>
+                      <div className="rb-kpi-bar"><i style={{ width: `${(ats.keywords.score / ats.keywords.max) * 100}%`, background: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? '#D99A2B' : 'var(--danger)' }} /></div>
+                      <span className="v" style={{ color: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? '#B7791F' : 'var(--danger)' }}>{ats.keywords.score}/{ats.keywords.max}</span>
+                    </div>
+                    <div className="rb-kpi-row">
+                      <b>Rigore cronologico e metrico</b>
+                      <div className="rb-kpi-bar"><i style={{ width: `${(ats.chronometric.score / ats.chronometric.max) * 100}%`, background: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? '#D99A2B' : 'var(--danger)' }} /></div>
+                      <span className="v" style={{ color: ats.chronometric.score >= 16 ? 'var(--success)' : '#B7791F' }}>{ats.chronometric.score}/{ats.chronometric.max}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ marginTop: 14, borderTop: '1px solid rgba(20,23,31,.06)', paddingTop: 12, fontSize: 12.5, color: '#565B66', lineHeight: 1.6 }}>
+                  {[...ats.parsing.issues, ...ats.chronometric.details].map(d => <div key={d}>· {d}</div>)}
+                </div>
+              </div>
+
+              <div className="rb-panel">
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>Confronta con un annuncio di lavoro</b>
+                  <span style={{ fontSize: 12, color: '#9297A1' }}>Il match keyword (50 punti) si calcola sull'annuncio incollato</span>
+                </div>
+                <div className="form-group">
+                  <textarea
+                    rows={6}
+                    placeholder="Incolla qui il testo dell'offerta di lavoro…"
+                    value={jobDescription}
+                    onChange={e => setJobDescription(e.target.value)}
+                  />
+                </div>
+                {ats.keywords.hasJD ? (
+                  <div style={{ marginTop: 12 }}>
+                    {ats.keywords.matched.map(kw => <span key={kw} className="rb-kw ok">✓ {kw}</span>)}
+                    {ats.keywords.missing.map(kw => <span key={kw} className="rb-kw miss">✗ {kw}</span>)}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 10, fontSize: 12.5, color: '#9297A1' }}>
+                    Senza annuncio il punteggio keyword resta 0/50.
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                  <button className="btn btn-gold btn-sm" style={{ gap: 6 }} onClick={handleOptimizeAll} disabled={optimizing || translating}>
+                    <Icon d={IC.spark} size={13} /> {optimizing ? 'Ottimizzazione…' : 'Ottimizza il CV con AI'}
+                  </button>
+                  <button className="btn btn-line btn-sm" onClick={() => setRbTab('edit')}>Modifica i contenuti</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

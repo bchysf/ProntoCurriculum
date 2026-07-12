@@ -211,24 +211,23 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     const confirmedCount = selectedExpIds.size;
 
     return (
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 24px 48px' }}>
         {/* Header */}
-        <div style={{ marginBottom: 40, textAlign: 'center' }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ marginBottom: 24, fontSize: 13 }}
-            onClick={() => setViewState('form')}
-          >
-            ← Torna all'offerta
-          </button>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>
-            Anteprima selezione AI
-          </h1>
-          <p style={{ color: 'var(--gray500)', fontSize: 15, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-            L'AI ha selezionato {cvData.experiences.length} esperienze dal tuo archivio e le ha riscritte per questa offerta.
-            Deseleziona quelle che non vuoi includere, poi conferma.
-          </p>
+        <div className="head">
+          <div>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginBottom: 10, marginLeft: -12 }}
+              onClick={() => setViewState('form')}
+            >
+              ← Torna all'offerta
+            </button>
+            <h1>Anteprima selezione AI</h1>
+            <p style={{ maxWidth: 560 }}>
+              L'AI ha selezionato {cvData.experiences.length} esperienze dal tuo archivio e le ha riscritte per questa offerta.
+              Deseleziona quelle che non vuoi includere, poi conferma.
+            </p>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -726,7 +725,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             <div className="modal-box" style={{ textAlign: 'center', padding: 56, maxWidth: 420 }}>
               <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
               <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
                 AI sta rigenerando il CV...
               </div>
               <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
@@ -741,45 +740,27 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   }
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 24px 48px' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 40, textAlign: 'center' }}>
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ marginBottom: 24, fontSize: 13 }}
-          onClick={() => onNavigate('home')}
-        >
-          ← Torna alla home
-        </button>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
-        <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-          CV su misura per l'offerta
-        </h1>
-        <p style={{ color: 'var(--gray500)', fontSize: 16, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-          Incolla il testo o l'URL dell'offerta di lavoro. L'AI selezionerà le tue esperienze più rilevanti, le riscriverà con le keyword richieste e genererà un CV ottimizzato.
-        </p>
+      <div className="head">
+        <div>
+          <h1>CV su misura per l'offerta</h1>
+          <p style={{ maxWidth: 560 }}>
+            Incolla il testo o l'URL dell'offerta di lavoro. L'AI selezionerà le tue esperienze più rilevanti, le riscriverà con le keyword richieste e genererà un CV ottimizzato.
+          </p>
+        </div>
       </div>
 
       {/* Auth gate */}
       {!isLoading && !isAuthenticated ? (
-        <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          padding: 40,
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 16 }}>🔐</div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
-            Accedi per creare il tuo CV su misura
-          </h2>
-          <p style={{ color: 'var(--gray500)', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
-            L'AI usa le esperienze salvate nel tuo archivio personale.<br />
-            Accedi per continuare.
+        <div className="lock-state" style={{ minHeight: '40vh' }}>
+          <h2>Accedi per creare il tuo CV su misura</h2>
+          <p style={{ color: 'var(--ink-60)', fontSize: 14.5, maxWidth: 440, lineHeight: 1.6 }}>
+            L'AI usa le esperienze salvate nel tuo archivio personale. Accedi per continuare.
           </p>
-          <button className="btn btn-gold" style={{ fontSize: 15, padding: '12px 32px' }} onClick={onLogin}>
-            Accedi con Replit
+          <button className="btn btn-ink" onClick={onLogin}>
+            Accedi
           </button>
         </div>
       ) : (
@@ -1023,7 +1004,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
           <div className="modal-box" style={{ textAlign: 'center', padding: 56, maxWidth: 420 }}>
             <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
             <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
-            <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
               AI sta creando il tuo CV...
             </div>
             <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>

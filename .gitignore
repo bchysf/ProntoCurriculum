@@ -56,3 +56,6 @@ Thumbs.db
 .vercel
 .env*
 supabase/.temp
+
+# Local server logs
+api-server.log

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
+import type { Page } from '../types';
 
 interface StoredExp {
   id: string;
@@ -62,7 +63,7 @@ function rowToForm(r: StoredExp): ExpForm {
 }
 
 interface ArchivioProps {
-  onNavigate: (page: 'home' | 'builder-step1' | 'builder-step2' | 'archivio') => void;
+  onNavigate: (page: Page) => void;
 }
 
 export default function Archivio({ onNavigate }: ArchivioProps) {
@@ -151,47 +152,45 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
-        <div style={{ color: 'var(--gray500)', fontSize: 14 }}>Caricamento...</div>
+      <div className="loading-state" style={{ minHeight: 300 }}>
+        <div className="spinner" />
+        <span>Caricamento…</span>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-          Accedi per vedere l'archivio
-        </h2>
-        <p style={{ color: 'var(--gray500)', fontSize: 15, marginBottom: 28 }}>
+      <div className="lock-state" style={{ minHeight: '40vh' }}>
+        <h2>Accedi per vedere l'archivio</h2>
+        <p style={{ color: 'var(--ink-60)', fontSize: 14.5, maxWidth: 440 }}>
           Salva le tue esperienze lavorative e importale in qualsiasi CV con un click.
         </p>
-        <button className="btn btn-gold" onClick={login}>Accedi con Replit</button>
+        <button className="btn btn-ink" onClick={login}>Accedi</button>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('home')} style={{ fontSize: 13 }}>
-          ← Torna alla home
-        </button>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: 'var(--navy)', margin: 0 }}>
-            Le mie esperienze
-          </h1>
-          <p style={{ color: 'var(--gray500)', fontSize: 13, margin: '4px 0 0' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 24px 80px' }}>
+      <div className="head">
+        <div>
+          <h1>Archivio esperienze</h1>
+          <p>
             Il tuo archivio personale — importa direttamente nel builder
           </p>
         </div>
-        <button className="btn btn-gold" onClick={openAdd}>+ Aggiungi</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-line" onClick={() => onNavigate('cover-letter')}>
+            Lettera AI
+          </button>
+          <button className="btn btn-ink" onClick={openAdd}>+ Aggiungi</button>
+        </div>
       </div>
 
       {showForm && (
         <div style={{ background: 'var(--gray50)', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: '24px', marginBottom: 24 }}>
-          <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 20, marginTop: 0 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 20, marginTop: 0 }}>
             {editId ? 'Modifica esperienza' : 'Nuova esperienza'}
           </h3>
 
@@ -272,7 +271,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
       ) : experiences.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 24px', background: 'var(--gray50)', borderRadius: 12, border: '1.5px dashed var(--gray100)' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>💼</div>
-          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
             Archivio vuoto
           </div>
           <div style={{ color: 'var(--gray500)', fontSize: 14, marginBottom: 20 }}>

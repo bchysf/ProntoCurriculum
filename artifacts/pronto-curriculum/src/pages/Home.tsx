@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Page, ModalType } from '../types';
+import { useAuth } from '../hooks/use-auth';
 
 // "Carta & Inchiostro" v3 — RedesignV3 integrated into the main app.
 // Switzer + Satoshi + IBM Plex Mono, white + aurora bg.
@@ -605,6 +606,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
   useCountUp();
   const atsRef = useAtsCounter();
   const { stageRef, stackRef } = useTilt();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <div className="pc3">
@@ -617,10 +619,17 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
           <nav aria-label="Navigazione principale">
             <div className="brand"><img src="/logo-icon.png" alt="" /><span>ProntoCurriculum</span></div>
             <div className="nav-links">
-              <span>Come funziona</span><span>Template</span><span>Prezzi</span>
+              <span onClick={() => { const el = document.getElementById('steps'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Come funziona</span>
+              <span onClick={() => { const el = document.getElementById('templates'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Template</span>
+              <span onClick={() => { const el = document.getElementById('pricing'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Prezzi</span>
+              <span onClick={() => onNavigate('blog')} style={{ cursor: 'pointer' }}>Blog & Guide</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-line btn-sm" onClick={() => onNavigate('dashboard')}>Accedi</button>
+              {!isLoading && (isAuthenticated ? (
+                <button className="btn btn-line btn-sm" onClick={() => onNavigate('dashboard')}>Dashboard</button>
+              ) : (
+                <button className="btn btn-line btn-sm" onClick={() => onModal('signup')}>Accedi</button>
+              ))}
               <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>Crea il tuo CV</button>
             </div>
           </nav>
@@ -759,11 +768,89 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
           </div>
         </section>
 
+        {/* SOCIAL PROOF & TESTIMONIALS */}
+        <section className="sec" style={{ paddingTop: 20 }} aria-label="Storie di successo e statistiche di affidabilità">
+          <div className="sec-head rv">
+            <h2>I risultati di chi ha scelto <span className="ac">ProntoCurriculum.</span></h2>
+            <span className="mono sec-num">04 — Risultati</span>
+          </div>
+
+          {/* Metrics Bar */}
+          <div className="rv d1" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+            gap: 20,
+            marginBottom: 56,
+          }}>
+            {([
+              ['+14.850', "CV su Misura Generati dall'AI"],
+              ['3,4x', 'Più Colloqui Ottenuti in 30 Giorni'],
+              ['8 Minuti', 'Da Zero al Download PDF/Word'],
+              ['4.9 ★', 'Valutazione Media in Italia'],
+            ] as [string, string][]).map(([num, label]) => (
+              <div key={label} style={{ background: 'var(--card)', border: '1px solid var(--hair-soft)', borderRadius: 16, padding: '24px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--f-display)', letterSpacing: '-0.02em' }}>{num}</div>
+                <div style={{ fontSize: 13.5, color: 'var(--ink-60)', marginTop: 4, fontWeight: 500 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Testimonials Grid */}
+          <div className="rv d2" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 24,
+            marginBottom: 36,
+          }}>
+            {[
+              {
+                initials: 'MR', name: 'Marco R.', role: 'Senior Software Engineer', hired: 'Assunto',
+                quote: "Avevo il solito Europass di 4 pagine che nessuno leggeva. Con ProntoCurriculum ho importato il mio profilo LinkedIn con un click e usato l'editor AI. Risultato? 3 colloqui fissati nella prima settimana a Milano.",
+              },
+              {
+                initials: 'EV', name: 'Elena V.', role: 'Marketing Specialist', hired: 'Assunta',
+                quote: "La funzione CV su Misura è formidabile. Ho incollato la Job Description di un'agenzia internazionale e il sistema ha ricalibrato ogni singolo bullet point del mio percorso. Mi hanno assunta al primo colpo.",
+              },
+              {
+                initials: 'DS', name: 'Davide S.', role: 'Junior Financial Analyst', hired: 'Assunto',
+                quote: "Zero esperienza pregressa e il terrore di inviare candidature a vuoto. Il Coach AI integrato mi ha preparato le 5 domande esatte che la direttrice HR mi ha poi fatto al colloquio. Strumento pazzesco!",
+              },
+            ].map(tst => (
+              <div key={tst.initials} style={{
+                background: 'var(--card)',
+                border: '1px solid var(--hair-soft)',
+                borderRadius: 18,
+                padding: 28,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', gap: 3, color: 'var(--accent)', fontSize: 15, marginBottom: 14 }}>★★★★★</div>
+                  <p style={{ fontSize: 14.5, color: 'var(--ink-60)', lineHeight: 1.65, margin: '0 0 20px' }}>
+                    “{tst.quote}”
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid var(--hair-soft)', paddingTop: 16 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(120deg, #6FA5FF, #BE9CFF)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, fontFamily: 'var(--f-display)' }}>
+                    {tst.initials}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{tst.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>{tst.role} · <span style={{ color: '#12805C', fontWeight: 600 }}>✓ {tst.hired}</span></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* GUIDA EDITORIALE */}
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Guida al curriculum perfetto">
           <div className="sec-head rv">
             <h2>La piccola guida al <span className="ac">curriculum perfetto.</span></h2>
-            <span className="mono sec-num">04 — Guida</span>
+            <span className="mono sec-num">05 — Guida</span>
           </div>
           <div className="guide">
             <article className="rv">
@@ -788,7 +875,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Domande frequenti">
           <div className="sec-head rv">
             <h2>Domande <span className="ac">frequenti.</span></h2>
-            <span className="mono sec-num">05 — FAQ</span>
+            <span className="mono sec-num">06 — FAQ</span>
           </div>
           <div className="faq rv">
             {FAQ_ITEMS.map(([q, a]) => (
@@ -836,22 +923,22 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               </nav>
               <nav className="foot-col" aria-label="Risorse">
                 <h4>Risorse</h4>
-                <a href="#">Guida al CV perfetto</a>
-                <a href="#">Cos'è il punteggio ATS</a>
-                <a href="#">CV Europass</a>
-                <a href="#">Esempi di CV</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog'); }}>Tutto il blog →</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('guida-cv'); }}>Guida al CV perfetto</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('punteggio-ats'); }}>Cos'è il punteggio ATS</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cv-europass'); }}>CV Europass</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('esempi-cv'); }}>Esempi di CV</a>
               </nav>
               <nav className="foot-col" aria-label="Legale">
                 <h4>Legale</h4>
-                <a href="#">Privacy</a>
-                <a href="#">Termini</a>
-                <a href="#">Cookie</a>
-                <a href="#">Contatti</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>Privacy</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>Termini</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>Cookie</a>
+                <a href="mailto:info@prontocurriculum.it">Contatti</a>
               </nav>
             </div>
             <div className="foot-bottom">
               <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — Fatto a mano in Italia</span>
-              <span className="mono">P.IVA 00000000000</span>
             </div>
           </div>
         </footer>

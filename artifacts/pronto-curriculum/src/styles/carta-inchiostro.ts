@@ -32,23 +32,23 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .grad { background: linear-gradient(96deg, #6FA5FF 0%, #8F8CFF 48%, #BE9CFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* SIDEBAR */
-.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 22px 14px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
-.dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 17px; letter-spacing: -0.03em; padding: 0 10px 22px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 16px 12px 12px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 16px; letter-spacing: -0.03em; padding: 0 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .dv3 .brand span { background: linear-gradient(90deg, var(--accent), #7C5CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.dv3 .brand img { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
-.dv3 .side .mono { padding: 0 10px 10px; display: block; }
-.dv3 .nav-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 12px; border: none; background: transparent; border-radius: 10px; font-family: var(--f-body); font-size: 13.5px; font-weight: 500; color: var(--ink-60); cursor: pointer; text-align: left; transition: background .15s, color .15s; margin-bottom: 2px; }
+.dv3 .brand img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+.dv3 .side .mono { padding: 0 10px 8px; display: block; }
+.dv3 .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 11px; border: none; background: transparent; border-radius: 9px; font-family: var(--f-body); font-size: 13px; font-weight: 500; color: var(--ink-60); cursor: pointer; text-align: left; transition: background .15s, color .15s; margin-bottom: 1px; }
 .dv3 .nav-item:hover { background: #F4F4F8; color: var(--ink); }
 .dv3 .nav-item.active { background: var(--tint); color: var(--accent); font-weight: 700; }
 .dv3 .nav-item.locked { color: var(--ink-40); }
 .dv3 .nav-item svg { flex-shrink: 0; }
 .dv3 .nav-badge { margin-left: auto; font-family: var(--f-mono); font-size: 10px; background: #F4F4F8; border-radius: 99px; padding: 2px 8px; color: var(--ink-40); }
 .dv3 .nav-item.active .nav-badge { background: rgba(47,42,229,.12); color: var(--accent); }
-.dv3 .side-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px; border-top: 1px solid var(--hair-soft); }
-.dv3 .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(120deg, #6FA5FF, #BE9CFF); color: #fff; font-family: var(--f-display); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.dv3 .side-user { display: flex; align-items: center; gap: 9px; padding: 10px 8px 0; border-top: 1px solid var(--hair-soft); }
+.dv3 .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(120deg, #6FA5FF, #BE9CFF); color: #fff; font-family: var(--f-display); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
 .dv3 .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.dv3 .side-user b { font-size: 13px; display: block; }
-.dv3 .side-user span { font-size: 11px; color: var(--ink-40); }
+.dv3 .side-user b { font-size: 12.5px; display: block; }
+.dv3 .side-user span { font-size: 10.5px; color: var(--ink-40); }
 
 /* MAIN */
 .dv3 .main { padding: 0 36px 56px; min-width: 0; }
@@ -232,7 +232,7 @@ export const CARTA_INCHIOSTRO_CSS = `
 @media (max-width: 860px) {
   .dv3 { grid-template-columns: 1fr; }
   .dv3 .side { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 12px 16px; flex-wrap: nowrap; }
-  .dv3 .side .mono, .dv3 .side-user { display: none; }
+  .dv3 .side .mono, .dv3 .side-user, .dv3 .side-foot { display: none; }
   .dv3 .brand { padding: 0 14px 0 0; white-space: nowrap; }
   .dv3 .nav-item { width: auto; white-space: nowrap; }
   .dv3 .main { padding: 0 20px 40px; }

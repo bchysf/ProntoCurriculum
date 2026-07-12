@@ -1,4 +1,5 @@
 import type { CVData } from '../types';
+import { CV_LABELS, type CvLang } from '../components/CVPreview';
 
 // ── exact CSS variable values from index.css ──────────────────────────────────
 const NAVY   = [11, 29, 58]   as [number, number, number]; // #0B1D3A
@@ -34,9 +35,10 @@ const SPECS: Record<string, TemplateSpec> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildPDF(cvData: CVData, template: string) {
+async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
   const { jsPDF } = await import('jspdf');
   const spec = SPECS[template] ?? SPECS.modern;
+  const L = CV_LABELS[lang] ?? CV_LABELS.IT;
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const PAGE_W = 210;
@@ -132,7 +134,7 @@ async function buildPDF(cvData: CVData, template: string) {
 
   // ── SUMMARY ─────────────────────────────────────────────────────────────────
   if (cvData.summary?.trim()) {
-    sectionTitle('Profilo Professionale');
+    sectionTitle(L.profile);
     setBody(false, 9.5);
     doc.setTextColor(...GRAY7);
     const lines = doc.splitTextToSize(cvData.summary, CW);
@@ -142,7 +144,7 @@ async function buildPDF(cvData: CVData, template: string) {
 
   // ── EXPERIENCES ──────────────────────────────────────────────────────────────
   if (cvData.experiences?.length) {
-    sectionTitle('Esperienze Lavorative');
+    sectionTitle(L.experience);
     for (const exp of cvData.experiences) {
       checkPage(25);
 
@@ -154,7 +156,7 @@ async function buildPDF(cvData: CVData, template: string) {
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
       doc.text(meta, M, y + 5);
-      doc.text(`${exp.from || ''} – ${exp.to || 'Presente'}`, PAGE_W - M, y + 5, { align: 'right' });
+      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + 5, { align: 'right' });
       doc.setTextColor(...GRAY7);
 
       if (template === 'minimal') {
@@ -185,7 +187,7 @@ async function buildPDF(cvData: CVData, template: string) {
   // ── EDUCATION ────────────────────────────────────────────────────────────────
   if (cvData.education?.length) {
     checkPage(35);
-    sectionTitle('Formazione');
+    sectionTitle(template === 'europass' ? L.educationEuro : L.education);
     for (const edu of cvData.education) {
       checkPage(20);
 
@@ -195,9 +197,9 @@ async function buildPDF(cvData: CVData, template: string) {
 
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
-      const inst = [edu.institution, edu.grade ? `Voto: ${edu.grade}` : ''].filter(Boolean).join('  —  ');
+      const inst = [edu.institution, edu.grade ? `${L.grade}: ${edu.grade}` : ''].filter(Boolean).join('  —  ');
       doc.text(inst, M, y + 5);
-      doc.text(`${edu.from || ''} – ${edu.to || 'Presente'}`, PAGE_W - M, y + 5, { align: 'right' });
+      doc.text(`${edu.from || ''} – ${edu.to || L.present}`, PAGE_W - M, y + 5, { align: 'right' });
       doc.setTextColor(...GRAY7);
       y += 13;
     }
@@ -207,7 +209,7 @@ async function buildPDF(cvData: CVData, template: string) {
   // ── SKILLS ──────────────────────────────────────────────────────────────────
   if (cvData.skills?.length) {
     checkPage(25);
-    sectionTitle('Competenze');
+    sectionTitle(L.skills);
     setBody(false, 9.5);
     doc.setTextColor(...GRAY7);
     const skillLines = doc.splitTextToSize(cvData.skills.join(' • '), CW);
@@ -218,17 +220,61 @@ async function buildPDF(cvData: CVData, template: string) {
   // ── LANGUAGES ────────────────────────────────────────────────────────────────
   if (cvData.languages?.length) {
     checkPage(25);
-    sectionTitle('Lingue');
+    sectionTitle(L.languages);
     setBody(false, 9.5);
-    for (const lang of cvData.languages) {
+    for (const cvLang of cvData.languages) {
       checkPage(8);
       doc.setTextColor(...GRAY7);
-      doc.text(`${lang.name}${lang.level ? '  —  ' + lang.level : ''}`, M, y);
+      doc.text(`${cvLang.name}${cvLang.level ? '  —  ' + cvLang.level : ''}`, M, y);
       y += 5.5;
     }
   }
 
+  // ── GDPR PRIVACY CLAUSE ─────────────────────────────────────────────────────
+  checkPage(18);
+  y += 6;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  const clauseLines = doc.splitTextToSize(L.privacyClause, CW);
+  doc.text(clauseLines, M, y);
+
   return doc;
+}
+
+// Diagonal watermark + footer note on every page — free plan only.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFreeWatermark(doc: any) {
+  const pages: number = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+
+    doc.saveGraphicsState();
+    doc.setGState(new doc.GState({ opacity: 0.08 }));
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(44);
+    doc.setTextColor(47, 42, 229);
+    doc.text('ProntoCurriculum.it', 105, 175, { align: 'center', angle: 40 });
+    doc.restoreGraphicsState();
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(170, 170, 170);
+    doc.text('Creato con ProntoCurriculum.it — passa a Pro per rimuovere la filigrana', 105, 293, { align: 'center' });
+  }
+}
+
+// The watermark is removed only for a verified active paid plan.
+async function hasActivePaidPlan(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/billing/status', { credentials: 'include' });
+    if (!res.ok) return false;
+    const data = await res.json() as { subscription?: { plan?: string; status?: string } };
+    const sub = data.subscription;
+    return !!sub && sub.plan !== 'free' && sub.status === 'active';
+  } catch {
+    return false;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -236,8 +282,13 @@ export async function downloadCVAsPDF(
   name: string,
   cvData: CVData,
   template = 'modern',
+  lang: CvLang = 'IT',
 ): Promise<void> {
-  const doc = await buildPDF(cvData, template);
+  const [doc, isPaid] = await Promise.all([
+    buildPDF(cvData, template, lang),
+    hasActivePaidPlan(),
+  ]);
+  if (!isPaid) applyFreeWatermark(doc);
   const filename = name
     ? `CV_${name.replace(/\s+/g, '_')}.pdf`
     : 'CV_ProntoCurriculum.pdf';
