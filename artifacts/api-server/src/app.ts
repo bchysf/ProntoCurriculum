@@ -6,6 +6,7 @@ import router from "./routes";
 import stripeWebhookRouter from "./routes/stripeWebhook";
 import { logger } from "./lib/logger";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { apiRateLimit } from "./middlewares/rateLimiter";
 
 const app: Express = express();
 
@@ -30,6 +31,7 @@ app.use(
 );
 app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
+app.use(apiRateLimit);
 
 // Stripe webhook needs the raw request body for signature verification,
 // so it must be mounted before the global express.json() body parser.

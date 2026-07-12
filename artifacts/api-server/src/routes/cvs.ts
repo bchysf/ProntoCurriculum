@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
 import { userCvsTable, experiencesTable } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
@@ -202,6 +203,82 @@ router.delete("/cvs/:id", async (req: Request, res: Response) => {
   } catch (err) {
     req.log.error({ err }, "DELETE /cvs/:id error");
     res.status(500).json({ error: "Errore nell'eliminazione" });
+  }
+});
+
+router.post("/cvs/export/docx", async (req: Request, res: Response) => {
+  try {
+    const { cvData, template = "modern", lang = "IT", includeWatermark } = req.body as {
+      cvData?: DocxExportInput["cvData"];
+      template?: string;
+      lang?: CvLang;
+      includeWatermark?: boolean;
+    };
+
+    if (!cvData) {
+      res.status(400).json({ error: "cvData mancante nel payload" });
+      return;
+    }
+
+    // Determine watermark based on user tier if logged in, or fallback to parameter / true
+    const isPro = req.user && (req.user as unknown as { tier?: string }).tier !== "free";
+    const watermark = isPro ? false : (includeWatermark !== undefined ? includeWatermark : true);
+
+    const buffer = await generateDocxBuffer({
+      cvData,
+      template,
+      lang,
+      includeWatermark: watermark,
+    });
+
+    const firstName = normalizeStr(cvData.firstName) || "curriculum";
+    const lastName = normalizeStr(cvData.lastName) || "vitae";
+    const filename = `${firstName}_${lastName}_ProntoCurriculum.docx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    req.log.error({ err }, "POST /cvs/export/docx error");
+    res.status(500).json({ error: "Errore durante la generazione del file Word (.docx)" });
+  }
+});
+
+router.get("/cvs/:id/export/docx", async (req: Request, res: Response) => {
+  const userId = getUserId(req, res);
+  if (!userId) return;
+
+  const id = String(req.params.id);
+  try {
+    const [cv] = await db
+      .select()
+      .from(userCvsTable)
+      .where(and(eq(userCvsTable.id, id), eq(userCvsTable.userId, userId)));
+
+    if (!cv || !cv.cvData) {
+      res.status(404).json({ error: "CV non trovato" });
+      return;
+    }
+
+    const isPro = req.user && (req.user as unknown as { tier?: string }).tier !== "free";
+    const buffer = await generateDocxBuffer({
+      cvData: cv.cvData as DocxExportInput["cvData"],
+      template: cv.template || "modern",
+      lang: (req.query.lang as CvLang) || "IT",
+      includeWatermark: !isPro,
+    });
+
+    const dataObj = cv.cvData as { firstName?: string; lastName?: string };
+    const firstName = normalizeStr(dataObj.firstName) || "curriculum";
+    const lastName = normalizeStr(dataObj.lastName) || "vitae";
+    const filename = `${firstName}_${lastName}_ProntoCurriculum.docx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    req.log.error({ err }, "GET /cvs/:id/export/docx error");
+    res.status(500).json({ error: "Errore durante l'esportazione del CV in formato Word" });
   }
 });
 

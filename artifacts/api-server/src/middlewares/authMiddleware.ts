@@ -54,3 +54,25 @@ export async function authMiddleware(
   req.user = session.user;
   next();
 }
+
+// Comma-separated allowlist; defaults to the site owner.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "jelspexar10@gmail.com")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  if (!isAdminEmail(req.user?.email)) {
+    res.status(403).json({ error: "Accesso riservato all'amministratore." });
+    return;
+  }
+  next();
+}

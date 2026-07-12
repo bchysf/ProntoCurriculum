@@ -472,4 +472,80 @@ router.delete("/tailored-cvs/:id", async (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+const INTERVIEW_PREP_SYSTEM_PROMPT = `Sei un Senior Executive Recruiter e Career Coach per aziende Fortune 500 e scaleup ad alta crescita.
+Stai preparando il candidato ad affrontare un colloquio di selezione decisivo per il ruolo di destinazione analizzando il suo CV su misura e l'offerta di lavoro (Job Description).
+
+Restituisci ESCLUSIVAMENTE un oggetto JSON valido, senza testo introduttivo o blocchi markdown di codice (\`\`\`json), con la seguente struttura esatta:
+{
+  "questions": [
+    {
+      "question": "Domanda di colloquio (es. Mi racconti la volta in cui ha ridotto il churn del 20% come scritto nel suo CV?)",
+      "category": "Tecnica" oppure "Comportamentale" oppure "Leadership" oppure "Situazionale",
+      "suggestedAnswer": "Risposta vincente e strutturata con metodo STAR (Situazione, Task, Azione, Risultato) che il candidato deve dare al colloquio citando i suoi successi effettivi dal CV"
+    }
+  ],
+  "strengths": [
+    {
+      "title": "Punto di forza principale per questa candidatura",
+      "desc": "Come il candidato deve valorizzare questo punto durante il colloquio per superare i concorrenti"
+    }
+  ],
+  "objections": [
+    {
+      "objection": "Possibile obiezione o debolezza vista dal recruiter (es. manca esperienza diretta su X o breve permanenza in azienda Y)",
+      "defense": "Strategia di risposta diplomatica e proattiva per trasformare il gap in un vantaggio"
+    }
+  ],
+  "questionsToAsk": [
+    "Domanda strategica 1 che il candidato deve porre al recruiter alla fine del colloquio",
+    "Domanda strategica 2 ad alto impatto di business",
+    "Domanda strategica 3 sulla cultura e obiettivi a 90 giorni"
+  ]
+}
+
+Genera esattamente:
+- 5 domande di colloquio di altissimo livello e super personalizzate sul match CV + Job Description
+- 3 punti di forza (strengths)
+- 2 possibili obiezioni con difesa
+- 4 domande strategiche (questionsToAsk)
+Tutto in lingua Italiana professionale.`;
+
+router.post("/tailored-cvs/interview-prep", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Non autenticato" });
+    return;
+  }
+
+  const { jobTitle, jobDescription, cvData } = req.body as {
+    jobTitle?: string;
+    jobDescription?: string;
+    cvData?: unknown;
+  };
+
+  if (!jobDescription || !cvData) {
+    res.status(400).json({ error: "Job Description e dati del CV richiesti" });
+    return;
+  }
+
+  try {
+    const prompt = `${INTERVIEW_PREP_SYSTEM_PROMPT}
+
+JOB TITLE TARGET: ${jobTitle ?? "Non specificato"}
+JOB DESCRIPTION:
+${jobDescription.slice(0, 6000)}
+
+CV DEL CANDIDATO:
+${JSON.stringify(cvData, null, 2).slice(0, 8000)}`;
+
+    const raw = await generateText(prompt, { maxTokens: 4000 });
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    const data = JSON.parse(jsonStr);
+
+    res.json({ success: true, data });
+  } catch (err) {
+    req.log.error({ err }, "tailored-cvs/interview-prep error");
+    res.status(500).json({ error: "Impossibile generare la simulazione del colloquio in questo momento." });
+  }
+});
+
 export default router;

@@ -5,6 +5,8 @@ import {
   LogoutMobileSessionResponse,
 } from '@workspace/api-zod';
 import { db, usersTable } from '@workspace/db';
+import { sendEmail, getWelcomeEmailHtml } from '../lib/email';
+import { claimReferralCode } from '../lib/referralService';
 import {
   clearSession,
   getSessionId,
@@ -70,7 +72,7 @@ router.get('/auth/user', (req: Request, res: Response) => {
 // POST /api/auth/sync — called from frontend after Supabase Google Sign-In
 // Verifies the Supabase access token and creates/updates a session
 router.post('/auth/sync', async (req: Request, res: Response) => {
-  const { accessToken } = req.body as { accessToken?: string };
+  const { accessToken, referralCode } = req.body as { accessToken?: string; referralCode?: string };
 
   if (!accessToken || typeof accessToken !== 'string') {
     res.status(400).json({ error: 'Access token mancante' });
@@ -96,6 +98,24 @@ router.post('/auth/sync', async (req: Request, res: Response) => {
       lastName,
       profileImageUrl: metadata.avatar_url ?? metadata.picture ?? null,
     });
+
+    // Automatically claim referral code if provided upon sign-in
+    if (referralCode && typeof referralCode === 'string' && dbUser.email) {
+      claimReferralCode(referralCode, dbUser.id, dbUser.email, firstName).catch(err => {
+        req.log.error({ err, referralCode }, 'Background referral claim failed');
+      });
+    }
+
+    // Send onboarding welcome email (asynchronously, non-blocking)
+    if (dbUser.email) {
+      sendEmail({
+        to: dbUser.email,
+        subject: '🎉 Benvenuto in ProntoCurriculum — Il Primo CV Builder AI in Italia',
+        html: getWelcomeEmailHtml(firstName || 'Utente'),
+      }).catch(err => {
+        req.log.error({ err }, 'Background welcome email failed');
+      });
+    }
 
     const now = Math.floor(Date.now() / 1000);
     const sessionData: SessionData = {

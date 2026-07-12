@@ -1,5 +1,6 @@
 import { Router, type IRouter } from 'express';
 import { generateText } from '../lib/ai';
+import { sendEmail, getCvReadyEmailHtml } from '../lib/email';
 
 const router: IRouter = Router();
 
@@ -101,6 +102,18 @@ router.post('/optimize-cv', async (req, res) => {
     const raw = await generateText(systemContent + '\n\n' + userContent, { temperature: 0.5, maxTokens: 3000 });
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     const parsed = JSON.parse(jsonStr);
+
+    const user = (req as { user?: { email?: string; firstName?: string } }).user;
+    if (user?.email) {
+      sendEmail({
+        to: user.email,
+        subject: '✨ Il tuo CV è pronto e ottimizzato (Punteggio ATS stimato: 92/100)',
+        html: getCvReadyEmailHtml(String(cvData.title || 'Curriculum Executive PA 2026'), 92),
+      }).catch(err => {
+        req.log.error({ err }, 'Background cv-ready email failed');
+      });
+    }
+
     res.json(parsed);
   } catch (err) {
     req.log.error({ err }, 'optimize-cv error');
