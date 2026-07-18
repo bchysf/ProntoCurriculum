@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /dashboard
+Disallow: /archivio
+Disallow: /candidature
+Disallow: /admin
+Disallow: /referral
+Disallow: /crea-cv/editor
 
 Sitemap: https://prontocurriculum.it/sitemap.xml

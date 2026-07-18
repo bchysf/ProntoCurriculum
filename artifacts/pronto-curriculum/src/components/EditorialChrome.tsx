@@ -156,27 +156,67 @@ export function useReveal(key?: unknown) {
   }, [key]);
 }
 
-/** Sets document title + meta description while the page is mounted. */
-export function useSeoMeta(title: string, description: string) {
+function setMeta(selector: string, createEl: () => HTMLElement, setValue: (el: HTMLElement) => void) {
+  let el = document.querySelector<HTMLElement>(selector);
+  let created = false;
+  if (!el) {
+    el = createEl();
+    document.head.appendChild(el);
+    created = true;
+  }
+  const prev = el.getAttribute('content') ?? el.getAttribute('href') ?? '';
+  setValue(el);
+  return { el, created, prev };
+}
+
+/** Sets document title, meta description, canonical link and OG tags while the page is mounted. */
+export function useSeoMeta(title: string, description: string, canonicalPath?: string) {
   useEffect(() => {
     const prevTitle = document.title;
     document.title = title;
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    let created = false;
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.name = 'description';
-      document.head.appendChild(meta);
-      created = true;
-    }
-    const prevDesc = meta.content;
-    meta.content = description;
+
+    const desc = setMeta(
+      'meta[name="description"]',
+      () => { const m = document.createElement('meta'); m.setAttribute('name', 'description'); return m; },
+      (el) => el.setAttribute('content', description),
+    );
+    const ogTitle = setMeta(
+      'meta[property="og:title"]',
+      () => { const m = document.createElement('meta'); m.setAttribute('property', 'og:title'); return m; },
+      (el) => el.setAttribute('content', title),
+    );
+    const ogDesc = setMeta(
+      'meta[property="og:description"]',
+      () => { const m = document.createElement('meta'); m.setAttribute('property', 'og:description'); return m; },
+      (el) => el.setAttribute('content', description),
+    );
+
+    const url = canonicalPath ? `https://prontocurriculum.it${canonicalPath}` : undefined;
+    const canonical = url
+      ? setMeta(
+          'link[rel="canonical"]',
+          () => { const l = document.createElement('link'); l.setAttribute('rel', 'canonical'); return l; },
+          (el) => el.setAttribute('href', url),
+        )
+      : undefined;
+    const ogUrl = url
+      ? setMeta(
+          'meta[property="og:url"]',
+          () => { const m = document.createElement('meta'); m.setAttribute('property', 'og:url'); return m; },
+          (el) => el.setAttribute('content', url),
+        )
+      : undefined;
+
     return () => {
       document.title = prevTitle;
-      if (created) meta!.remove();
-      else meta!.content = prevDesc;
+      [desc, ogTitle, ogDesc, canonical, ogUrl].forEach((entry) => {
+        if (!entry) return;
+        if (entry.created) entry.el.remove();
+        else if (entry.el.tagName === 'LINK') entry.el.setAttribute('href', entry.prev);
+        else entry.el.setAttribute('content', entry.prev);
+      });
     };
-  }, [title, description]);
+  }, [title, description, canonicalPath]);
 }
 
 interface EditorialChromeProps {

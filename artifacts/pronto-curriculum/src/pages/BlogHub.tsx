@@ -93,6 +93,7 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
   useSeoMeta(
     'Blog & Guide Carriera — CV, ATS, Colloqui e Stipendi | ProntoCurriculum',
     'Guide pratiche su curriculum, punteggio ATS, lettera di presentazione, colloqui e mercato del lavoro in Italia, scritte dal team di ProntoCurriculum.',
+    '/blog',
   );
 
   const categories = useMemo(() => {

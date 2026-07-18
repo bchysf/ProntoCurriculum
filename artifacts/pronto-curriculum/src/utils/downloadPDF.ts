@@ -1,5 +1,8 @@
 import type { CVData } from '../types';
 import { CV_LABELS, type CvLang } from '../components/CVPreview';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 // ── exact CSS variable values from index.css ──────────────────────────────────
 const NAVY   = [11, 29, 58]   as [number, number, number]; // #0B1D3A
@@ -292,7 +295,31 @@ export async function downloadCVAsPDF(
   const filename = name
     ? `CV_${name.replace(/\s+/g, '_')}.pdf`
     : 'CV_ProntoCurriculum.pdf';
-  doc.save(filename);
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const pdfDataUri = doc.output('datauristring');
+      const base64Data = pdfDataUri.split(',')[1];
+      
+      const fileResult = await Filesystem.writeFile({
+        path: filename,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+
+      await Share.share({
+        title: 'Condividi il tuo Curriculum',
+        text: 'Ecco il mio curriculum vitae generato con ProntoCurriculum.',
+        url: fileResult.uri,
+        dialogTitle: 'Condividi PDF',
+      });
+    } catch (err) {
+      console.error('Errore durante il salvataggio o la condivisione del PDF:', err);
+      alert('Non è stato possibile salvare o condividere il PDF su questo dispositivo.');
+    }
+  } else {
+    doc.save(filename);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -303,6 +330,11 @@ export async function previewCVAsPDF(
   _cvData: CVData,
   _template = 'modern',
 ): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    alert('Usa il pulsante "Scarica PDF" per generare e visualizzare il tuo curriculum in anteprima.');
+    return;
+  }
+
   const cvEl = document.querySelector('.cv-doc') as HTMLElement | null;
   if (!cvEl) {
     alert('Anteprima non trovata. Assicurati che il builder sia aperto.');

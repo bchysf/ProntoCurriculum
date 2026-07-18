@@ -154,7 +154,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
   }, [article]);
 
   useReveal(article.slug);
-  useSeoMeta(`${article.title} | ProntoCurriculum`, article.metaDescription);
+  useSeoMeta(`${article.title} | ProntoCurriculum`, article.metaDescription, `/${article.slug}`);
   const progressRef = useReadingProgress();
   const sectionIds = useMemo(() => article.sections.map(s => s.id), [article]);
   const activeSection = useScrollSpy(sectionIds, article.slug);

@@ -24,6 +24,7 @@ import { Page, ModalType, TemplateType, CVData } from './types';
 import { useAuth } from './hooks/use-auth';
 import { LanguageProvider } from './i18n/LanguageContext';
 import type { SupportedLanguage } from './utils/aiTranslate';
+import { pathToPage, pageToPath } from './utils/routes';
 
 const DEFAULT_CV_DATA: CVData = {
   firstName: 'Mario',
@@ -57,8 +58,9 @@ const DEFAULT_CV_DATA: CVData = {
 
 function AppInner() {
   const { user, isAuthenticated, login, loginWithEmail, signUpWithEmail, logout } = useAuth();
-  const [page, setPage] = useState<Page>('home');
-  const [activeBlogSlug, setActiveBlogSlug] = useState<string | undefined>('guida-cv');
+  const initialRoute = pathToPage(window.location.pathname);
+  const [page, setPage] = useState<Page>(initialRoute.page);
+  const [activeBlogSlug, setActiveBlogSlug] = useState<string | undefined>(initialRoute.slug ?? 'guida-cv');
   const [modal, setModal] = useState<ModalType>(null);
   const [aiLoadingText, setAiLoadingText] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
@@ -71,16 +73,36 @@ function AppInner() {
     }
   }, []);
 
+  // Keep the URL in sync with in-app navigation so every page has a real,
+  // shareable, crawlable address, and handle browser back/forward.
+  useEffect(() => {
+    const onPopState = () => {
+      const route = pathToPage(window.location.pathname);
+      setPage(route.page);
+      if (route.slug) setActiveBlogSlug(route.slug);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   const navigate = useCallback((p: Page, slug?: string) => {
+    let resolvedSlug = slug;
     if (slug) {
       setActiveBlogSlug(slug);
     } else if (p === 'guida-cv' || p === 'punteggio-ats' || p === 'cv-europass' || p === 'esempi-cv') {
+      resolvedSlug = p;
       setActiveBlogSlug(p);
       p = 'blog-article';
     }
     setPage(p);
     window.scrollTo(0, 0);
     trackPageView(p);
+
+    const nextPath = pageToPath(p, p === 'blog-article' ? resolvedSlug : undefined);
+    if (nextPath !== window.location.pathname) {
+      window.history.pushState({}, '', nextPath);
+    }
   }, []);
 
   const openModal = useCallback((m: ModalType) => setModal(m), []);

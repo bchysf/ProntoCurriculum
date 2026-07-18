@@ -1,11 +1,24 @@
 import React from "react";
 import type { Page } from "../types";
 import BrandLogo from "../components/BrandLogo";
+import { useSeoMeta } from "../components/EditorialChrome";
 
 interface LegalProps {
   section: "privacy" | "terms" | "cookie";
   onNavigate: (page: Page) => void;
 }
+
+const PATHS: Record<LegalProps["section"], string> = {
+  privacy: "/privacy",
+  terms: "/termini",
+  cookie: "/cookie",
+};
+
+const DESCRIPTIONS: Record<LegalProps["section"], string> = {
+  privacy: "Informativa sulla privacy di ProntoCurriculum ai sensi del Regolamento UE 2016/679 (GDPR): dati raccolti, finalità del trattamento e diritti dell'utente.",
+  terms: "Termini e condizioni di servizio di ProntoCurriculum: regole di utilizzo della piattaforma, abbonamenti e responsabilità.",
+  cookie: "Informativa sui cookie di ProntoCurriculum: cookie tecnici, analitici e di terze parti utilizzati e come gestire le preferenze.",
+};
 
 export default function Legal({ section, onNavigate }: LegalProps) {
   const titles: Record<LegalProps["section"], string> = {
@@ -14,6 +27,8 @@ export default function Legal({ section, onNavigate }: LegalProps) {
     terms: "Termini e Condizioni di Servizio",
     cookie: "Informativa sui Cookie (Cookie Policy)",
   };
+
+  useSeoMeta(`${titles[section]} | ProntoCurriculum`, DESCRIPTIONS[section], PATHS[section]);
 
   return (
     <div

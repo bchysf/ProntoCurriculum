@@ -218,6 +218,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
   useSeoMeta(
     'Calcolo Stipendio Netto dalla RAL 2026 — CCNL e Livelli | ProntoCurriculum',
     'Calcola lo stipendio netto mensile dalla RAL: aliquote IRPEF 2026 a 3 scaglioni, esonero contributivo INPS, detrazioni e addizionali regionali. Gratis.',
+    '/calcolo-stipendio',
   );
 
   useEffect(() => {

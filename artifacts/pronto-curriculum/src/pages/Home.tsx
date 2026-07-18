@@ -608,6 +608,19 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
   const { stageRef, stackRef } = useTilt();
   const { isAuthenticated, isLoading } = useAuth();
 
+  useEffect(() => {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    let created = false;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
+      created = true;
+    }
+    link.href = 'https://prontocurriculum.it/';
+    return () => { if (created) link!.remove(); };
+  }, []);
+
   return (
     <div className="pc3">
       <style>{CSS}</style>
