@@ -623,6 +623,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               <span onClick={() => { const el = document.getElementById('templates'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Template</span>
               <span onClick={() => { const el = document.getElementById('pricing'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Prezzi</span>
               <span onClick={() => onNavigate('blog')} style={{ cursor: 'pointer' }}>Blog & Guide</span>
+              <span onClick={() => onNavigate('calcolo-stipendio')} style={{ cursor: 'pointer' }}>Calcolatore Stipendio</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               {!isLoading && (isAuthenticated ? (
@@ -928,6 +929,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
                 <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('punteggio-ats'); }}>Cos'è il punteggio ATS</a>
                 <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cv-europass'); }}>CV Europass</a>
                 <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('esempi-cv'); }}>Esempi di CV</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>Calcolo Stipendio Netto</a>
               </nav>
               <nav className="foot-col" aria-label="Legale">
                 <h4>Legale</h4>

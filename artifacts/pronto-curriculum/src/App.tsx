@@ -17,6 +17,7 @@ import ConcorsiPubblici from './pages/ConcorsiPubblici';
 import ReferralPage from './pages/ReferralPage';
 import AdminPanel from './pages/AdminPanel';
 import JobsBoard from './pages/JobsBoard';
+import SalaryCalculator from './pages/SalaryCalculator';
 import { initGA4, trackPageView } from './utils/analytics';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
@@ -216,6 +217,9 @@ function AppInner() {
           <WorkspaceShell page={page} {...shellProps}>
             <AdminPanel onNavigate={navigate} />
           </WorkspaceShell>
+        )}
+        {page === 'calcolo-stipendio' && (
+          <SalaryCalculator onNavigate={navigate} />
         )}
       </main>
 
