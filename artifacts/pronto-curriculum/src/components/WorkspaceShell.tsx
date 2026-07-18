@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Page } from '../types';
 import { useT, useLanguage } from '../i18n/LanguageContext';
 import { LANG_OPTIONS } from '../i18n/translations';
@@ -27,6 +27,9 @@ const IC = {
   shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
   mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z|M22 6l-10 7L2 6',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9',
+  search: 'M21 21l-4.3-4.3|M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+  menu: 'M4 6h16|M4 12h16|M4 18h16',
+  close: 'M18 6L6 18|M6 6l12 12',
 };
 
 interface WorkspaceShellProps {
@@ -48,6 +51,7 @@ export const ADMIN_EMAIL = 'jelspexar10@gmail.com';
 export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLogin, user, onLogout, children }: WorkspaceShellProps) {
   const t = useT();
   const { lang, setLang } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const items: Array<{
     key: string;
@@ -60,6 +64,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
     { key: 'dashboard', icon: IC.grid, label: t('dash.title'), page: 'dashboard', activeOn: ['dashboard'], locked: !isAuthenticated },
     { key: 'create', icon: IC.doc, label: t('ws.create'), page: 'builder-step1', activeOn: ['builder-step1', 'builder-step2'], locked: false },
     { key: 'tailor', icon: IC.spark, label: t('ws.tailor'), page: 'tailor', activeOn: ['tailor'], locked: !isAuthenticated },
+    { key: 'jobs', icon: IC.search, label: 'Offerte di lavoro', page: 'jobs', activeOn: ['jobs'], locked: false },
     { key: 'apps', icon: IC.list, label: t('ws.applications'), page: 'candidature', activeOn: ['candidature'], locked: !isAuthenticated },
     { key: 'letter', icon: IC.mail, label: 'Lettera AI', page: 'cover-letter', activeOn: ['cover-letter'], locked: !isAuthenticated },
     { key: 'archive', icon: IC.briefcase, label: t('ws.archive'), page: 'archivio', activeOn: ['archivio'], locked: !isAuthenticated },
@@ -73,8 +78,20 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
   return (
     <div className="dv3">
       <style>{CARTA_INCHIOSTRO_CSS}</style>
-      <aside className="side">
-        <BrandLogo onClick={() => onNavigate('home')} iconSize={24} fontSize={17} style={{ padding: '0 10px 22px' }} />
+
+      {/* Mobile Topbar */}
+      <header className="mob-header">
+        <BrandLogo onClick={() => { onNavigate('home'); setMenuOpen(false); }} iconSize={24} fontSize={17} />
+        <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+          <Icon d={menuOpen ? IC.close : IC.menu} size={18} />
+        </button>
+      </header>
+
+      {/* Drawer Overlay backdrop */}
+      <div className={`side-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
+
+      <aside className={`side${menuOpen ? ' open' : ''}`}>
+        <BrandLogo onClick={() => { onNavigate('home'); setMenuOpen(false); }} iconSize={24} fontSize={17} style={{ padding: '0 10px 22px' }} />
         <div className="mono">{t('ws.workspace')}</div>
         {items.map(item => {
           const active = item.activeOn.includes(page);
@@ -83,7 +100,14 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
               key={item.key}
               className={`nav-item${active ? ' active' : ''}${item.locked ? ' locked' : ''}`}
               title={item.locked ? t('ws.lockedHint') : undefined}
-              onClick={() => item.locked ? onLogin() : onNavigate(item.page)}
+              onClick={() => {
+                if (item.locked) {
+                  onLogin();
+                } else {
+                  onNavigate(item.page);
+                }
+                setMenuOpen(false);
+              }}
             >
               <Icon d={item.icon} size={16} />
               <span>{item.label}</span>
@@ -137,7 +161,10 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
                 <button
                   title={t('nav.logout')}
                   aria-label={t('nav.logout')}
-                  onClick={onLogout}
+                  onClick={() => {
+                    onLogout();
+                    setMenuOpen(false);
+                  }}
                   style={{ border: 'none', background: 'transparent', color: 'var(--ink-40)', cursor: 'pointer', padding: 6, borderRadius: 8, display: 'flex', flexShrink: 0 }}
                 >
                   <Icon d={IC.logout} size={15} />
@@ -148,7 +175,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
             <div className="panel panel-cta">
               <h3 style={{ fontSize: 13.5 }}>{t('ws.unlockTitle')}</h3>
               <p className="psub" style={{ marginBottom: 12 }}>{t('ws.unlockSub')}</p>
-              <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onLogin}>
+              <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { onLogin(); setMenuOpen(false); }}>
                 {t('nav.login')}
               </button>
             </div>

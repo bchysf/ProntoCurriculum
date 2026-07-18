@@ -13,6 +13,7 @@ import coverLetterRouter from "./coverLetter";
 import { emailRouter } from "./email";
 import { adminRouter } from "./admin";
 import { referralRouter } from "./referral";
+import { jobsRouter } from "./jobs";
 import { aiRateLimit, authRateLimiter, generalRateLimiter } from "../middlewares/rateLimiter";
 import { requireAdmin } from "../middlewares/authMiddleware";
 
@@ -49,9 +50,12 @@ router.use(
     "/translate-cv",
     "/translate-field",
     "/tailored-cvs/interview-prep",
+    "/jobs/analyze",
+    "/jobs/translate",
   ],
   aiRateLimit,
 );
+router.use("/jobs", jobsRouter);
 router.use(parseCvRouter);
 router.use(optimizeCvRouter);
 router.use(tailorCvRouter);

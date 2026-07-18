@@ -14,6 +14,12 @@
       "runtimeArgs": ["--filter", "@workspace/mockup-sandbox", "dev"],
       "port": 5174,
       "autoPort": true
+    },
+    {
+      "name": "api-server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@workspace/api-server", "dev"],
+      "port": 5000
     }
   ]
 }

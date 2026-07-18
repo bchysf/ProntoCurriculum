@@ -329,6 +329,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
   const GOALS: Array<{ label: string; sub: string; icon: string; page: Page }> = [
     { label: 'Creare un nuovo CV', sub: 'Parti da zero, da un PDF o da LinkedIn', icon: IC.doc, page: 'builder-step1' },
+    { label: 'Trovare offerte di lavoro', sub: 'Annunci reali con analisi di compatibilità AI', icon: IC.eye, page: 'jobs' },
     { label: 'Adattare il CV a un annuncio', sub: "L'AI riscrive il CV per una specifica offerta", icon: IC.spark, page: 'tailor' },
     { label: 'Scrivere la lettera di presentazione', sub: 'Struttura in 4 parti, generata dal tuo CV', icon: IC.doc, page: 'cover-letter' },
     { label: 'Prepararmi a un colloquio', sub: 'Coach AI sulle tue candidature', icon: IC.bulb, page: 'candidature' },

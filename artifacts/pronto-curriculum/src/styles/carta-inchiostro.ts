@@ -229,13 +229,81 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .ai-panel-empty { font-size: 12px; color: var(--ink-40); text-align: center; padding: 18px 0; }
 
 @media (max-width: 1080px) { .dv3 .cols { grid-template-columns: 1fr; } .dv3 .stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* Mobile Header & Drawer CSS */
+.dv3 .mob-header { display: none; }
+.dv3 .side-overlay { display: none; }
+
 @media (max-width: 860px) {
   .dv3 { grid-template-columns: 1fr; }
-  .dv3 .side { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 12px 16px; flex-wrap: nowrap; }
-  .dv3 .side .mono, .dv3 .side-user, .dv3 .side-foot { display: none; }
-  .dv3 .brand { padding: 0 14px 0 0; white-space: nowrap; }
-  .dv3 .nav-item { width: auto; white-space: nowrap; }
-  .dv3 .main { padding: 0 20px 40px; }
+  
+  .dv3 .mob-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 56px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--hair-soft);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+  }
+  
+  .dv3 .menu-toggle {
+    border: none;
+    background: transparent;
+    color: var(--ink-60);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  .dv3 .menu-toggle:hover {
+    background: #F4F4F8;
+    color: var(--ink);
+  }
+
+  .dv3 .side {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s var(--ease);
+    box-shadow: 0 0 30px rgba(0,0,0,0.15);
+  }
+  
+  .dv3 .side.open {
+    transform: translateX(0);
+  }
+  
+  .dv3 .side-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 23, 31, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ease);
+  }
+  
+  .dv3 .side-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dv3 .side .mono, .dv3 .side-user, .dv3 .side-foot { display: block; }
+  .dv3 .brand { padding: 0 10px 22px; }
+  .dv3 .nav-item { width: 100%; white-space: normal; }
+  .dv3 .main { padding: 16px 16px 40px; }
   .dv3 .stats { grid-template-columns: repeat(2, 1fr); }
   .dv3 .head { flex-direction: column; align-items: flex-start; }
   .dv3 .form-grid { grid-template-columns: 1fr; }

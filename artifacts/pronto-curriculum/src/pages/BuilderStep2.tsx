@@ -272,9 +272,90 @@ const RB_CSS = `
 .rb-kw.ok { background: #E7F5EE; color: #12805C; }
 .rb-kw.miss { background: #FDF0F0; color: #B23B3B; }
 
+/* salary estimator */
+.rb-sal-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.rb-sal-form input, .rb-sal-form select { background: #F1F2F6; border: 1px solid transparent; border-radius: 10px; padding: 10px 13px; font-family: inherit; font-size: 13px; color: var(--ink, #14171F); outline: none; }
+.rb-sal-form input:focus, .rb-sal-form select:focus { background: #fff; border-color: var(--gold, #2F2AE5); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+.rb-sal-range { position: relative; height: 10px; border-radius: 99px; background: linear-gradient(90deg, #EDEDF2, #C7C5F7, #2F2AE5); margin: 34px 8px 8px; }
+.rb-sal-tick { position: absolute; top: 14px; transform: translateX(-50%); font-family: var(--f-mono, monospace); font-size: 10px; color: #9297A1; white-space: nowrap; }
+.rb-sal-me { position: absolute; top: -30px; transform: translateX(-50%); text-align: center; }
+.rb-sal-me .flag { background: var(--ink, #14171F); color: #fff; font-size: 11px; font-weight: 800; border-radius: 7px; padding: 3px 9px; white-space: nowrap; }
+.rb-sal-me .pin { width: 2.5px; height: 16px; background: var(--ink, #14171F); margin: 2px auto 0; border-radius: 2px; }
+.rb-sal-stats { display: flex; gap: 20px; margin-top: 32px; flex-wrap: wrap; }
+.rb-sal-stat b { font-family: var(--f-display, Switzer, sans-serif); font-size: 19px; font-weight: 700; display: block; }
+.rb-sal-stat span { font-family: var(--f-mono, monospace); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: #9297A1; }
+
+.rb-tab-preview-only { display: none; }
+
 @media (max-width: 980px) {
-  .rb-prev { display: none; }
-  .rb-tabs { display: none; }
+  .rb-top {
+    height: auto;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .rb-doc {
+    order: 1;
+    flex: 1 1 auto;
+  }
+  .rb-actions {
+    order: 2;
+    flex: 0 0 auto;
+  }
+  .rb-tabs {
+    order: 3;
+    width: 100%;
+    margin-top: 4px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    border-radius: 8px;
+    padding: 2px;
+    background: #F1F2F6;
+  }
+  .rb-tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .rb-tab-preview-only {
+    display: flex !important;
+  }
+  .rb-split {
+    flex-direction: column;
+  }
+  .rb-form-col {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+  .rb-prev {
+    display: none;
+  }
+  .rb-resize {
+    display: none;
+  }
+  
+  .rb-split.rb-show-edit .rb-form-col {
+    display: block;
+  }
+  .rb-split.rb-show-edit .rb-prev {
+    display: none;
+  }
+  .rb-split.rb-show-preview .rb-form-col {
+    display: none;
+  }
+  .rb-split.rb-show-preview .rb-prev {
+    display: flex;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    height: calc(100vh - 110px);
+  }
+  .rb-pane {
+    padding: 16px 12px 60px;
+  }
+  .rb-pane-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }
 `;
 
@@ -573,8 +654,33 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const [jobDescription, setJobDescription] = useState('');
   const [showATSDetails, setShowATSDetails] = useState(false);
-  const [rbTab, setRbTab] = useState<'edit' | 'custom' | 'ats'>('edit');
+  const [rbTab, setRbTab] = useState<'edit' | 'preview' | 'custom' | 'ats'>('edit');
   const [dlOpen, setDlOpen] = useState(false);
+
+  // Salary estimator (tab Analisi ATS) — market data from the jobs API.
+  const [salTitle, setSalTitle] = useState('');
+  const [salLoc, setSalLoc] = useState('');
+  const [salCountry, setSalCountry] = useState('it');
+  const [salLoading, setSalLoading] = useState(false);
+  const [salData, setSalData] = useState<{ currency: string; p25: number; median: number; p75: number; samples: number; source: string } | null>(null);
+
+  const handleSalary = async () => {
+    const title = (salTitle || cvData.title || '').trim();
+    if (!title) { toast.error('Indica un ruolo per la stima retributiva.'); return; }
+    setSalLoading(true);
+    try {
+      const params = new URLSearchParams({ title, location: salLoc, country: salCountry });
+      const res = await fetch(`/api/jobs/salary?${params}`);
+      const body = await res.json() as { salary?: typeof salData; error?: string };
+      if (!res.ok || !body.salary) throw new Error(body.error ?? 'Dati non disponibili');
+      setSalData(body.salary);
+    } catch (err) {
+      setSalData(null);
+      toast.error(err instanceof Error ? err.message : 'Errore nella stima retributiva');
+    } finally {
+      setSalLoading(false);
+    }
+  };
 
   const [sidebarWidth, setSidebarWidth] = useState(420);
   const isResizing = useRef(false);
@@ -966,6 +1072,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
           <div className="rb-tabs">
             <button className={`rb-tab${rbTab === 'edit' ? ' on' : ''}`} onClick={() => setRbTab('edit')}>Modifica</button>
+            <button className={`rb-tab rb-tab-preview-only${rbTab === 'preview' ? ' on' : ''}`} onClick={() => setRbTab('preview')}>Anteprima</button>
             <button className={`rb-tab${rbTab === 'custom' ? ' on' : ''}`} onClick={() => setRbTab('custom')}>Template</button>
             <button className={`rb-tab${rbTab === 'ats' ? ' on' : ''}`} onClick={() => setRbTab('ats')}>Analisi ATS</button>
             <button className="rb-tab" onClick={() => onNavigate('tailor')}>Su misura <span className="aidot">AI</span></button>
@@ -1000,8 +1107,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           </div>
         </div>
 
-        {rbTab === 'edit' && (
-        <div className="rb-split">
+        {(rbTab === 'edit' || rbTab === 'preview') && (
+        <div className={`rb-split ${rbTab === 'preview' ? 'rb-show-preview' : 'rb-show-edit'}`}>
           {/* ── FORM ── */}
           <div className="rb-form-col">
           <div className="rb-form">
@@ -1769,6 +1876,74 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   </button>
                   <button className="btn btn-line btn-sm" onClick={() => setRbTab('edit')}>Modifica i contenuti</button>
                 </div>
+              </div>
+
+              {/* Salary estimator */}
+              <div className="rb-panel">
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>Quanto vali sul mercato</b>
+                  <span style={{ fontSize: 12, color: '#9297A1' }}>Retribuzioni reali dagli annunci · la tua posizione dipende dal punteggio ATS</span>
+                </div>
+                <p style={{ fontSize: 12.5, color: '#565B66', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  Confrontiamo il tuo ruolo con le retribuzioni pubblicate negli annunci: più il CV è forte, più in alto ti collochi nella fascia.
+                </p>
+                <div className="rb-sal-form">
+                  <input
+                    style={{ flex: '2 1 200px' }}
+                    placeholder={cvData.title || 'Ruolo (es. Project Manager)'}
+                    value={salTitle}
+                    onChange={e => setSalTitle(e.target.value)}
+                  />
+                  <input
+                    style={{ flex: '1 1 120px' }}
+                    placeholder="Città (opzionale)"
+                    value={salLoc}
+                    onChange={e => setSalLoc(e.target.value)}
+                  />
+                  <select value={salCountry} onChange={e => setSalCountry(e.target.value)}>
+                    <option value="it">🇮🇹 Italia</option>
+                    <option value="gb">🇬🇧 Regno Unito</option>
+                    <option value="de">🇩🇪 Germania</option>
+                    <option value="fr">🇫🇷 Francia</option>
+                    <option value="es">🇪🇸 Spagna</option>
+                    <option value="nl">🇳🇱 Paesi Bassi</option>
+                    <option value="us">🇺🇸 Stati Uniti</option>
+                    <option value="ch">🇨🇭 Svizzera</option>
+                  </select>
+                  <button className="btn btn-gold btn-sm" onClick={() => void handleSalary()} disabled={salLoading}>
+                    {salLoading ? 'Calcolo…' : 'Calcola'}
+                  </button>
+                </div>
+
+                {salData && (() => {
+                  const score = Math.max(15, Math.min(95, ats.total));
+                  const estimate = Math.round(salData.p25 + (salData.p75 - salData.p25) * (score / 100));
+                  const plus10 = Math.round((salData.p75 - salData.p25) * 0.10);
+                  const span = Math.max(1, salData.p75 - salData.p25);
+                  const mePct = Math.max(4, Math.min(96, ((estimate - salData.p25) / span) * 100));
+                  const fmtK = (n: number) => `${salData.currency} ${Math.round(n / 1000)}k`;
+                  return (
+                    <div style={{ marginTop: 8 }}>
+                      <div className="rb-sal-range">
+                        <span className="rb-sal-me" style={{ left: `${mePct}%` }}>
+                          <span className="flag">Tu · {fmtK(estimate)}</span>
+                          <span className="pin" style={{ display: 'block' }} />
+                        </span>
+                        <span className="rb-sal-tick" style={{ left: '0%' }}>{fmtK(salData.p25)}</span>
+                        <span className="rb-sal-tick" style={{ left: '50%' }}>mediana {fmtK(salData.median)}</span>
+                        <span className="rb-sal-tick" style={{ left: '100%' }}>{fmtK(salData.p75)}</span>
+                      </div>
+                      <div className="rb-sal-stats">
+                        <div className="rb-sal-stat"><b>{salData.currency} {estimate.toLocaleString('it-IT')}</b><span>Stima con CV a {ats.total}/100</span></div>
+                        <div className="rb-sal-stat"><b style={{ color: '#12805C' }}>+{salData.currency} {plus10.toLocaleString('it-IT')}</b><span>Ogni +10 punti ATS</span></div>
+                        <div className="rb-sal-stat"><b>{salData.samples.toLocaleString('it-IT')}</b><span>Annunci analizzati</span></div>
+                      </div>
+                      <div style={{ marginTop: 12, fontSize: 11.5, color: '#9297A1' }}>
+                        Fonte: {salData.source}. Stima indicativa lorda annua, non un'offerta.
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

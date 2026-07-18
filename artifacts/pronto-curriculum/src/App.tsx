@@ -16,6 +16,7 @@ import CoverLetterBuilder from './pages/CoverLetterBuilder';
 import ConcorsiPubblici from './pages/ConcorsiPubblici';
 import ReferralPage from './pages/ReferralPage';
 import AdminPanel from './pages/AdminPanel';
+import JobsBoard from './pages/JobsBoard';
 import { initGA4, trackPageView } from './utils/analytics';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
@@ -160,6 +161,15 @@ function AppInner() {
             <Candidature
               onNavigate={navigate}
               onCVLoaded={handleCVLoaded}
+              onLogin={() => openModal('signup')}
+            />
+          </WorkspaceShell>
+        )}
+        {page === 'jobs' && (
+          <WorkspaceShell page={page} {...shellProps}>
+            <JobsBoard
+              cvData={cvData}
+              onNavigate={navigate}
               onLogin={() => openModal('signup')}
             />
           </WorkspaceShell>

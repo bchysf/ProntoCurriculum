@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { CVData, Experience, Page } from '../types';
 import { useAuth } from '../hooks/use-auth';
@@ -37,6 +37,20 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const [editedSummary, setEditedSummary] = useState<string | null>(null);
   const [excludedExperiences, setExcludedExperiences] = useState<Experience[]>([]);
   const [excludedSectionOpen, setExcludedSectionOpen] = useState(false);
+
+  // Handoff from the jobs board: prefill the pasted announcement.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('pc_pending_job');
+    if (!raw) return;
+    sessionStorage.removeItem('pc_pending_job');
+    try {
+      const job = JSON.parse(raw) as { title?: string; company?: string; description?: string };
+      if (job.description) {
+        setMode('text');
+        setJobText(`${job.title ?? ''}${job.company ? ` — ${job.company}` : ''}\n\n${job.description}`.trim());
+      }
+    } catch { /* ignore malformed handoff */ }
+  }, []);
 
   const handleFetchUrl = async () => {
     const url = urlInput.trim();
