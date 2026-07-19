@@ -95,6 +95,35 @@ const COUNTRY_LEVEL_LABELS = new Set([
 ]);
 const isCountryLevel = (city: string) => COUNTRY_LEVEL_LABELS.has(city.toLowerCase());
 
+// Benefits are not a structured API field: detect the common ones from the posting text.
+const BENEFIT_PATTERNS: Array<[RegExp, string]> = [
+  [/buoni\s+pasto|ticket\s+restaurant|meal\s+vouchers?/i, 'Buoni pasto'],
+  [/smart\s*working|lavoro\s+da\s+remoto|remote\s+work|da\s+remoto|hybrid|ibrido/i, 'Smart working / ibrido'],
+  [/welfare/i, 'Welfare aziendale'],
+  [/assicurazione\s+sanitaria|health\s+insurance|polizza\s+sanitaria|copertura\s+sanitaria/i, 'Assicurazione sanitaria'],
+  [/auto\s+aziendale|company\s+car/i, 'Auto aziendale'],
+  [/bonus|incentiv|premi\s+di\s+(produzione|risultato)/i, 'Bonus / incentivi'],
+  [/formazione|training|corsi\s+di/i, 'Formazione'],
+  [/mensa\s+aziendale|mensa\b/i, 'Mensa'],
+  [/stock\s+option|equity|azioni\s+aziendali/i, 'Stock options / equity'],
+  [/tredicesima|quattordicesima/i, 'Tredicesima / quattordicesima'],
+  [/orario\s+flessibile|flessibilit[àa]\s+orari/i, 'Orario flessibile'],
+  [/ferie\s+aggiuntive|permessi\s+extra|unlimited\s+(pto|vacation)/i, 'Ferie extra'],
+];
+const detectBenefits = (desc: string) =>
+  BENEFIT_PATTERNS.filter(([re]) => re.test(desc)).map(([, label]) => label);
+
+interface SalaryStats {
+  currency: string;
+  p25: number;
+  median: number;
+  p75: number;
+  samples: number;
+  source: string;
+}
+
+const fmtSalary = (n: number, cur: string) => `${Math.round(n).toLocaleString('it-IT')} ${cur}`;
+
 function timeAgo(iso: string | null): string {
   if (!iso) return '';
   const ms = Date.now() - Date.parse(iso);
@@ -113,21 +142,38 @@ const JB_CSS = `
 
 .jb .head { flex-shrink: 0; }
 
-/* filter toolbar — one elevated card with labelled dropdowns */
-.jb-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; padding: 14px 16px; box-shadow: 0 12px 32px -24px rgba(20,23,31,.3); margin-bottom: 12px; flex-shrink: 0; }
-.jb-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 210px; min-width: 170px; }
-.jb-field.cc { flex: 0 1 190px; }
+/* header tools: result count + "Filtri" button opening a floating panel */
+.jb-headtools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.jb-count { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--ink-60); white-space: nowrap; }
+.jb-count b { font-family: var(--f-display); font-size: 15px; color: var(--ink); }
+.jb-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; border-radius: 99px; padding: 1px 7px; margin-left: 4px; }
+.jb-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; box-shadow: 0 18px 44px rgba(20,23,31,.16); padding: 16px; width: 330px; max-width: calc(100vw - 40px); display: flex; flex-direction: column; gap: 12px; animation: jbIn .18s var(--ease); }
+@keyframes jbIn { from { opacity: 0; transform: translateY(-6px); } }
+.jb-field { display: flex; flex-direction: column; gap: 5px; }
 .jb-field label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); padding-left: 2px; }
 .jb-field select { appearance: none; -webkit-appearance: none; width: 100%; background: #F7F7FA url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%239297A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center; border: 1px solid transparent; border-radius: 10px; padding: 10px 34px 10px 12px; font-family: var(--f-body); font-size: 13px; color: var(--ink); cursor: pointer; outline: none; transition: border-color .15s, background-color .15s, box-shadow .15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jb-field select:hover { border-color: var(--hair); background-color: #fff; }
 .jb-field select:focus { background-color: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
 .jb-field select:disabled { opacity: .55; cursor: default; }
-
-/* result count + active-filter reset */
-.jb-count { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--ink-60); margin-bottom: 12px; flex-shrink: 0; padding: 0 2px; }
-.jb-count b { font-family: var(--f-display); font-size: 14px; color: var(--ink); }
 .jb-reset { border: none; background: none; color: var(--accent); font-weight: 700; font-size: 12px; cursor: pointer; font-family: var(--f-body); padding: 0; }
 .jb-reset:hover { text-decoration: underline; }
+
+/* floating salary window (minimizable / closable, recall pill top-right) */
+.jb-sal-win { position: fixed; top: 72px; right: 26px; width: 330px; max-height: calc(100vh - 100px); overflow-y: auto; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; box-shadow: 0 24px 60px -12px rgba(20,23,31,.35); z-index: 120; animation: jbIn .2s var(--ease); }
+.jb-sal-head { display: flex; align-items: center; gap: 6px; padding: 13px 14px; border-bottom: 1px solid var(--hair-soft); position: sticky; top: 0; background: #fff; z-index: 2; }
+.jb-sal-head h4 { font-family: var(--f-display); font-size: 14px; font-weight: 700; margin: 0; flex: 1; display: flex; align-items: center; gap: 7px; color: var(--ink); }
+.jb-sal-head h4 svg { color: var(--accent); }
+.jb-sal-ctl { border: none; background: transparent; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; color: var(--ink-40); display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; padding: 0; }
+.jb-sal-ctl:hover { background: #F4F4F8; color: var(--ink); }
+.jb-sal-body { padding: 13px 16px 16px; }
+.jb-sal-job { font-size: 12.5px; color: var(--ink-60); margin-bottom: 8px; line-height: 1.45; }
+.jb-sal-job b { color: var(--ink); }
+.jb-sal-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--hair-soft); font-size: 12px; color: var(--ink-60); }
+.jb-sal-row b { font-family: var(--f-display); font-size: 13.5px; color: var(--ink); }
+.jb-sal-row.mid b { font-size: 19px; color: var(--accent); }
+.jb-sal-src { font-size: 10.5px; color: var(--ink-40); margin-top: 9px; line-height: 1.5; }
+.jb-sal-pill { position: fixed; top: 72px; right: 26px; z-index: 120; display: flex; align-items: center; gap: 7px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-family: var(--f-body); font-weight: 800; font-size: 12.5px; border-radius: 99px; padding: 9px 16px; cursor: pointer; box-shadow: 0 10px 26px rgba(47,42,229,.22); animation: jbIn .2s var(--ease); }
+.jb-sal-pill:hover { background: var(--tint); }
 
 /* split */
 .jb-split { flex: 1; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; min-height: 0; }
@@ -188,6 +234,12 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   const [selected, setSelected] = useState<JobPosting | null>(null);
   const [filterCity, setFilterCity] = useState('');
   const [filterRoleOrCompany, setFilterRoleOrCompany] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const [salaryWin, setSalaryWin] = useState<'closed' | 'open' | 'min'>('closed');
+  const [salaryJob, setSalaryJob] = useState<JobPosting | null>(null);
+  const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null);
+  const [salaryLoading, setSalaryLoading] = useState(false);
 
   const [archive, setArchive] = useState<StoredExp[]>([]);
   const [analyses, setAnalyses] = useState<Record<string, JobAnalysis>>({});
@@ -245,6 +297,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     [jobs, filterCity, filterRoleOrCompany]
   );
   const hasActiveFilters = !!(filterCity || filterRoleOrCompany);
+  const salaryBenefits = useMemo(() => salaryJob ? detectBenefits(salaryJob.description) : [], [salaryJob]);
 
   // Keep the selected job in sync with the filtered list.
   useEffect(() => {
@@ -317,6 +370,30 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     }
   };
 
+  const handleSalary = async (job: JobPosting) => {
+    setSalaryJob(job);
+    setSalaryWin('open');
+    setSalaryStats(null);
+    setSalaryLoading(true);
+    try {
+      const city = cleanCity(job.location);
+      const params = new URLSearchParams({
+        title: cleanRole(job.title),
+        location: isCountryLevel(city) ? '' : city,
+        country: (job.country || country).toLowerCase().slice(0, 2),
+      });
+      const res = await fetch(`/api/jobs/salary?${params}`);
+      const body = await res.json() as { salary?: SalaryStats; error?: string };
+      if (!res.ok || !body.salary) throw new Error(body.error ?? 'Dati retributivi non disponibili');
+      setSalaryStats(body.salary);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore nella stima dello stipendio');
+      setSalaryWin('closed');
+    } finally {
+      setSalaryLoading(false);
+    }
+  };
+
   const handleTailor = (job: JobPosting) => {
     sessionStorage.setItem('pc_pending_job', JSON.stringify({
       title: job.title,
@@ -344,51 +421,66 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
             Annunci reali dalle principali job board{providers.length > 0 ? ` (${providers.join(', ')})` : ''}. L'AI misura la compatibilità col tuo CV e ti dice cosa cambiare.
           </p>
         </div>
-      </div>
-
-      {/* FILTER TOOLBAR */}
-      <div className="jb-bar">
-        <div className="jb-field">
-          <label>Ruolo o azienda</label>
-          <select value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} disabled={jobs.length === 0}>
-            <option value="">Tutti i ruoli e le aziende</option>
-            <optgroup label="Ruoli">
-              {roleOptions.map(([r, n]) => <option key={`r-${r}`} value={r}>{r} ({n})</option>)}
-            </optgroup>
-            <optgroup label="Aziende">
-              {companyOptions.map(([c, n]) => <option key={`c-${c}`} value={c}>{c} ({n})</option>)}
-            </optgroup>
-          </select>
-        </div>
-        <div className="jb-field">
-          <label>Città</label>
-          <select value={filterCity} onChange={e => setFilterCity(e.target.value)} disabled={jobs.length === 0}>
-            <option value="">Tutte le città</option>
-            {cityOptions.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
-          </select>
-        </div>
-        <div className="jb-field cc">
-          <label>Paese</label>
-          <select value={country} onChange={e => { const cc = e.target.value; setCountry(cc); void search('', '', cc); }}>
-            {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
-          </select>
-        </div>
-        <button className="btn btn-ink" style={{ gap: 7 }} disabled={searching} onClick={() => void search('', '', country)}>
-          {searching ? 'Ricerca…' : <><Icon d={IC.spark} size={14} /> Aggiorna</>}
-        </button>
-      </div>
-
-      {searched && !searching && jobs.length > 0 && (
-        <div className="jb-count">
-          <b>{filteredJobs.length}</b>
-          <span>{filteredJobs.length === 1 ? 'offerta' : 'offerte'}{hasActiveFilters ? ` su ${jobs.length} trovate` : ' trovate'}</span>
-          {hasActiveFilters && (
-            <button className="jb-reset" onClick={() => { setFilterCity(''); setFilterRoleOrCompany(''); }}>
-              Azzera filtri
-            </button>
+        <div className="jb-headtools">
+          {searched && !searching && jobs.length > 0 && (
+            <div className="jb-count">
+              <b>{filteredJobs.length}</b>
+              <span>{filteredJobs.length === 1 ? 'offerta' : 'offerte'}{hasActiveFilters ? ` su ${jobs.length}` : ''}</span>
+              {hasActiveFilters && (
+                <button className="jb-reset" onClick={() => { setFilterCity(''); setFilterRoleOrCompany(''); }}>
+                  Azzera
+                </button>
+              )}
+            </div>
           )}
+          <div style={{ position: 'relative' }}>
+            <button className="btn btn-line" style={{ gap: 7 }} onClick={() => setFiltersOpen(v => !v)}>
+              <Icon d={IC.sliders} size={14} /> Filtri
+              {(Number(!!filterCity) + Number(!!filterRoleOrCompany)) > 0 && (
+                <span className="jb-badge">{Number(!!filterCity) + Number(!!filterRoleOrCompany)}</span>
+              )}
+            </button>
+            {filtersOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 55 }} onClick={() => setFiltersOpen(false)} />
+                <div className="jb-pop">
+                  <div className="jb-field">
+                    <label>Ruolo o azienda</label>
+                    <select value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} disabled={jobs.length === 0}>
+                      <option value="">Tutti i ruoli e le aziende</option>
+                      <optgroup label="Ruoli">
+                        {roleOptions.map(([r, n]) => <option key={`r-${r}`} value={r}>{r} ({n})</option>)}
+                      </optgroup>
+                      <optgroup label="Aziende">
+                        {companyOptions.map(([c, n]) => <option key={`c-${c}`} value={c}>{c} ({n})</option>)}
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div className="jb-field">
+                    <label>Città</label>
+                    <select value={filterCity} onChange={e => setFilterCity(e.target.value)} disabled={jobs.length === 0}>
+                      <option value="">Tutte le città</option>
+                      {cityOptions.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
+                    </select>
+                  </div>
+                  <div className="jb-field">
+                    <label>Paese</label>
+                    <select value={country} onChange={e => { const cc = e.target.value; setCountry(cc); void search('', '', cc); }}>
+                      {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center', gap: 6 }} disabled={searching} onClick={() => void search('', '', country)}>
+                      {searching ? 'Ricerca…' : <><Icon d={IC.refresh} size={12} /> Aggiorna</>}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setFiltersOpen(false)}>Chiudi</button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       <div className="jb-split">
         {/* LIST */}
@@ -451,6 +543,10 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                       {analyzing ? 'Analisi in corso…' : 'Analizza col mio CV'}
                     </button>
                   )}
+                  <button className="btn btn-line btn-sm" style={{ gap: 6 }} onClick={() => void handleSalary(selected)} disabled={salaryLoading && salaryJob?.id === selected.id}>
+                    <Icon d={IC.coins} size={13} />
+                    {salaryLoading && salaryJob?.id === selected.id ? 'Stima in corso…' : 'Stima stipendio'}
+                  </button>
                   {!translation && (
                     <button className="btn btn-line btn-sm" onClick={() => void handleTranslate()} disabled={translating}>
                       {translating ? 'Traduzione…' : 'Traduci in italiano'}
@@ -555,6 +651,54 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
           )}
         </div>
       </div>
+
+      {/* FLOATING SALARY WINDOW */}
+      {salaryWin === 'open' && salaryJob && (
+        <div className="jb-sal-win">
+          <div className="jb-sal-head">
+            <h4><Icon d={IC.coins} size={14} /> Stima stipendio</h4>
+            <button className="jb-sal-ctl" title="Riduci" aria-label="Riduci" onClick={() => setSalaryWin('min')}>–</button>
+            <button className="jb-sal-ctl" title="Chiudi" aria-label="Chiudi" onClick={() => setSalaryWin('closed')}>×</button>
+          </div>
+          <div className="jb-sal-body">
+            <div className="jb-sal-job">
+              <b>{cleanRole(salaryJob.title)}</b> · {salaryJob.company}
+              {!isCountryLevel(cleanCity(salaryJob.location)) && cleanCity(salaryJob.location) ? ` · ${cleanCity(salaryJob.location)}` : ''}
+            </div>
+            {salaryLoading && (
+              <div className="jb-empty" style={{ padding: '20px 0' }}>
+                <div className="spinner" style={{ margin: '0 auto 10px' }} />
+                Stima della retribuzione in corso…
+              </div>
+            )}
+            {!salaryLoading && salaryStats && (
+              <>
+                <div className="jb-sal-row"><span>25° percentile</span><b>{fmtSalary(salaryStats.p25, salaryStats.currency)}</b></div>
+                <div className="jb-sal-row mid"><span>Mediana · annuo lordo</span><b>{fmtSalary(salaryStats.median, salaryStats.currency)}</b></div>
+                <div className="jb-sal-row"><span>75° percentile</span><b>{fmtSalary(salaryStats.p75, salaryStats.currency)}</b></div>
+                {salaryBenefits.length > 0 && (
+                  <>
+                    <div className="jb-sec-label">Benefit citati nell'annuncio</div>
+                    <div>{salaryBenefits.map(b => <span key={b} className="jb-kw">{b}</span>)}</div>
+                  </>
+                )}
+                <div className="jb-sal-src">
+                  {salaryStats.source}{salaryStats.samples ? ` · ${salaryStats.samples} campioni` : ''}. Stima indicativa basata su annunci e dati di mercato.
+                </div>
+                <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={() => onNavigate('calcolo-stipendio')}>
+                  Apri il calcolatore completo
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {salaryWin === 'min' && salaryJob && (
+        <button className="jb-sal-pill" onClick={() => setSalaryWin('open')} title="Riapri la stima stipendio">
+          <Icon d={IC.coins} size={14} />
+          {salaryStats ? fmtSalary(salaryStats.median, salaryStats.currency) : 'Stipendio'}
+        </button>
+      )}
     </div>
   );
 }
