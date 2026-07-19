@@ -18,6 +18,8 @@ import ReferralPage from './pages/ReferralPage';
 import AdminPanel from './pages/AdminPanel';
 import JobsBoard from './pages/JobsBoard';
 import SalaryCalculator from './pages/SalaryCalculator';
+import Prezzi from './pages/Prezzi';
+import ComeFunziona from './pages/ComeFunziona';
 import { initGA4, trackPageView } from './utils/analytics';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
@@ -242,6 +244,12 @@ function AppInner() {
         )}
         {page === 'calcolo-stipendio' && (
           <SalaryCalculator onNavigate={navigate} />
+        )}
+        {page === 'prezzi' && (
+          <Prezzi onNavigate={navigate} onModal={openModal} />
+        )}
+        {page === 'come-funziona' && (
+          <ComeFunziona onNavigate={navigate} />
         )}
       </main>
 

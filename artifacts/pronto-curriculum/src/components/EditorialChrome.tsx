@@ -221,7 +221,7 @@ export function useSeoMeta(title: string, description: string, canonicalPath?: s
 
 interface EditorialChromeProps {
   onNavigate: (page: Page, slug?: string) => void;
-  active?: 'blog' | 'calcolo-stipendio';
+  active?: 'blog' | 'calcolo-stipendio' | 'prezzi' | 'come-funziona';
   tagline?: string;
   children: ReactNode;
 }
@@ -242,6 +242,8 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
             </div>
             <div className="nav-links">
               <span onClick={() => onNavigate('home')}>Home</span>
+              <span className={active === 'come-funziona' ? 'active' : ''} onClick={() => onNavigate('come-funziona')}>Come Funziona</span>
+              <span className={active === 'prezzi' ? 'active' : ''} onClick={() => onNavigate('prezzi')}>Prezzi</span>
               <span className={active === 'blog' ? 'active' : ''} onClick={() => onNavigate('blog')}>Blog & Guide</span>
               <span className={active === 'calcolo-stipendio' ? 'active' : ''} onClick={() => onNavigate('calcolo-stipendio')}>Calcolatore Stipendio</span>
             </div>
@@ -269,7 +271,8 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
             <nav className="foot-col" aria-label="Prodotto">
               <h4>Prodotto</h4>
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Crea il tuo CV</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Template ATS</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('come-funziona'); }}>Come funziona</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('prezzi'); }}>Prezzi</a>
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>CV su misura</a>
             </nav>
             <nav className="foot-col" aria-label="Risorse">

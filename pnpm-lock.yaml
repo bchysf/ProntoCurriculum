@@ -430,6 +430,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.0
         version: 2.110.1
+      '@workspace/api-server':
+        specifier: workspace:*
+        version: link:../api-server
       html2pdf.js:
         specifier: ^0.14.0
         version: 0.14.0

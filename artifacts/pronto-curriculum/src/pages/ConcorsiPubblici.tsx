@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Page, CVData, TemplateType } from '../types';
+import { useSeoMeta } from '../components/EditorialChrome';
 
 interface ConcorsiPubbliciProps {
   onNavigate: (page: Page) => void;
@@ -9,6 +10,11 @@ interface ConcorsiPubbliciProps {
 }
 
 export default function ConcorsiPubblici({ onNavigate, cvData, onCVChange, onTemplateChange }: ConcorsiPubbliciProps) {
+  useSeoMeta(
+    'CV per Concorsi Pubblici: Punteggio Titoli e Template PA | ProntoCurriculum',
+    'Calcola il punteggio titoli stimato per i concorsi pubblici e genera un CV in formato Europass/PA, con laurea, servizio in PA e certificazioni valorizzati secondo i bandi.',
+    '/concorsi-pubblici',
+  );
   const [laureaScore, setLaureaScore] = useState<number>(110);
   const [hasLode, setHasLode] = useState<boolean>(true);
   const [paYears, setPaYears] = useState<number>(2);

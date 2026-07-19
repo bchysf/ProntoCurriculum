@@ -78,6 +78,7 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/share": "^8.0.1",
     "@supabase/supabase-js": "^2.45.0",
+    "@workspace/api-server": "workspace:*",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
     "pdfjs-dist": "^5.7.284"

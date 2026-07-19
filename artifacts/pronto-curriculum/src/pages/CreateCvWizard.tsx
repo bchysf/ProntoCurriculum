@@ -5,6 +5,7 @@ import { aiParseCV, aiParseLinkedInText } from '../utils/aiParseCV';
 import { LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { Icon, IC } from '../components/StrokeIcon';
 import CVPreview from '../components/CVPreview';
+import { useSeoMeta } from '../components/EditorialChrome';
 
 const BLANK_CV: CVData = {
   firstName: '', lastName: '', title: '', email: '', phone: '',
@@ -74,6 +75,11 @@ interface CreateCvWizardProps {
 }
 
 export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
+  useSeoMeta(
+    'Crea il tuo CV Gratis con l\'AI — Template ATS | ProntoCurriculum',
+    'Crea un curriculum professionale in pochi minuti: carica il PDF o LinkedIn, scegli un template ottimizzato ATS e lascia che l\'AI scriva le tue esperienze. Gratis, senza registrazione.',
+    '/crea-cv',
+  );
   const [step, setStep] = useState<Step>('source');
   const [source, setSource] = useState<Source | null>(null);
   const [linkedInTab, setLinkedInTab] = useState<'pdf' | 'paste'>('pdf');

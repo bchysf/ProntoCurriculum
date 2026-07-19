@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Page, CVData, TemplateType } from '../types';
 import { toast } from 'sonner';
+import { useSeoMeta } from '../components/EditorialChrome';
 
 interface CoverLetterBuilderProps {
   cvData: CVData;
@@ -18,6 +19,11 @@ interface CoverLetterData {
 }
 
 export default function CoverLetterBuilder({ cvData, template = 'modern', onNavigate }: CoverLetterBuilderProps) {
+  useSeoMeta(
+    'Genera Lettera di Presentazione con l\'AI | ProntoCurriculum',
+    'Crea una lettera di presentazione professionale in italiano in pochi secondi: l\'AI la scrive a partire dal tuo CV e dall\'annuncio di lavoro, con tono formale, entusiasta o executive a scelta.',
+    '/genera-lettera-presentazione',
+  );
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [jobDescription, setJobDescription] = useState('');

@@ -3,6 +3,7 @@ import { Page, CVData } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { Icon, IC } from '../components/StrokeIcon';
 import { toast } from 'sonner';
+import { useSeoMeta } from '../components/EditorialChrome';
 
 // Offerte di lavoro — resume.io "Tailor" structure, Carta & Inchiostro skin.
 // Left: searchable feed aggregated from free job boards (server-side).
@@ -127,6 +128,11 @@ const JB_CSS = `
 `;
 
 export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProps) {
+  useSeoMeta(
+    'Offerte di Lavoro in Italia con Analisi AI di Compatibilità | ProntoCurriculum',
+    'Cerca offerte di lavoro aggregate dai principali portali italiani ed europei e scopri con l\'AI quanto il tuo CV è compatibile con ogni annuncio, con suggerimenti per candidarti al meglio.',
+    '/offerte-lavoro',
+  );
   const { isAuthenticated } = useAuth();
 
   const [q, setQ] = useState('');

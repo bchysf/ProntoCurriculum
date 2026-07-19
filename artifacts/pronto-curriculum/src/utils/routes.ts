@@ -21,6 +21,8 @@ const STATIC_PATH_TO_PAGE: Record<string, Page> = {
   '/genera-lettera-presentazione': 'cover-letter',
   '/concorsi-pubblici': 'concorsi',
   '/offerte-lavoro': 'jobs',
+  '/prezzi': 'prezzi',
+  '/come-funziona': 'come-funziona',
   '/archivio': 'archivio',
   '/candidature': 'candidature',
   '/dashboard': 'dashboard',
