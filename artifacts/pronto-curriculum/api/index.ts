@@ -5,30 +5,55 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 // to this file; Vercel keeps the original path in req.url, so the Express
 // routes mounted under "/api" match unchanged.
 //
-// The app is imported dynamically inside the handler: a static import that
-// throws (e.g. a module-scope "env var must be set" check) would crash the
-// function before any code runs, yielding an opaque FUNCTION_INVOCATION_FAILED
-// with no way to see the error without dashboard access. This way boot
-// failures surface in the HTTP response instead.
-const appPromise = import("@workspace/api-server/app").then((m) => m.default);
+// The app is imported dynamically with the rejection handler attached
+// immediately: a static import that throws would kill the function with an
+// opaque FUNCTION_INVOCATION_FAILED, and a bare import() promise that
+// rejects before the first request becomes an unhandled rejection that
+// crashes the process during init (which surfaces as requests hanging
+// forever). Capturing the error lets us return it in the HTTP response.
+type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void;
+
+const loaded: Promise<{ app?: NodeHandler; err?: unknown }> = import(
+  "@workspace/api-server/app"
+)
+  .then((m) => {
+    // Guard against ESM/CJS interop double-wrapping the default export.
+    const mod = m as { default?: unknown };
+    const candidate =
+      typeof mod.default === "function"
+        ? mod.default
+        : typeof (mod.default as { default?: unknown } | undefined)?.default ===
+            "function"
+          ? (mod.default as { default: unknown }).default
+          : null;
+    if (!candidate) {
+      return {
+        err: new Error(
+          `app module loaded but default export is not a function (got ${typeof mod.default})`,
+        ),
+      };
+    }
+    return { app: candidate as NodeHandler };
+  })
+  .catch((err: unknown) => ({ err }));
 
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ) {
-  try {
-    const app = await appPromise;
+  const { app, err } = await loaded;
+  if (app) {
     app(req, res);
-  } catch (err) {
-    const e = err as Error;
-    res.statusCode = 500;
-    res.setHeader("content-type", "application/json");
-    res.end(
-      JSON.stringify({
-        error: "api_boot_failure",
-        message: e?.message ?? String(err),
-        stack: e?.stack?.split("\n").slice(0, 6),
-      }),
-    );
+    return;
   }
+  const e = err as Error;
+  res.statusCode = 500;
+  res.setHeader("content-type", "application/json");
+  res.end(
+    JSON.stringify({
+      error: "api_boot_failure",
+      message: e?.message ?? String(err),
+      stack: e?.stack?.split("\n").slice(0, 6),
+    }),
+  );
 }
