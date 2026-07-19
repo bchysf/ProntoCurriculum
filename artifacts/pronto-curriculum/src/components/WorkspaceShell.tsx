@@ -30,7 +30,10 @@ const IC = {
   search: 'M21 21l-4.3-4.3|M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
   menu: 'M4 6h16|M4 12h16|M4 18h16',
   close: 'M18 6L6 18|M6 6l12 12',
+  chevronsLeft: 'M11 17l-5-5 5-5|M18 17l-5-5 5-5',
 };
+
+const SIDEBAR_COLLAPSE_KEY = 'pc_sidebar_collapsed';
 
 interface WorkspaceShellProps {
   page: Page;
@@ -52,6 +55,18 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
   const t = useT();
   const { lang, setLang } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === '1';
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed(v => {
+      const next = !v;
+      window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, next ? '1' : '0');
+      return next;
+    });
+  };
 
   const items: Array<{
     key: string;
@@ -76,7 +91,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
   ];
 
   return (
-    <div className="dv3">
+    <div className={`dv3${collapsed ? ' side-collapsed' : ''}`}>
       <style>{CARTA_INCHIOSTRO_CSS}</style>
 
       {/* Mobile Topbar */}
@@ -91,7 +106,21 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
       <div className={`side-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
 
       <aside className={`side${menuOpen ? ' open' : ''}`}>
-        <BrandLogo onClick={() => { onNavigate('home'); setMenuOpen(false); }} iconSize={24} fontSize={17} style={{ padding: '0 10px 22px' }} />
+        <button
+          className="side-toggle"
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Espandi menu' : 'Comprimi menu'}
+          aria-label={collapsed ? 'Espandi menu' : 'Comprimi menu'}
+        >
+          <Icon d={IC.chevronsLeft} size={13} />
+        </button>
+        <BrandLogo
+          onClick={() => { onNavigate('home'); setMenuOpen(false); }}
+          iconSize={24}
+          fontSize={17}
+          iconOnly={collapsed}
+          style={{ padding: collapsed ? '0 0 22px' : '0 10px 22px', justifyContent: collapsed ? 'center' : 'flex-start', transition: 'padding .2s var(--ease)' }}
+        />
         <div className="mono">{t('ws.workspace')}</div>
         {items.map(item => {
           const active = item.activeOn.includes(page);
@@ -99,7 +128,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
             <button
               key={item.key}
               className={`nav-item${active ? ' active' : ''}${item.locked ? ' locked' : ''}`}
-              title={item.locked ? t('ws.lockedHint') : undefined}
+              title={item.locked ? t('ws.lockedHint') : (collapsed ? item.label : undefined)}
               onClick={() => {
                 if (item.locked) {
                   onLogin();

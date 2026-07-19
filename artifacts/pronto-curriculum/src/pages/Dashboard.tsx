@@ -225,6 +225,11 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
   const handleEditCV = (cv: SavedCV) => { onCVLoaded(cv.cvData, cv.template); onNavigate('builder-step2'); };
   const handleEditTailored = (cv: SavedTailoredCv) => { onCVLoaded(cv.cvData); onNavigate('builder-step2'); };
+  const handleOptimizeCV = (cv: SavedCV) => {
+    sessionStorage.setItem('pc_auto_optimize', '1');
+    onCVLoaded(cv.cvData, cv.template);
+    onNavigate('builder-step2');
+  };
 
   const handleDeleteCV = async (id: string) => {
     setDeletingId(id);
@@ -368,7 +373,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
       {/* FEATURE CARDS */}
       <div className="dh-feats">
-        <button className="dh-feat" onClick={() => onNavigate('builder-step1')}>
+        <button className="dh-feat" onClick={() => document.getElementById('dh-docs')?.scrollIntoView({ behavior: 'smooth' })}>
           <div className="dh-feat-top">
             <span className="dh-feat-ico"><Icon d={IC.doc} size={16} /></span>
             <b>{t('dash.myCVs')}</b>
@@ -437,7 +442,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
       </div>
 
       {/* DOCUMENTS */}
-      <div className="dh-sec">
+      <div className="dh-sec" id="dh-docs">
         <div className="dh-sec-head">
           <h3>I miei documenti</h3>
           <a onClick={() => onNavigate('builder-step1')}>+ Nuovo CV</a>
@@ -469,6 +474,9 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
               </div>
               <div className="dh-doc-acts">
                 <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => handleEditCV(cv)}>{t('dash.openCV')}</button>
+                <button className="btn btn-line btn-sm" onClick={() => handleOptimizeCV(cv)} title="Ottimizza con AI" aria-label="Ottimizza con AI">
+                  <Icon d={IC.spark} size={13} />
+                </button>
                 <button className="btn btn-line btn-sm" disabled={downloadingDocxId === cv.id} onClick={() => void handleQuickDownloadDOCX(cv)} title="Scarica in Word (.docx)">
                   {downloadingDocxId === cv.id ? '…' : <Icon d={IC.doc} size={13} />}
                 </button>

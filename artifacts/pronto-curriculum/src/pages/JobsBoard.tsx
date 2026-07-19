@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Page, CVData } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { Icon, IC } from '../components/StrokeIcon';
@@ -56,6 +56,22 @@ const COUNTRIES: Array<[string, string]> = [
   ['nl', '🇳🇱 Paesi Bassi'],
   ['us', '🇺🇸 Stati Uniti'],
   ['ch', '🇨🇭 Svizzera'],
+  ['ca', '🇨🇦 Canada'],
+  ['au', '🇦🇺 Australia'],
+  ['nz', '🇳🇿 Nuova Zelanda'],
+  ['ae', '🇦🇪 Emirati Arabi Uniti'],
+  ['sa', '🇸🇦 Arabia Saudita'],
+  ['qa', '🇶🇦 Qatar'],
+  ['kw', '🇰🇼 Kuwait'],
+  ['bh', '🇧🇭 Bahrein'],
+  ['om', '🇴🇲 Oman'],
+  ['ie', '🇮🇪 Irlanda'],
+  ['se', '🇸🇪 Svezia'],
+  ['no', '🇳🇴 Norvegia'],
+  ['dk', '🇩🇰 Danimarca'],
+  ['be', '🇧🇪 Belgio'],
+  ['at', '🇦🇹 Austria'],
+  ['sg', '🇸🇬 Singapore'],
 ];
 
 function timeAgo(iso: string | null): string {
@@ -83,6 +99,11 @@ const JB_CSS = `
 .jb-q { flex: 2 1 220px; }
 .jb-loc { flex: 1 1 140px; }
 .jb-cc { flex: 0 0 auto; cursor: pointer; }
+
+/* result filters (dropdowns built from the jobs currently loaded) */
+.jb-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; flex-shrink: 0; }
+.jb-filter { background: #F1F2F6; border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; font-family: var(--f-body); font-size: 12.5px; color: var(--ink-60); cursor: pointer; max-width: 240px; outline: none; transition: all .15s; }
+.jb-filter:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
 
 /* split */
 .jb-split { flex: 1; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; min-height: 0; }
@@ -143,6 +164,8 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selected, setSelected] = useState<JobPosting | null>(null);
+  const [filterCity, setFilterCity] = useState('');
+  const [filterRoleOrCompany, setFilterRoleOrCompany] = useState('');
 
   const [archive, setArchive] = useState<StoredExp[]>([]);
   const [analyses, setAnalyses] = useState<Record<string, JobAnalysis>>({});
@@ -175,6 +198,38 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     void search('', '', 'it');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A fresh set of results invalidates any previously chosen dropdown filter.
+  useEffect(() => { setFilterCity(''); setFilterRoleOrCompany(''); }, [jobs]);
+
+  const cityOptions = useMemo(
+    () => Array.from(new Set(jobs.map(j => j.location).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [jobs]
+  );
+  const roleOptions = useMemo(
+    () => Array.from(new Set(jobs.map(j => j.title).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [jobs]
+  );
+  const companyOptions = useMemo(
+    () => Array.from(new Set(jobs.map(j => j.company).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [jobs]
+  );
+
+  const filteredJobs = useMemo(
+    () => jobs.filter(j =>
+      (!filterCity || j.location === filterCity) &&
+      (!filterRoleOrCompany || j.title === filterRoleOrCompany || j.company === filterRoleOrCompany)
+    ),
+    [jobs, filterCity, filterRoleOrCompany]
+  );
+
+  // Keep the selected job in sync with the filtered list.
+  useEffect(() => {
+    if (selected && !filteredJobs.some(j => j.id === selected.id)) {
+      setSelected(filteredJobs[0] ?? null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredJobs]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -280,6 +335,24 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         </button>
       </form>
 
+      {jobs.length > 0 && (
+        <div className="jb-filters">
+          <select className="jb-filter" value={filterCity} onChange={e => setFilterCity(e.target.value)} title="Filtra per città">
+            <option value="">Tutte le città</option>
+            {cityOptions.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="jb-filter" value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} title="Filtra per ruolo, competenza o azienda">
+            <option value="">Ruolo, competenza o azienda</option>
+            <optgroup label="Ruoli">
+              {roleOptions.map(r => <option key={`r-${r}`} value={r}>{r}</option>)}
+            </optgroup>
+            <optgroup label="Aziende">
+              {companyOptions.map(c => <option key={`c-${c}`} value={c}>{c}</option>)}
+            </optgroup>
+          </select>
+        </div>
+      )}
+
       <div className="jb-split">
         {/* LIST */}
         <div className="jb-list">
@@ -292,7 +365,13 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
               Prova con parole più generiche o cambia paese.
             </div>
           )}
-          {jobs.map(job => (
+          {!searching && jobs.length > 0 && filteredJobs.length === 0 && (
+            <div className="jb-empty">
+              Nessuna offerta corrisponde ai filtri selezionati.<br />
+              Prova a cambiare o azzerare i filtri.
+            </div>
+          )}
+          {filteredJobs.map(job => (
             <button key={job.id} className={`jb-card${selected?.id === job.id ? ' on' : ''}`} onClick={() => setSelected(job)}>
               <span className="jb-logo">{(job.company[0] ?? '?').toUpperCase()}</span>
               <span style={{ minWidth: 0 }}>

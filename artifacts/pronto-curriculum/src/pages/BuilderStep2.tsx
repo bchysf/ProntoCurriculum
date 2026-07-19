@@ -792,6 +792,16 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     }
   };
 
+  // "Ottimizza" quick action from the dashboard's saved-CV card sets this flag
+  // before loading the CV here, so the AI optimization runs automatically once.
+  useEffect(() => {
+    if (sessionStorage.getItem('pc_auto_optimize') === '1') {
+      sessionStorage.removeItem('pc_auto_optimize');
+      void handleOptimizeAll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const update = useCallback((field: keyof CVData, value: unknown) => {
     onCVChange({ ...cvData, [field]: value });
   }, [cvData, onCVChange]);
@@ -1909,6 +1919,22 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <option value="nl">🇳🇱 Paesi Bassi</option>
                     <option value="us">🇺🇸 Stati Uniti</option>
                     <option value="ch">🇨🇭 Svizzera</option>
+                    <option value="ca">🇨🇦 Canada</option>
+                    <option value="au">🇦🇺 Australia</option>
+                    <option value="nz">🇳🇿 Nuova Zelanda</option>
+                    <option value="ae">🇦🇪 Emirati Arabi Uniti</option>
+                    <option value="sa">🇸🇦 Arabia Saudita</option>
+                    <option value="qa">🇶🇦 Qatar</option>
+                    <option value="kw">🇰🇼 Kuwait</option>
+                    <option value="bh">🇧🇭 Bahrein</option>
+                    <option value="om">🇴🇲 Oman</option>
+                    <option value="ie">🇮🇪 Irlanda</option>
+                    <option value="se">🇸🇪 Svezia</option>
+                    <option value="no">🇳🇴 Norvegia</option>
+                    <option value="dk">🇩🇰 Danimarca</option>
+                    <option value="be">🇧🇪 Belgio</option>
+                    <option value="at">🇦🇹 Austria</option>
+                    <option value="sg">🇸🇬 Singapore</option>
                   </select>
                   <button className="btn btn-gold btn-sm" onClick={() => void handleSalary()} disabled={salLoading}>
                     {salLoading ? 'Calcolo…' : 'Calcola'}

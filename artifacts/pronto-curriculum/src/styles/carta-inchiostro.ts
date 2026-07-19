@@ -24,34 +24,49 @@ export const CARTA_INCHIOSTRO_CSS = `
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 244px 1fr;
+  display: flex;
+  align-items: stretch;
 }
 .dv3 * { margin: 0; padding: 0; box-sizing: border-box; }
 .dv3 .mono { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-40); }
 .dv3 .grad { background: linear-gradient(96deg, #6FA5FF 0%, #8F8CFF 48%, #BE9CFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* SIDEBAR */
-.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 16px 12px 12px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 16px 12px 12px; display: flex; flex-direction: column; flex-shrink: 0; width: 244px; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width .26s var(--ease), padding .26s var(--ease); }
+.dv3.side-collapsed .side { width: 72px; padding: 16px 10px 12px; }
+.dv3 .side-toggle { position: absolute; top: 20px; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 1px solid var(--hair-soft); box-shadow: 0 2px 8px rgba(20,23,31,.12); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-40); transition: color .18s, border-color .18s, transform .26s var(--ease); z-index: 15; }
+.dv3 .side-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.dv3.side-collapsed .side-toggle svg { transform: rotate(180deg); }
 .dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 16px; letter-spacing: -0.03em; padding: 0 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-.dv3 .brand span { background: linear-gradient(90deg, var(--accent), #7C5CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dv3.side-collapsed .brand { justify-content: center; padding: 0 0 14px; }
+.dv3 .brand span { background: linear-gradient(90deg, var(--accent), #7C5CFF); -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 1; transition: opacity .16s ease; }
 .dv3 .brand img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
-.dv3 .side .mono { padding: 0 10px 8px; display: block; }
+.dv3 .side .mono { padding: 0 10px 8px; display: block; opacity: 1; max-height: 30px; overflow: hidden; white-space: nowrap; transition: opacity .16s ease, max-height .2s var(--ease), padding .2s var(--ease); }
+.dv3.side-collapsed .side .mono { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
 .dv3 .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 11px; border: none; background: transparent; border-radius: 9px; font-family: var(--f-body); font-size: 13px; font-weight: 500; color: var(--ink-60); cursor: pointer; text-align: left; transition: background .15s, color .15s; margin-bottom: 1px; }
+.dv3.side-collapsed .nav-item { justify-content: center; padding: 8px; }
 .dv3 .nav-item:hover { background: #F4F4F8; color: var(--ink); }
 .dv3 .nav-item.active { background: var(--tint); color: var(--accent); font-weight: 700; }
 .dv3 .nav-item.locked { color: var(--ink-40); }
 .dv3 .nav-item svg { flex-shrink: 0; }
-.dv3 .nav-badge { margin-left: auto; font-family: var(--f-mono); font-size: 10px; background: #F4F4F8; border-radius: 99px; padding: 2px 8px; color: var(--ink-40); }
+.dv3 .nav-item span { opacity: 1; max-width: 170px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; transition: opacity .14s ease, max-width .22s var(--ease); }
+.dv3.side-collapsed .nav-item span { opacity: 0; max-width: 0; }
+.dv3 .nav-badge { margin-left: auto; font-family: var(--f-mono); font-size: 10px; background: #F4F4F8; border-radius: 99px; padding: 2px 8px; color: var(--ink-40); flex-shrink: 0; }
+.dv3.side-collapsed .nav-badge { display: none; }
 .dv3 .nav-item.active .nav-badge { background: rgba(47,42,229,.12); color: var(--accent); }
 .dv3 .side-user { display: flex; align-items: center; gap: 9px; padding: 10px 8px 0; border-top: 1px solid var(--hair-soft); }
+.dv3.side-collapsed .side-user { justify-content: center; padding: 10px 0 0; }
 .dv3 .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(120deg, #6FA5FF, #BE9CFF); color: #fff; font-family: var(--f-display); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
 .dv3 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .dv3 .side-user b { font-size: 12.5px; display: block; }
 .dv3 .side-user span { font-size: 10.5px; color: var(--ink-40); }
+.dv3.side-collapsed .side-user > div:not(.avatar) { display: none; }
+.dv3.side-collapsed .side-user button { display: none; }
+.dv3.side-collapsed .side-foot select,
+.dv3.side-collapsed .side-foot .panel-cta { display: none; }
 
 /* MAIN */
-.dv3 .main { padding: 0 36px 56px; min-width: 0; }
+.dv3 .main { flex: 1 1 auto; padding: 0 36px 56px; min-width: 0; }
 .dv3 .topbar { display: flex; align-items: center; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--hair-soft); margin-bottom: 32px; }
 .dv3 .search { flex: 1; max-width: 380px; display: flex; align-items: center; gap: 9px; background: #FFFFFF; border: 1px solid var(--hair-soft); border-radius: 10px; padding: 9px 13px; color: var(--ink-40); font-size: 13px; transition: border-color .2s, box-shadow .2s; }
 .dv3 .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.1); }
@@ -235,8 +250,18 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .side-overlay { display: none; }
 
 @media (max-width: 860px) {
-  .dv3 { grid-template-columns: 1fr; }
-  
+  .dv3 .side-toggle { display: none; }
+  .dv3.side-collapsed .brand span,
+  .dv3.side-collapsed .side .mono,
+  .dv3.side-collapsed .nav-item span,
+  .dv3.side-collapsed .nav-badge,
+  .dv3.side-collapsed .side-user > div:not(.avatar),
+  .dv3.side-collapsed .side-user button,
+  .dv3.side-collapsed .side-foot select,
+  .dv3.side-collapsed .side-foot .panel-cta { opacity: 1; max-width: none; max-height: none; display: revert; }
+  .dv3.side-collapsed .side { width: 280px; padding: 16px 12px 12px; }
+  .dv3.side-collapsed .brand { justify-content: flex-start; padding: 0 10px 14px; }
+
   .dv3 .mob-header {
     display: flex;
     align-items: center;

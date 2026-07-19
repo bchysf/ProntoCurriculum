@@ -6,6 +6,7 @@ interface BrandLogoProps {
   iconSize?: number;
   fontSize?: number;
   className?: string;
+  iconOnly?: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ export default function BrandLogo({
   iconSize = 24,
   fontSize = 17,
   className = 'pc-brand-logo',
+  iconOnly = false,
 }: BrandLogoProps) {
   return (
     <div
@@ -47,16 +49,19 @@ export default function BrandLogo({
           flexShrink: 0,
         }}
       />
-      <span
-        style={{
-          background: 'linear-gradient(90deg, #2F2AE5, #7C5CFF)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
-      >
-        ProntoCurriculum
-      </span>
+      {!iconOnly && (
+        <span
+          style={{
+            background: 'linear-gradient(90deg, #2F2AE5, #7C5CFF)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ProntoCurriculum
+        </span>
+      )}
     </div>
   );
 }

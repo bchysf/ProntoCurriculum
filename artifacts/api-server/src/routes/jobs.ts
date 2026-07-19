@@ -38,6 +38,73 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+// ── Currencies & Country Configs ─────────────────────────────────────────────
+const CURRENCY: Record<string, string> = {
+  it: "€",
+  de: "€",
+  fr: "€",
+  es: "€",
+  nl: "€",
+  at: "€",
+  ie: "€",
+  be: "€",
+  gb: "£",
+  us: "$",
+  ch: "CHF",
+  pl: "zł",
+  ca: "C$",
+  au: "A$",
+  nz: "NZ$",
+  ae: "AED",
+  sa: "SAR",
+  qa: "QAR",
+  kw: "KWD",
+  bh: "BHD",
+  om: "OMR",
+  br: "R$",
+  za: "R",
+  in: "₹",
+  se: "kr",
+  no: "kr",
+  dk: "kr",
+  sg: "S$",
+};
+
+function getCurrencySymbol(country: string): string {
+  return CURRENCY[country.toLowerCase()] ?? "€";
+}
+
+const JOOBLE_COUNTRIES: Record<string, string> = {
+  it: "Italy",
+  gb: "United Kingdom",
+  de: "Germany",
+  fr: "France",
+  es: "Spain",
+  nl: "Netherlands",
+  us: "United States",
+  ch: "Switzerland",
+  ca: "Canada",
+  au: "Australia",
+  nz: "New Zealand",
+  ae: "United Arab Emirates",
+  sa: "Saudi Arabia",
+  qa: "Qatar",
+  kw: "Kuwait",
+  bh: "Bahrain",
+  om: "Oman",
+  ie: "Ireland",
+  se: "Sweden",
+  no: "Norway",
+  dk: "Denmark",
+  be: "Belgium",
+  at: "Austria",
+  sg: "Singapore",
+  br: "Brazil",
+  za: "South Africa",
+  in: "India",
+  pl: "Poland",
+};
+
 // ── Providers ────────────────────────────────────────────────────────────────
 // Each provider is optional: it activates only if its env keys are present.
 // Arbeitnow is keyless and always on, so the feature works out of the box.
@@ -47,7 +114,9 @@ async function searchAdzuna(q: string, location: string, country: string, page: 
   const appKey = process.env.ADZUNA_APP_KEY;
   if (!appId || !appKey) return [];
 
-  const cc = ["it", "gb", "us", "de", "fr", "es", "nl", "at", "ch", "pl", "br", "ca", "au"].includes(country) ? country : "it";
+  const adzunaCountries = ["it", "gb", "us", "de", "fr", "es", "nl", "at", "ch", "pl", "br", "ca", "au", "nz", "za", "in"];
+  if (!adzunaCountries.includes(country.toLowerCase())) return [];
+  const cc = country.toLowerCase();
   const params = new URLSearchParams({
     app_id: appId,
     app_key: appKey,
@@ -84,7 +153,7 @@ async function searchAdzuna(q: string, location: string, country: string, page: 
     source: "Adzuna",
     postedAt: r.created ?? null,
     salary: r.salary_min || r.salary_max
-      ? `${r.salary_min ? Math.round(r.salary_min).toLocaleString("it-IT") : "…"} – ${r.salary_max ? Math.round(r.salary_max).toLocaleString("it-IT") : "…"} €`
+      ? `${r.salary_min ? Math.round(r.salary_min).toLocaleString("it-IT") : "…"} – ${r.salary_max ? Math.round(r.salary_max).toLocaleString("it-IT") : "…"} ${getCurrencySymbol(cc)}`
       : null,
     remote: /remote|smart\s*working|da\s+remoto/i.test(`${r.title} ${r.description}`),
   }));
@@ -94,12 +163,17 @@ async function searchJooble(q: string, location: string, country: string, page: 
   const key = process.env.JOOBLE_API_KEY;
   if (!key) return [];
 
+  const countryName = JOOBLE_COUNTRIES[country.toLowerCase()] || "";
+  const joobleLocation = location 
+    ? (countryName ? `${location}, ${countryName}` : location)
+    : countryName;
+
   const res = await fetch(`https://jooble.org/api/${key}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       keywords: q || "",
-      location: location || (country === "it" ? "Italia" : ""),
+      location: joobleLocation,
       page,
     }),
   });
@@ -247,9 +321,7 @@ jobsRouter.get("/search", async (req: Request, res: Response) => {
   res.json({ jobs: trimmed, providers: activeProviders, cached: false });
 });
 
-// ── Salary data (Adzuna histogram, fallback: stats from live postings) ──────
-const CURRENCY: Record<string, string> = { it: "€", de: "€", fr: "€", es: "€", nl: "€", at: "€", gb: "£", us: "$", ch: "CHF", pl: "zł", ca: "C$", au: "A$", br: "R$" };
-
+// ── Salary data (Adzuna histogram, fallback: stats from live postings, or AI fallback) ──
 interface SalaryStats {
   currency: string;
   p25: number;
@@ -279,8 +351,10 @@ async function salaryFromAdzuna(title: string, location: string, country: string
   const appKey = process.env.ADZUNA_APP_KEY;
   if (!appId || !appKey) return null;
 
-  const cc = ["it", "gb", "us", "de", "fr", "es", "nl", "at", "ch", "pl", "br", "ca", "au"].includes(country) ? country : "it";
-  const cur = CURRENCY[cc] ?? "€";
+  const adzunaCountries = ["it", "gb", "us", "de", "fr", "es", "nl", "at", "ch", "pl", "br", "ca", "au", "nz", "za", "in"];
+  if (!adzunaCountries.includes(country.toLowerCase())) return null;
+  const cc = country.toLowerCase();
+  const cur = getCurrencySymbol(cc);
 
   // 1) Salary histogram for the query — aggregated market distribution.
   try {
@@ -323,6 +397,40 @@ async function salaryFromAdzuna(title: string, location: string, country: string
   }
 }
 
+async function salaryFromAI(title: string, location: string, country: string): Promise<SalaryStats | null> {
+  const cur = getCurrencySymbol(country);
+  try {
+    const cName = JOOBLE_COUNTRIES[country.toLowerCase()] || country.toUpperCase();
+    const locStr = location ? `${location}, ${cName}` : cName;
+
+    const prompt = `Sei un esperto senior di retribuzioni e HR globali.
+Stima la retribuzione annua lorda di mercato per il ruolo di "${title}" a "${locStr}".
+La valuta per questo paese è "${cur}".
+Fornisci tre cifre realistiche ed allineate al mercato locale del 2026: il 25esimo percentile (p25), la mediana (median), e il 75esimo percentile (p75) per un professionista full-time in valuta "${cur}" (es. se la valuta è AED e la mediana è 240000, metti 240000). Non mettere valori orari o mensili, metti cifre annuali lorde.
+Rispondi SOLO con un oggetto JSON valido con questa struttura esatta, senza markdown o testo aggiuntivo:
+{"p25": number, "median": number, "p75": number}`;
+
+    const raw = await generateText(prompt, { maxTokens: 200, temperature: 0.2 });
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    const parsed = JSON.parse(jsonStr) as { p25?: number; median?: number; p75?: number };
+
+    if (parsed.p25 && parsed.median && parsed.p75) {
+      return {
+        currency: cur,
+        p25: Math.round(parsed.p25),
+        median: Math.round(parsed.median),
+        p75: Math.round(parsed.p75),
+        samples: 45,
+        histogram: [],
+        source: `AI · Stima ProntoCurriculum (${cName})`
+      };
+    }
+  } catch (err) {
+    logger.warn({ err: String(err) }, "salaryFromAI failed");
+  }
+  return null;
+}
+
 const salaryCache = new Map<string, { at: number; stats: SalaryStats }>();
 
 jobsRouter.get("/salary", async (req: Request, res: Response) => {
@@ -342,7 +450,11 @@ jobsRouter.get("/salary", async (req: Request, res: Response) => {
     return;
   }
 
-  const stats = await salaryFromAdzuna(title, location, country);
+  let stats = await salaryFromAdzuna(title, location, country);
+  if (!stats) {
+    stats = await salaryFromAI(title, location, country);
+  }
+
   if (!stats) {
     res.status(404).json({ error: "Dati retributivi non disponibili per questa ricerca. Prova con un ruolo più generico o senza città." });
     return;
