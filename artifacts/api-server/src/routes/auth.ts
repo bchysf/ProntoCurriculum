@@ -19,11 +19,20 @@ import {
 
 const router: IRouter = Router();
 
-// Supabase Admin client (service role) — used only to verify user access tokens
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-);
+// Supabase Admin client (service role) — used only to verify user access tokens.
+// Created lazily: createClient throws when SUPABASE_URL is unset, and doing
+// that at module scope would crash the whole serverless function at import,
+// taking down every /api route instead of just token verification.
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
+function supabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.SUPABASE_URL ?? '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    );
+  }
+  return _supabaseAdmin;
+}
 
 function setSessionCookie(res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
@@ -80,7 +89,7 @@ router.post('/auth/sync', async (req: Request, res: Response) => {
   }
 
   try {
-    const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
+    const { data, error } = await supabaseAdmin().auth.getUser(accessToken);
     if (error || !data.user) {
       throw error ?? new Error('Utente non trovato');
     }
