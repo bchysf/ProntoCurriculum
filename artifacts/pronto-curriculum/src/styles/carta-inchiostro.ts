@@ -253,6 +253,7 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .side-overlay { display: none; }
 
 @media (max-width: 860px) {
+  .dv3 { flex-direction: column; }
   .dv3 .side-toggle { display: none; }
   .dv3.side-collapsed .brand span,
   .dv3.side-collapsed .side .mono,
@@ -332,10 +333,17 @@ export const CARTA_INCHIOSTRO_CSS = `
   .dv3 .side .mono, .dv3 .side-user, .dv3 .side-foot { display: block; }
   .dv3 .brand { padding: 0 10px 22px; }
   .dv3 .nav-item { width: 100%; white-space: normal; }
-  .dv3 .main { padding: 16px 16px 40px; }
+  .dv3 .main { width: 100%; padding: 16px 16px 40px; overflow-x: hidden; }
+  .dv3 h1 { font-size: 23px; }
   .dv3 .stats { grid-template-columns: repeat(2, 1fr); }
+  .dv3 .stat { padding: 16px; }
+  .dv3 .stat-num { font-size: 26px; }
   .dv3 .head { flex-direction: column; align-items: flex-start; }
+  .dv3 .head > button, .dv3 .head .btn { align-self: stretch; justify-content: center; }
   .dv3 .form-grid { grid-template-columns: 1fr; }
+  .dv3 .wiz-shell { padding: 32px 18px 64px; }
   .dv3 .wiz-options, .dv3 .tpl-grid { grid-template-columns: 1fr; }
+  .dv3 .panel { padding: 18px; }
+  .dv3 .ai-float { width: min(320px, calc(100vw - 24px)); }
 }
 `;

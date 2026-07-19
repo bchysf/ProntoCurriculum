@@ -314,10 +314,24 @@ ${Array.from({ length: 7 }, (_, i) => `.pc3 .wl:nth-of-type(${i + 1})::after { -
   .pc3 .cell-wide { grid-column: span 1; }
   .pc3 .nav-links { display: none; }
   .pc3 .orbit { width: 420px; height: 420px; }
+  .pc3 .cta-row { flex-wrap: wrap; }
   .pc3 .pl-body { grid-template-columns: 1fr; }
   .pc3 .pl-screen { margin: 0 16px 16px; min-height: 320px; }
   .pc3 .guide { grid-template-columns: 1fr; gap: 28px; }
   .pc3 .foot-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .pc3 .shell { padding: 0 16px; }
+  .pc3 .topbar nav { height: 58px; gap: 8px; }
+  .pc3 .brand { font-size: 15px; gap: 6px; min-width: 0; }
+  .pc3 .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pc3 .brand img { width: 28px; height: 28px; }
+  .pc3 .topbar .btn-sm { padding: 7px 10px; font-size: 11.5px; white-space: nowrap; flex-shrink: 0; }
+  .pc3 h1 { font-size: clamp(38px, 11.5vw, 52px); }
+  .pc3 .hero { padding: 40px 0 56px; }
+  .pc3 .hero-row { margin-top: 40px; gap: 48px; }
+  .pc3 .cta-row .btn { padding: 11px 16px; font-size: 13px; }
+  .pc3 .foot-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   .pc3 .orbit, .pc3 .mq-track, .pc3 .chip, .pc3 .stamp, .pc3 .wl::after, .pc3 .ats-fill3, .pc3 .sheet-name, .pc3 .aurora i { animation: none !important; }

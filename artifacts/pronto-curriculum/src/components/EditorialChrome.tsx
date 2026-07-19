@@ -137,6 +137,16 @@ export const EDITORIAL_CSS = `
   .pce .foot-grid { grid-template-columns: 1fr 1fr; }
   .pce .cta-band { padding: 28px 24px; }
 }
+@media (max-width: 560px) {
+  .pce .shell { padding: 0 16px; }
+  .pce .topbar nav { height: 58px; gap: 8px; }
+  .pce .brand { font-size: 15px; gap: 6px; min-width: 0; }
+  .pce .brand > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pce .brand .mono { display: none; }
+  .pce .brand img { width: 28px; height: 28px; }
+  .pce .topbar .btn-sm { padding: 7px 10px; font-size: 11.5px; white-space: nowrap; flex-shrink: 0; }
+  .pce .foot-grid { grid-template-columns: 1fr; }
+}
 @media (prefers-reduced-motion: reduce) {
   .pce .aurora i { animation: none !important; }
   .pce .rv { opacity: 1; transform: none; transition: none; }

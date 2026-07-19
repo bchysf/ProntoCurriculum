@@ -178,6 +178,12 @@ const JB_CSS = `
 /* split */
 .jb-split { flex: 1; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; min-height: 0; }
 @media (max-width: 900px) { .jb-split { grid-template-columns: 1fr; } .jb-detail { display: none; } }
+@media (max-width: 860px) {
+  .jb { height: calc(100vh - 88px); }
+  .jb-pop { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 130px); overflow-y: auto; }
+  .jb-sal-win { top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; max-height: 60vh; }
+  .jb-sal-pill { top: auto; bottom: 16px; right: 16px; }
+}
 
 /* list */
 .jb-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }

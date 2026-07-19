@@ -152,6 +152,17 @@ const DH_CSS = `
 .dh-ai-pill { display: flex; align-items: center; gap: 9px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-family: var(--f-body); font-size: 13.5px; font-weight: 800; border-radius: 99px; padding: 12px 22px; cursor: pointer; box-shadow: 0 12px 30px rgba(47,42,229,.2); }
 .dh-ai-pill:hover { background: var(--tint); }
 .dh-ai-menu { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid var(--hair-soft); border-radius: 14px; box-shadow: 0 18px 44px rgba(20,23,31,.18); padding: 6px; min-width: 280px; }
+
+@media (max-width: 640px) {
+  .dh-hero { padding-top: 20px; }
+  .dh-hero h1 { font-size: 25px; }
+  .dh-goal-btn { padding: 11px 16px; font-size: 14px; max-width: calc(100vw - 48px); }
+  .dh-goal-menu { min-width: 0; width: max(260px, calc(100vw - 48px)); max-width: 340px; }
+  .dh-ai-menu { min-width: 0; width: max(250px, calc(100vw - 48px)); max-width: 320px; }
+  .dh-banner { flex-direction: column; align-items: flex-start; padding: 22px 20px; gap: 16px; }
+  .dh-form-grid { grid-template-columns: 1fr; }
+  .dh-profile { padding: 18px; }
+}
 `;
 
 export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: DashboardProps) {
