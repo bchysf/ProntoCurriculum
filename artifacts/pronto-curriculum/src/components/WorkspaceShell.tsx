@@ -106,21 +106,23 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
       <div className={`side-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
 
       <aside className={`side${menuOpen ? ' open' : ''}`}>
-        <button
-          className="side-toggle"
-          onClick={toggleCollapsed}
-          title={collapsed ? 'Espandi menu' : 'Comprimi menu'}
-          aria-label={collapsed ? 'Espandi menu' : 'Comprimi menu'}
-        >
-          <Icon d={IC.chevronsLeft} size={13} />
-        </button>
-        <BrandLogo
-          onClick={() => { onNavigate('home'); setMenuOpen(false); }}
-          iconSize={24}
-          fontSize={17}
-          iconOnly={collapsed}
-          style={{ padding: collapsed ? '0 0 22px' : '0 10px 22px', justifyContent: collapsed ? 'center' : 'flex-start', transition: 'padding .2s var(--ease)' }}
-        />
+        <div className="side-head">
+          <BrandLogo
+            onClick={() => { onNavigate('home'); setMenuOpen(false); }}
+            iconSize={24}
+            fontSize={17}
+            iconOnly={collapsed && !menuOpen}
+            style={{ padding: collapsed ? 0 : '0 0 0 10px', minWidth: 0 }}
+          />
+          <button
+            className="side-toggle"
+            onClick={toggleCollapsed}
+            title={collapsed ? 'Espandi menu' : 'Comprimi menu'}
+            aria-label={collapsed ? 'Espandi menu' : 'Comprimi menu'}
+          >
+            <Icon d={IC.chevronsLeft} size={14} />
+          </button>
+        </div>
         <div className="mono">{t('ws.workspace')}</div>
         {items.map(item => {
           const active = item.activeOn.includes(page);

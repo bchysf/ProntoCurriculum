@@ -74,6 +74,27 @@ const COUNTRIES: Array<[string, string]> = [
   ['sg', '🇸🇬 Singapore'],
 ];
 
+// Providers often append the city to the title ("Agente di vendita - Taranto"):
+// strip that suffix so the role dropdown groups them under one clean entry.
+const cleanRole = (title: string) => title.split(/\s+[-–—|·]\s+/)[0].trim();
+// Locations arrive as "Milano, Lombardia" or "Roma, Lazio, Italia": keep the city.
+const cleanCity = (location: string) => location.split(',')[0].trim();
+
+// Some providers (Jooble) return country-wide postings with the country name as
+// location ("Italian Republic"): those aren't cities, keep them out of the dropdown.
+const COUNTRY_LEVEL_LABELS = new Set([
+  'italia', 'italy', 'italian republic', 'regno unito', 'united kingdom', 'great britain',
+  'germania', 'germany', 'deutschland', 'francia', 'france', 'spagna', 'spain', 'españa',
+  'paesi bassi', 'netherlands', 'nederland', 'stati uniti', 'united states', 'usa',
+  'svizzera', 'switzerland', 'schweiz', 'suisse', 'canada', 'australia',
+  'nuova zelanda', 'new zealand', 'emirati arabi uniti', 'united arab emirates',
+  'arabia saudita', 'saudi arabia', 'qatar', 'kuwait', 'bahrein', 'bahrain', 'oman',
+  'irlanda', 'ireland', 'svezia', 'sweden', 'sverige', 'norvegia', 'norway', 'norge',
+  'danimarca', 'denmark', 'danmark', 'belgio', 'belgium', 'belgië', 'belgique',
+  'austria', 'österreich', 'singapore', 'europe', 'europa', 'remote', 'worldwide',
+]);
+const isCountryLevel = (city: string) => COUNTRY_LEVEL_LABELS.has(city.toLowerCase());
+
 function timeAgo(iso: string | null): string {
   if (!iso) return '';
   const ms = Date.now() - Date.parse(iso);
@@ -92,18 +113,21 @@ const JB_CSS = `
 
 .jb .head { flex-shrink: 0; }
 
-/* search bar */
-.jb-search { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; flex-shrink: 0; }
-.jb-search input, .jb-search select { background: #F1F2F6; border: 1px solid transparent; border-radius: 10px; padding: 10px 13px; font-family: var(--f-body); font-size: 13.5px; color: var(--ink); outline: none; transition: all .15s; }
-.jb-search input:focus, .jb-search select:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
-.jb-q { flex: 2 1 220px; }
-.jb-loc { flex: 1 1 140px; }
-.jb-cc { flex: 0 0 auto; cursor: pointer; }
+/* filter toolbar — one elevated card with labelled dropdowns */
+.jb-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; padding: 14px 16px; box-shadow: 0 12px 32px -24px rgba(20,23,31,.3); margin-bottom: 12px; flex-shrink: 0; }
+.jb-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 210px; min-width: 170px; }
+.jb-field.cc { flex: 0 1 190px; }
+.jb-field label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); padding-left: 2px; }
+.jb-field select { appearance: none; -webkit-appearance: none; width: 100%; background: #F7F7FA url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%239297A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center; border: 1px solid transparent; border-radius: 10px; padding: 10px 34px 10px 12px; font-family: var(--f-body); font-size: 13px; color: var(--ink); cursor: pointer; outline: none; transition: border-color .15s, background-color .15s, box-shadow .15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jb-field select:hover { border-color: var(--hair); background-color: #fff; }
+.jb-field select:focus { background-color: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+.jb-field select:disabled { opacity: .55; cursor: default; }
 
-/* result filters (dropdowns built from the jobs currently loaded) */
-.jb-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; flex-shrink: 0; }
-.jb-filter { background: #F1F2F6; border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; font-family: var(--f-body); font-size: 12.5px; color: var(--ink-60); cursor: pointer; max-width: 240px; outline: none; transition: all .15s; }
-.jb-filter:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+/* result count + active-filter reset */
+.jb-count { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--ink-60); margin-bottom: 12px; flex-shrink: 0; padding: 0 2px; }
+.jb-count b { font-family: var(--f-display); font-size: 14px; color: var(--ink); }
+.jb-reset { border: none; background: none; color: var(--accent); font-weight: 700; font-size: 12px; cursor: pointer; font-family: var(--f-body); padding: 0; }
+.jb-reset:hover { text-decoration: underline; }
 
 /* split */
 .jb-split { flex: 1; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; min-height: 0; }
@@ -156,8 +180,6 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   );
   const { isAuthenticated } = useAuth();
 
-  const [q, setQ] = useState('');
-  const [loc, setLoc] = useState('');
   const [country, setCountry] = useState('it');
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [providers, setProviders] = useState<string[]>([]);
@@ -202,26 +224,27 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   // A fresh set of results invalidates any previously chosen dropdown filter.
   useEffect(() => { setFilterCity(''); setFilterRoleOrCompany(''); }, [jobs]);
 
+  const countOptions = (values: string[]): Array<[string, number]> => {
+    const m = new Map<string, number>();
+    values.forEach(v => { if (v) m.set(v, (m.get(v) ?? 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  };
+
   const cityOptions = useMemo(
-    () => Array.from(new Set(jobs.map(j => j.location).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    () => countOptions(jobs.map(j => cleanCity(j.location)).filter(c => !isCountryLevel(c))),
     [jobs]
   );
-  const roleOptions = useMemo(
-    () => Array.from(new Set(jobs.map(j => j.title).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [jobs]
-  );
-  const companyOptions = useMemo(
-    () => Array.from(new Set(jobs.map(j => j.company).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [jobs]
-  );
+  const roleOptions = useMemo(() => countOptions(jobs.map(j => cleanRole(j.title))), [jobs]);
+  const companyOptions = useMemo(() => countOptions(jobs.map(j => j.company)), [jobs]);
 
   const filteredJobs = useMemo(
     () => jobs.filter(j =>
-      (!filterCity || j.location === filterCity) &&
-      (!filterRoleOrCompany || j.title === filterRoleOrCompany || j.company === filterRoleOrCompany)
+      (!filterCity || cleanCity(j.location) === filterCity) &&
+      (!filterRoleOrCompany || cleanRole(j.title) === filterRoleOrCompany || j.company === filterRoleOrCompany)
     ),
     [jobs, filterCity, filterRoleOrCompany]
   );
+  const hasActiveFilters = !!(filterCity || filterRoleOrCompany);
 
   // Keep the selected job in sync with the filtered list.
   useEffect(() => {
@@ -323,33 +346,47 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         </div>
       </div>
 
-      {/* SEARCH */}
-      <form className="jb-search" onSubmit={e => { e.preventDefault(); void search(q, loc, country); }}>
-        <input className="jb-q" placeholder="Ruolo, competenza o azienda… (es. project manager)" value={q} onChange={e => setQ(e.target.value)} />
-        <input className="jb-loc" placeholder="Città (es. Milano)" value={loc} onChange={e => setLoc(e.target.value)} />
-        <select className="jb-cc" value={country} onChange={e => setCountry(e.target.value)} title="Paese">
-          {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
-        </select>
-        <button type="submit" className="btn btn-ink" style={{ gap: 7 }} disabled={searching}>
-          {searching ? 'Ricerca…' : <><Icon d={IC.spark} size={14} /> Cerca</>}
-        </button>
-      </form>
-
-      {jobs.length > 0 && (
-        <div className="jb-filters">
-          <select className="jb-filter" value={filterCity} onChange={e => setFilterCity(e.target.value)} title="Filtra per città">
-            <option value="">Tutte le città</option>
-            {cityOptions.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select className="jb-filter" value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} title="Filtra per ruolo, competenza o azienda">
-            <option value="">Ruolo, competenza o azienda</option>
+      {/* FILTER TOOLBAR */}
+      <div className="jb-bar">
+        <div className="jb-field">
+          <label>Ruolo o azienda</label>
+          <select value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} disabled={jobs.length === 0}>
+            <option value="">Tutti i ruoli e le aziende</option>
             <optgroup label="Ruoli">
-              {roleOptions.map(r => <option key={`r-${r}`} value={r}>{r}</option>)}
+              {roleOptions.map(([r, n]) => <option key={`r-${r}`} value={r}>{r} ({n})</option>)}
             </optgroup>
             <optgroup label="Aziende">
-              {companyOptions.map(c => <option key={`c-${c}`} value={c}>{c}</option>)}
+              {companyOptions.map(([c, n]) => <option key={`c-${c}`} value={c}>{c} ({n})</option>)}
             </optgroup>
           </select>
+        </div>
+        <div className="jb-field">
+          <label>Città</label>
+          <select value={filterCity} onChange={e => setFilterCity(e.target.value)} disabled={jobs.length === 0}>
+            <option value="">Tutte le città</option>
+            {cityOptions.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
+          </select>
+        </div>
+        <div className="jb-field cc">
+          <label>Paese</label>
+          <select value={country} onChange={e => { const cc = e.target.value; setCountry(cc); void search('', '', cc); }}>
+            {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+        </div>
+        <button className="btn btn-ink" style={{ gap: 7 }} disabled={searching} onClick={() => void search('', '', country)}>
+          {searching ? 'Ricerca…' : <><Icon d={IC.spark} size={14} /> Aggiorna</>}
+        </button>
+      </div>
+
+      {searched && !searching && jobs.length > 0 && (
+        <div className="jb-count">
+          <b>{filteredJobs.length}</b>
+          <span>{filteredJobs.length === 1 ? 'offerta' : 'offerte'}{hasActiveFilters ? ` su ${jobs.length} trovate` : ' trovate'}</span>
+          {hasActiveFilters && (
+            <button className="jb-reset" onClick={() => { setFilterCity(''); setFilterRoleOrCompany(''); }}>
+              Azzera filtri
+            </button>
+          )}
         </div>
       )}
 

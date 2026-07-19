@@ -32,10 +32,13 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .grad { background: linear-gradient(96deg, #6FA5FF 0%, #8F8CFF 48%, #BE9CFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* SIDEBAR */
-.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 16px 12px 12px; display: flex; flex-direction: column; flex-shrink: 0; width: 244px; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width .26s var(--ease), padding .26s var(--ease); }
-.dv3.side-collapsed .side { width: 72px; padding: 16px 10px 12px; }
-.dv3 .side-toggle { position: absolute; top: 20px; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 1px solid var(--hair-soft); box-shadow: 0 2px 8px rgba(20,23,31,.12); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-40); transition: color .18s, border-color .18s, transform .26s var(--ease); z-index: 15; }
-.dv3 .side-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.dv3 .side { background: #FFFFFF; border-right: 1px solid var(--hair-soft); padding: 16px 12px 12px; display: flex; flex-direction: column; flex-shrink: 0; width: 244px; position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden; will-change: width; transition: width .22s var(--ease); }
+.dv3.side-collapsed .side { width: 72px; }
+.dv3 .side-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 0 18px; }
+.dv3.side-collapsed .side-head { flex-direction: column; gap: 10px; padding-bottom: 14px; }
+.dv3 .side-toggle { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; background: transparent; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-40); transition: background .15s, color .15s; }
+.dv3 .side-toggle:hover { background: #F4F4F8; color: var(--ink); }
+.dv3 .side-toggle svg { transition: transform .22s var(--ease); }
 .dv3.side-collapsed .side-toggle svg { transform: rotate(180deg); }
 .dv3 .brand { font-family: var(--f-display); font-weight: 700; font-size: 16px; letter-spacing: -0.03em; padding: 0 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .dv3.side-collapsed .brand { justify-content: center; padding: 0 0 14px; }
@@ -260,6 +263,7 @@ export const CARTA_INCHIOSTRO_CSS = `
   .dv3.side-collapsed .side-foot select,
   .dv3.side-collapsed .side-foot .panel-cta { opacity: 1; max-width: none; max-height: none; display: revert; }
   .dv3.side-collapsed .side { width: 280px; padding: 16px 12px 12px; }
+  .dv3.side-collapsed .side-head { flex-direction: row; padding-bottom: 18px; }
   .dv3.side-collapsed .brand { justify-content: flex-start; padding: 0 10px 14px; }
 
   .dv3 .mob-header {
