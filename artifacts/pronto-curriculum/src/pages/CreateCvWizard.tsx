@@ -6,6 +6,7 @@ import { LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { Icon, IC } from '../components/StrokeIcon';
 import CVPreview from '../components/CVPreview';
 import { useSeoMeta } from '../components/EditorialChrome';
+import { FlagImg } from '../components/CountrySelect';
 
 const BLANK_CV: CVData = {
   firstName: '', lastName: '', title: '', email: '', phone: '',
@@ -316,7 +317,7 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
                 className={`wiz-lang${language === l.code ? ' selected' : ''}`}
                 onClick={() => setLanguage(l.code)}
               >
-                <span>{l.flag}</span> {l.label}
+                <FlagImg cc={l.flag} size={20} /> {l.label}
               </button>
             ))}
           </div>

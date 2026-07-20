@@ -2,13 +2,15 @@ import { CVData } from '../types';
 
 export type SupportedLanguage = 'IT' | 'EN' | 'FR' | 'DE' | 'ES' | 'PT';
 
+// `flag` is the country code for the flag image (see FlagImg in components/CountrySelect):
+// emoji flags render as bare letters on Windows, so we use real images everywhere.
 export const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
-  { code: 'IT', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'EN', label: 'English', flag: '🇬🇧' },
-  { code: 'FR', label: 'Français', flag: '🇫🇷' },
-  { code: 'DE', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'ES', label: 'Español', flag: '🇪🇸' },
-  { code: 'PT', label: 'Português', flag: '🇵🇹' },
+  { code: 'IT', label: 'Italiano', flag: 'it' },
+  { code: 'EN', label: 'English', flag: 'gb' },
+  { code: 'FR', label: 'Français', flag: 'fr' },
+  { code: 'DE', label: 'Deutsch', flag: 'de' },
+  { code: 'ES', label: 'Español', flag: 'es' },
+  { code: 'PT', label: 'Português', flag: 'pt' },
 ];
 
 export async function aiTranslateCV(cvData: CVData, targetLanguage: SupportedLanguage): Promise<CVData> {

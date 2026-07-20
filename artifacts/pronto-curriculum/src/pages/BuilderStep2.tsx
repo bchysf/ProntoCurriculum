@@ -9,6 +9,7 @@ import { translateDateLabel } from '../utils/dateI18n';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
 import { Icon, IC } from '../components/StrokeIcon';
+import { CountrySelect, FlagImg, JOB_COUNTRIES } from '../components/CountrySelect';
 import { useAuth } from '../hooks/use-auth';
 import { useT } from '../i18n/LanguageContext';
 import { toast } from 'sonner';
@@ -1207,8 +1208,6 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 17,
-                      lineHeight: 1,
                       borderRadius: '50%',
                       border: `1.5px solid ${selectedLanguage === lang.code ? '#2F2AE5' : 'var(--border)'}`,
                       background: selectedLanguage === lang.code ? '#EEF0FD' : 'transparent',
@@ -1216,7 +1215,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       transition: 'all 0.15s',
                     }}
                   >
-                    {lang.flag}
+                    <FlagImg cc={lang.flag} size={18} style={{ borderRadius: '50%', width: 18, height: 18 }} />
                   </button>
                 ))}
               </div>
@@ -1910,32 +1909,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     value={salLoc}
                     onChange={e => setSalLoc(e.target.value)}
                   />
-                  <select value={salCountry} onChange={e => setSalCountry(e.target.value)}>
-                    <option value="it">🇮🇹 Italia</option>
-                    <option value="gb">🇬🇧 Regno Unito</option>
-                    <option value="de">🇩🇪 Germania</option>
-                    <option value="fr">🇫🇷 Francia</option>
-                    <option value="es">🇪🇸 Spagna</option>
-                    <option value="nl">🇳🇱 Paesi Bassi</option>
-                    <option value="us">🇺🇸 Stati Uniti</option>
-                    <option value="ch">🇨🇭 Svizzera</option>
-                    <option value="ca">🇨🇦 Canada</option>
-                    <option value="au">🇦🇺 Australia</option>
-                    <option value="nz">🇳🇿 Nuova Zelanda</option>
-                    <option value="ae">🇦🇪 Emirati Arabi Uniti</option>
-                    <option value="sa">🇸🇦 Arabia Saudita</option>
-                    <option value="qa">🇶🇦 Qatar</option>
-                    <option value="kw">🇰🇼 Kuwait</option>
-                    <option value="bh">🇧🇭 Bahrein</option>
-                    <option value="om">🇴🇲 Oman</option>
-                    <option value="ie">🇮🇪 Irlanda</option>
-                    <option value="se">🇸🇪 Svezia</option>
-                    <option value="no">🇳🇴 Norvegia</option>
-                    <option value="dk">🇩🇰 Danimarca</option>
-                    <option value="be">🇧🇪 Belgio</option>
-                    <option value="at">🇦🇹 Austria</option>
-                    <option value="sg">🇸🇬 Singapore</option>
-                  </select>
+                  <CountrySelect
+                    variant="field"
+                    options={JOB_COUNTRIES}
+                    value={salCountry}
+                    onChange={setSalCountry}
+                    ariaLabel="Paese"
+                    style={{ flex: '1 1 150px' }}
+                  />
                   <button className="btn btn-gold btn-sm" onClick={() => void handleSalary()} disabled={salLoading}>
                     {salLoading ? 'Calcolo…' : 'Calcola'}
                   </button>

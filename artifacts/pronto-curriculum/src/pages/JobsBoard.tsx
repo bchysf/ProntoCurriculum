@@ -4,11 +4,13 @@ import { useAuth } from '../hooks/use-auth';
 import { Icon, IC } from '../components/StrokeIcon';
 import { toast } from 'sonner';
 import { useSeoMeta } from '../components/EditorialChrome';
+import { heuristicMatchScore } from '../lib/jobMatch';
+import { CountrySelect, JOB_COUNTRIES } from '../components/CountrySelect';
 
-// Offerte di lavoro — resume.io "Tailor" structure, Carta & Inchiostro skin.
-// Left: searchable feed aggregated from free job boards (server-side).
-// Right: job detail + AI compatibility analysis against the current CV,
-// with recommended archive experiences and a handoff to the tailor flow.
+// Offerte di lavoro — full-width card grid + modal detail popup.
+// Top: "quest bar" (destination country + dream salary + AI search) and a
+// toolbar (keyword search, sort, filters). Every job opens in a centered
+// popup window with description, AI compatibility and salary estimate.
 
 interface JobPosting {
   id: string;
@@ -21,6 +23,11 @@ interface JobPosting {
   source: string;
   postedAt: string | null;
   salary: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+  employmentType: 'full-time' | 'part-time' | 'contract' | null;
+  languages: string[];
   remote: boolean;
 }
 
@@ -47,32 +54,18 @@ interface JobsBoardProps {
   onLogin: () => void;
 }
 
-const COUNTRIES: Array<[string, string]> = [
-  ['it', '🇮🇹 Italia'],
-  ['gb', '🇬🇧 Regno Unito'],
-  ['de', '🇩🇪 Germania'],
-  ['fr', '🇫🇷 Francia'],
-  ['es', '🇪🇸 Spagna'],
-  ['nl', '🇳🇱 Paesi Bassi'],
-  ['us', '🇺🇸 Stati Uniti'],
-  ['ch', '🇨🇭 Svizzera'],
-  ['ca', '🇨🇦 Canada'],
-  ['au', '🇦🇺 Australia'],
-  ['nz', '🇳🇿 Nuova Zelanda'],
-  ['ae', '🇦🇪 Emirati Arabi Uniti'],
-  ['sa', '🇸🇦 Arabia Saudita'],
-  ['qa', '🇶🇦 Qatar'],
-  ['kw', '🇰🇼 Kuwait'],
-  ['bh', '🇧🇭 Bahrein'],
-  ['om', '🇴🇲 Oman'],
-  ['ie', '🇮🇪 Irlanda'],
-  ['se', '🇸🇪 Svezia'],
-  ['no', '🇳🇴 Norvegia'],
-  ['dk', '🇩🇰 Danimarca'],
-  ['be', '🇧🇪 Belgio'],
-  ['at', '🇦🇹 Austria'],
-  ['sg', '🇸🇬 Singapore'],
-];
+const EMPLOYMENT_LABELS: Record<string, string> = {
+  'full-time': 'Tempo pieno',
+  'part-time': 'Part-time',
+  contract: 'A contratto',
+};
+
+// Mirrors the backend CURRENCY map (jobs.ts) — just for the desired-salary input suffix.
+const CURRENCY: Record<string, string> = {
+  it: '€', de: '€', fr: '€', es: '€', nl: '€', at: '€', ie: '€', be: '€',
+  gb: '£', us: '$', ch: 'CHF', pl: 'zł', ca: 'C$', au: 'A$', nz: 'NZ$',
+  ae: 'AED', sa: 'SAR', qa: 'QAR', kw: 'KWD', bh: 'BHD', om: 'OMR', sg: 'S$',
+};
 
 // Providers often append the city to the title ("Agente di vendita - Taranto"):
 // strip that suffix so the role dropdown groups them under one clean entry.
@@ -136,92 +129,163 @@ function timeAgo(iso: string | null): string {
   return m === 1 ? '1 mese fa' : `${m} mesi fa`;
 }
 
-const JB_CSS = `
-.jb { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; height: calc(100vh - 28px); padding-bottom: 16px; }
-.jb * { box-sizing: border-box; }
+// Adzuna/Jooble/Careerjet all cap their API description field well under this
+// length by design (verified against the raw providers — Adzuna is always
+// exactly 500 chars, Careerjet ~200, Jooble's field is literally called
+// "snippet"): below this, what we show is a teaser, not the full ad. There is
+// no legitimate way to fetch the rest — the full text lives behind each
+// board's own page (often JS-gated) and scraping it to republish here would
+// both fail unreliably and run against those sites' terms of service.
+const PREVIEW_LENGTH_THRESHOLD = 550;
 
-.jb .head { flex-shrink: 0; }
+const scoreColor = (n: number) => n >= 70 ? 'var(--success)' : n >= 45 ? '#D99A2B' : 'var(--danger)';
+const scoreBg = (n: number) => n >= 70 ? '#E7F5EE' : n >= 45 ? '#FBF3E4' : '#FDECEC';
 
-/* header tools: result count + "Filtri" button opening a floating panel */
-.jb-headtools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.jb-count { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--ink-60); white-space: nowrap; }
-.jb-count b { font-family: var(--f-display); font-size: 15px; color: var(--ink); }
-.jb-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; border-radius: 99px; padding: 1px 7px; margin-left: 4px; }
-.jb-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; box-shadow: 0 18px 44px rgba(20,23,31,.16); padding: 16px; width: 330px; max-width: calc(100vw - 40px); display: flex; flex-direction: column; gap: 12px; animation: jbIn .18s var(--ease); }
-@keyframes jbIn { from { opacity: 0; transform: translateY(-6px); } }
-.jb-field { display: flex; flex-direction: column; gap: 5px; }
-.jb-field label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); padding-left: 2px; }
-.jb-field select { appearance: none; -webkit-appearance: none; width: 100%; background: #F7F7FA url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%239297A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center; border: 1px solid transparent; border-radius: 10px; padding: 10px 34px 10px 12px; font-family: var(--f-body); font-size: 13px; color: var(--ink); cursor: pointer; outline: none; transition: border-color .15s, background-color .15s, box-shadow .15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.jb-field select:hover { border-color: var(--hair); background-color: #fff; }
-.jb-field select:focus { background-color: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
-.jb-field select:disabled { opacity: .55; cursor: default; }
-.jb-reset { border: none; background: none; color: var(--accent); font-weight: 700; font-size: 12px; cursor: pointer; font-family: var(--f-body); padding: 0; }
-.jb-reset:hover { text-decoration: underline; }
+const JX_CSS = `
+.jx { max-width: 1240px; margin: 0 auto; padding: 4px 0 60px; }
+.jx * { box-sizing: border-box; }
 
-/* floating salary window (minimizable / closable, recall pill top-right) */
-.jb-sal-win { position: fixed; top: 72px; right: 26px; width: 330px; max-height: calc(100vh - 100px); overflow-y: auto; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; box-shadow: 0 24px 60px -12px rgba(20,23,31,.35); z-index: 120; animation: jbIn .2s var(--ease); }
-.jb-sal-head { display: flex; align-items: center; gap: 6px; padding: 13px 14px; border-bottom: 1px solid var(--hair-soft); position: sticky; top: 0; background: #fff; z-index: 2; }
-.jb-sal-head h4 { font-family: var(--f-display); font-size: 14px; font-weight: 700; margin: 0; flex: 1; display: flex; align-items: center; gap: 7px; color: var(--ink); }
-.jb-sal-head h4 svg { color: var(--accent); }
-.jb-sal-ctl { border: none; background: transparent; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; color: var(--ink-40); display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; padding: 0; }
-.jb-sal-ctl:hover { background: #F4F4F8; color: var(--ink); }
-.jb-sal-body { padding: 13px 16px 16px; }
-.jb-sal-job { font-size: 12.5px; color: var(--ink-60); margin-bottom: 8px; line-height: 1.45; }
-.jb-sal-job b { color: var(--ink); }
-.jb-sal-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--hair-soft); font-size: 12px; color: var(--ink-60); }
-.jb-sal-row b { font-family: var(--f-display); font-size: 13.5px; color: var(--ink); }
-.jb-sal-row.mid b { font-size: 19px; color: var(--accent); }
-.jb-sal-src { font-size: 10.5px; color: var(--ink-40); margin-top: 9px; line-height: 1.5; }
-.jb-sal-pill { position: fixed; top: 72px; right: 26px; z-index: 120; display: flex; align-items: center; gap: 7px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-family: var(--f-body); font-weight: 800; font-size: 12.5px; border-radius: 99px; padding: 9px 16px; cursor: pointer; box-shadow: 0 10px 26px rgba(47,42,229,.22); animation: jbIn .2s var(--ease); }
-.jb-sal-pill:hover { background: var(--tint); }
+/* ── Hero ─────────────────────────────────────────────────────────── */
+.jx-hero h1 { font-family: var(--f-display); font-size: clamp(26px, 3.4vw, 34px); font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin: 0 0 6px; }
+.jx-hero .sub { font-size: 14px; color: var(--ink-60); line-height: 1.6; margin: 0 0 22px; max-width: 640px; }
 
-/* split */
-.jb-split { flex: 1; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; min-height: 0; }
-@media (max-width: 900px) { .jb-split { grid-template-columns: 1fr; } .jb-detail { display: none; } }
-@media (max-width: 860px) {
-  .jb { height: calc(100vh - 88px); }
-  .jb-pop { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 130px); overflow-y: auto; }
-  .jb-sal-win { top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; max-height: 60vh; }
-  .jb-sal-pill { top: auto; bottom: 16px; right: 16px; }
+/* command bar: destination + dream salary + AI CTA in one elevated pill */
+.jx-quest { display: flex; align-items: stretch; gap: 4px; background: #fff; border: 1px solid var(--hair-soft); border-radius: 18px; padding: 8px; box-shadow: 0 24px 60px -34px rgba(20,23,31,.35); }
+.jx-q-seg { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 9px 16px; border-radius: 12px; transition: background .15s; position: relative; }
+.jx-q-seg:hover { background: #F7F7FA; }
+.jx-q-seg + .jx-q-seg::before { content: ''; position: absolute; left: -2px; top: 12px; bottom: 12px; width: 1px; background: var(--hair-soft); }
+.jx-q-seg label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); white-space: nowrap; }
+.jx-q-seg input { border: none; background: none; outline: none; width: 100%; font-family: var(--f-body); font-size: 14.5px; font-weight: 600; color: var(--ink); padding: 0; }
+.jx-q-seg input::placeholder { color: var(--ink-40); font-weight: 500; }
+.jx-q-salrow { display: flex; align-items: baseline; gap: 6px; }
+.jx-q-salrow b { font-size: 13px; font-weight: 700; color: var(--ink-40); flex-shrink: 0; }
+/* visual style comes from the site-wide .btn .btn-gold — here only layout */
+.jx-q-cta { flex-shrink: 0; align-self: center; margin-left: 4px; }
+.jx-q-cta:disabled { opacity: .6; cursor: default; transform: none; }
+
+.jx-roles { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-60); margin-top: 12px; }
+.jx-roles .chip { background: var(--tint); color: var(--accent); font-size: 11.5px; font-weight: 700; border-radius: 99px; padding: 4px 12px; }
+
+/* ── Toolbar ──────────────────────────────────────────────────────── */
+.jx-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 26px 0 16px; }
+.jx-count { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--ink-60); white-space: nowrap; margin-right: auto; }
+.jx-count b { font-family: var(--f-display); font-size: 17px; color: var(--ink); }
+.jx-reset { border: none; background: none; color: var(--accent); font-weight: 700; font-size: 12px; cursor: pointer; font-family: var(--f-body); padding: 0 0 0 4px; }
+.jx-reset:hover { text-decoration: underline; }
+.jx-mini { font-size: 11px; color: var(--ink-40); display: inline-flex; align-items: center; gap: 6px; }
+.jx-mini::before { content: ''; width: 10px; height: 10px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: jxspin .7s linear infinite; }
+@keyframes jxspin { to { transform: rotate(360deg); } }
+
+.jx-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--hair-soft); border-radius: 99px; padding: 8px 16px; min-width: 220px; transition: border-color .15s, box-shadow .15s; }
+.jx-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+.jx-search svg { color: var(--ink-40); flex-shrink: 0; }
+.jx-search input { border: none; background: none; outline: none; font-family: var(--f-body); font-size: 13px; color: var(--ink); width: 100%; }
+.jx-search input::placeholder { color: var(--ink-40); }
+
+.jx-sel { appearance: none; -webkit-appearance: none; background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%239297A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center; border: 1px solid var(--hair-soft); border-radius: 99px; padding: 8px 32px 8px 16px; font-family: var(--f-body); font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; outline: none; transition: border-color .15s; }
+.jx-sel:hover { border-color: var(--accent); }
+
+.jx-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; border-radius: 99px; padding: 1px 7px; margin-left: 4px; }
+
+/* filters popover */
+.jx-popwrap { position: relative; }
+.jx-pop { position: absolute; top: calc(100% + 10px); right: 0; z-index: 70; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; box-shadow: 0 18px 44px rgba(20,23,31,.16); padding: 18px; width: 560px; max-width: calc(100vw - 40px); animation: jxin .18s var(--ease); }
+@keyframes jxin { from { opacity: 0; transform: translateY(-6px); } }
+.jx-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.jx-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.jx-field label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jx-field select, .jx-field input { appearance: none; -webkit-appearance: none; width: 100%; background: #F7F7FA; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; font-family: var(--f-body); font-size: 13px; color: var(--ink); outline: none; transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.jx-field select { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%239297A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jx-field select:hover, .jx-field input:hover { border-color: var(--hair); background-color: #fff; }
+.jx-field select:focus, .jx-field input:focus { background-color: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
+.jx-field select:disabled, .jx-field input:disabled { opacity: .55; cursor: default; }
+.jx-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); cursor: pointer; padding: 4px 0; }
+.jx-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+.jx-pfoot { display: flex; gap: 8px; margin-top: 14px; }
+
+/* ── Grid ─────────────────────────────────────────────────────────── */
+.jx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.jx-loadmore { display: flex; justify-content: center; margin-top: 22px; }
+.jx-loadmore .btn { border-radius: 99px; padding: 11px 28px; }
+.jx-card { display: flex; flex-direction: column; gap: 9px; background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; padding: 18px; cursor: pointer; text-align: left; font-family: var(--f-body); transition: transform .16s var(--ease), box-shadow .16s, border-color .16s; }
+.jx-card:hover { transform: translateY(-2px); border-color: rgba(47,42,229,.35); box-shadow: 0 16px 36px -18px rgba(20,23,31,.28); }
+.jx-c-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.jx-logo { width: 40px; height: 40px; border-radius: 11px; background: var(--tint); color: var(--accent-ink); font-family: var(--f-display); font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.jx-match { font-size: 10.5px; font-weight: 800; border-radius: 99px; padding: 3px 10px; white-space: nowrap; }
+.jx-c-title { font-family: var(--f-display); font-size: 15.5px; font-weight: 700; color: var(--ink); line-height: 1.35; letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+.jx-c-sub { font-size: 12.5px; color: var(--ink-60); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jx-c-sal { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.jx-c-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+.jx-tag { font-size: 10px; font-weight: 800; letter-spacing: .03em; background: #F4F4F8; color: var(--ink-40); border-radius: 99px; padding: 2.5px 9px; white-space: nowrap; }
+.jx-tag.src { background: var(--tint); color: var(--accent); }
+.jx-tag.rem { background: #E7F5EE; color: #12805C; }
+
+/* skeletons */
+.jx-sk { border: 1px solid var(--hair-soft); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; background: #fff; }
+.jx-sk .b { background: linear-gradient(90deg, #F1F2F6 25%, #FAFAFC 50%, #F1F2F6 75%); background-size: 200% 100%; animation: jxsh 1.2s infinite; border-radius: 7px; }
+@keyframes jxsh { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.jx-empty { grid-column: 1 / -1; text-align: center; color: var(--ink-40); font-size: 13.5px; padding: 70px 16px; line-height: 1.7; }
+.jx-empty b { color: var(--ink); font-family: var(--f-display); font-size: 16px; display: block; margin-bottom: 4px; }
+
+/* ── Modal popup ──────────────────────────────────────────────────── */
+.jx-ov { position: fixed; inset: 0; background: rgba(20,23,31,.48); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 28px; animation: jxfade .18s ease; }
+@keyframes jxfade { from { opacity: 0; } }
+.jx-modal { width: min(880px, 100%); max-height: min(88vh, 940px); background: #fff; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 40px 110px -20px rgba(20,23,31,.55); animation: jxpop .22s var(--ease); }
+@keyframes jxpop { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+.jx-m-head { padding: 24px 28px 18px; border-bottom: 1px solid var(--hair-soft); flex-shrink: 0; }
+.jx-m-toprow { display: flex; align-items: flex-start; gap: 14px; }
+.jx-m-toprow .jx-logo { width: 46px; height: 46px; font-size: 17px; border-radius: 13px; }
+.jx-m-titles { flex: 1; min-width: 0; }
+.jx-m-titles h2 { font-family: var(--f-display); font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 3px; line-height: 1.3; }
+.jx-m-titles .sub { font-size: 13px; color: var(--ink-60); }
+.jx-m-close { flex-shrink: 0; border: none; background: #F4F4F8; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; color: var(--ink-60); font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; }
+.jx-m-close:hover { background: var(--ink); color: #fff; }
+.jx-m-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.jx-m-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.jx-m-body { overflow-y: auto; padding: 22px 28px 34px; }
+.jx-desc { font-size: 13.5px; color: var(--ink-60); line-height: 1.75; white-space: pre-line; }
+.jx-preview-cta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--tint); border: 1px solid rgba(47,42,229,.16); border-radius: 12px; padding: 14px 16px; margin-top: 16px; font-size: 12.5px; color: var(--ink-60); line-height: 1.5; }
+.jx-preview-cta b { color: var(--ink); }
+.jx-preview-cta .btn { margin-left: auto; }
+.jx-sec-label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); margin: 18px 0 8px; }
+.jx-sec-label:first-child { margin-top: 0; }
+
+/* AI panel inside the modal */
+.jx-ai { background: #FAFAFC; border: 1px solid var(--hair-soft); border-radius: 14px; padding: 18px 20px; margin-bottom: 22px; }
+.jx-ai-head { display: flex; align-items: center; gap: 14px; }
+.jx-ring { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.jx-ring > span { width: 48px; height: 48px; border-radius: 50%; background: #FAFAFC; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 700; font-size: 17px; }
+.jx-ai h3 { font-family: var(--f-display); font-size: 15px; font-weight: 700; margin: 0; color: var(--ink); }
+.jx-ai .psub { font-size: 12.5px; color: var(--ink-60); margin: 3px 0 0; line-height: 1.55; }
+.jx-kw { display: inline-flex; font-size: 11.5px; font-weight: 700; padding: 3.5px 10px; border-radius: 99px; margin: 0 5px 5px 0; background: #F1F2F6; color: var(--ink-60); }
+.jx-li { display: flex; gap: 8px; font-size: 12.5px; color: var(--ink-60); line-height: 1.55; padding: 3px 0; }
+.jx-li .dot { flex-shrink: 0; margin-top: 1px; font-weight: 800; }
+.jx-exp { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid rgba(47,42,229,.16); border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; }
+.jx-exp b { font-size: 12.5px; color: var(--ink); }
+.jx-exp span { font-size: 11px; color: var(--ink-40); }
+
+/* salary section inside the modal */
+.jx-sal { background: #FAFAFC; border: 1px solid var(--hair-soft); border-radius: 14px; padding: 16px 20px; margin-bottom: 22px; }
+.jx-sal-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--hair-soft); font-size: 12px; color: var(--ink-60); }
+.jx-sal-row b { font-family: var(--f-display); font-size: 13.5px; color: var(--ink); }
+.jx-sal-row.mid b { font-size: 20px; color: var(--accent); }
+.jx-sal-src { font-size: 10.5px; color: var(--ink-40); margin-top: 10px; line-height: 1.55; }
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .jx-quest { flex-wrap: wrap; }
+  .jx-q-seg { flex: 1 1 44%; }
+  .jx-q-seg + .jx-q-seg::before { display: none; }
+  .jx-q-cta { flex: 1 1 100%; justify-content: center; margin-left: 0; }
+  .jx-pgrid { grid-template-columns: 1fr; }
+  .jx-pop { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 120px); overflow-y: auto; }
+  .jx-search { min-width: 0; flex: 1 1 100%; order: 5; }
 }
-
-/* list */
-.jb-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
-.jb-card { background: #fff; border: 1px solid var(--hair-soft); border-radius: 13px; padding: 13px 15px; cursor: pointer; text-align: left; font-family: var(--f-body); transition: all .15s; display: flex; gap: 11px; align-items: flex-start; }
-.jb-card:hover { border-color: rgba(111,140,255,.4); }
-.jb-card.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,42,229,.08); }
-.jb-logo { width: 36px; height: 36px; border-radius: 9px; background: var(--tint); color: var(--accent-ink); font-family: var(--f-display); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.jb-card b { font-size: 13.5px; color: var(--ink); display: block; line-height: 1.35; }
-.jb-card .sub { font-size: 12px; color: var(--ink-60); margin-top: 2px; }
-.jb-card .meta { display: flex; gap: 6px; align-items: center; margin-top: 7px; flex-wrap: wrap; }
-.jb-tag { font-size: 10px; font-weight: 800; letter-spacing: .03em; background: #F4F4F8; color: var(--ink-40); border-radius: 99px; padding: 2.5px 8px; }
-.jb-tag.src { background: var(--tint); color: var(--accent); }
-.jb-tag.rem { background: #E7F5EE; color: #12805C; }
-.jb-empty { text-align: center; color: var(--ink-40); font-size: 13px; padding: 40px 16px; line-height: 1.6; }
-
-/* detail */
-.jb-detail { background: #fff; border: 1px solid var(--hair-soft); border-radius: 16px; overflow-y: auto; min-height: 0; }
-.jb-d-head { padding: 22px 26px 16px; border-bottom: 1px solid var(--hair-soft); position: sticky; top: 0; background: #fff; z-index: 5; }
-.jb-d-head h2 { font-family: var(--f-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
-.jb-d-head .sub { font-size: 13px; color: var(--ink-60); }
-.jb-d-acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-.jb-d-body { padding: 18px 26px 30px; }
-.jb-desc { font-size: 13.5px; color: var(--ink-60); line-height: 1.7; white-space: pre-line; }
-
-/* AI panel */
-.jb-ai { background: #FAFAFC; border: 1px solid var(--hair-soft); border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; }
-.jb-ai-head { display: flex; align-items: center; gap: 12px; }
-.jb-ring { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.jb-ring > span { width: 46px; height: 46px; border-radius: 50%; background: #FAFAFC; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 700; font-size: 16px; }
-.jb-ai h3 { font-family: var(--f-display); font-size: 15px; font-weight: 700; margin: 0; }
-.jb-ai .psub { font-size: 12.5px; color: var(--ink-60); margin: 2px 0 0; }
-.jb-sec-label { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-40); margin: 16px 0 7px; }
-.jb-kw { display: inline-flex; font-size: 11.5px; font-weight: 700; padding: 3.5px 10px; border-radius: 99px; margin: 0 5px 5px 0; background: #F1F2F6; color: var(--ink-60); }
-.jb-li { display: flex; gap: 8px; font-size: 12.5px; color: var(--ink-60); line-height: 1.55; padding: 3px 0; }
-.jb-li .dot { flex-shrink: 0; margin-top: 1px; font-weight: 800; }
-.jb-exp { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid rgba(47,42,229,.16); border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; }
-.jb-exp b { font-size: 12.5px; }
-.jb-exp span { font-size: 11px; color: var(--ink-40); }
+@media (max-width: 640px) {
+  .jx-ov { padding: 0; }
+  .jx-modal { width: 100%; height: 100%; max-height: none; border-radius: 0; }
+}
 `;
 
 export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProps) {
@@ -233,16 +297,30 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   const { isAuthenticated } = useAuth();
 
   const [country, setCountry] = useState('it');
+  const [query, setQuery] = useState('');
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [providers, setProviders] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selected, setSelected] = useState<JobPosting | null>(null);
+
   const [filterCity, setFilterCity] = useState('');
   const [filterRoleOrCompany, setFilterRoleOrCompany] = useState('');
+  const [filterRemote, setFilterRemote] = useState(false);
+  const [filterMinSalary, setFilterMinSalary] = useState('');
+  const [strictSalaryFilter, setStrictSalaryFilter] = useState(false);
+  const [filterLanguage, setFilterLanguage] = useState('');
+  const [filterEmploymentType, setFilterEmploymentType] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'recent' | 'match' | 'salary'>('recent');
+  const [bulkMatching, setBulkMatching] = useState(false);
 
-  const [salaryWin, setSalaryWin] = useState<'closed' | 'open' | 'min'>('closed');
+  // "Relocation search": dove voglio trasferirmi + quanto voglio guadagnare —
+  // l'AI propone i titoli di ricerca giusti per il CV in quel mercato.
+  const [desiredSalary, setDesiredSalary] = useState('');
+  const [suggestedRoles, setSuggestedRoles] = useState<string[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+
   const [salaryJob, setSalaryJob] = useState<JobPosting | null>(null);
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null);
   const [salaryLoading, setSalaryLoading] = useState(false);
@@ -255,16 +333,88 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   const [translating, setTranslating] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
 
-  const search = useCallback(async (query: string, location: string, cc: string) => {
-    setSearching(true);
+  // Pagination: each /search call already returns a much bigger single batch
+  // (backend now asks every provider for its real per-call maximum), so
+  // "Carica altri risultati" only needs to kick in once that batch runs out.
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastQuery, setLastQuery] = useState<{ q: string; location: string; cc: string } | null>(null);
+
+  const resetFilterState = () => {
+    setFilterCity(''); setFilterRoleOrCompany(''); setFilterRemote(false);
+    setFilterMinSalary(''); setFilterLanguage(''); setFilterEmploymentType(''); setStrictSalaryFilter(false);
+  };
+
+  const search = useCallback(async (q: string, location: string, cc: string, pageNum = 1) => {
+    if (pageNum === 1) { setSearching(true); resetFilterState(); setSuggestedRoles([]); }
+    else setLoadingMore(true);
     try {
-      const params = new URLSearchParams({ q: query, location, country: cc });
+      const params = new URLSearchParams({ q, location, country: cc, page: String(pageNum) });
       const res = await fetch(`/api/jobs/search?${params}`);
       if (!res.ok) throw new Error(`Il server ha risposto ${res.status}`);
       const data = await res.json() as { jobs: JobPosting[]; providers: string[] };
-      setJobs(data.jobs);
+      setJobs(prev => {
+        if (pageNum === 1) return data.jobs;
+        const seen = new Set(prev.map(j => j.id));
+        return [...prev, ...data.jobs.filter(j => !seen.has(j.id))];
+      });
       setProviders(data.providers);
-      setSelected(data.jobs[0] ?? null);
+      setSearched(true);
+      setPage(pageNum);
+      setHasMore(data.jobs.length > 0 && pageNum < 10);
+      setLastQuery({ q, location, cc });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore nella ricerca delle offerte');
+    } finally {
+      setSearching(false);
+      setLoadingMore(false);
+    }
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (!lastQuery || loadingMore) return;
+    void search(lastQuery.q, lastQuery.location, lastQuery.cc, page + 1);
+  }, [lastQuery, loadingMore, page, search]);
+
+  // Fan out one /search call per AI-suggested role, then merge round-robin
+  // (same principle as the backend's per-provider merge) and de-dupe by id.
+  // (This path always fetches a fresh, non-paginated batch — "Carica altri"
+  // only applies to the plain single-query search above.)
+  const searchMulti = useCallback(async (roles: string[], cc: string) => {
+    setSearching(true);
+    resetFilterState();
+    setHasMore(false);
+    try {
+      const settled = await Promise.allSettled(
+        roles.map(role =>
+          fetch(`/api/jobs/search?${new URLSearchParams({ q: role, location: '', country: cc })}`)
+            .then(r => r.json() as Promise<{ jobs: JobPosting[]; providers: string[] }>)
+        )
+      );
+      const perRole: JobPosting[][] = [];
+      const providerSet = new Set<string>();
+      settled.forEach(s => {
+        if (s.status === 'fulfilled') {
+          perRole.push(s.value.jobs ?? []);
+          (s.value.providers ?? []).forEach(p => providerSet.add(p));
+        } else {
+          perRole.push([]);
+        }
+      });
+      const merged: JobPosting[] = [];
+      const seen = new Set<string>();
+      const maxLen = Math.max(0, ...perRole.map(p => p.length));
+      for (let i = 0; i < maxLen; i++) {
+        for (const list of perRole) {
+          const job = list[i];
+          if (job && !seen.has(job.id)) { seen.add(job.id); merged.push(job); }
+        }
+      }
+      const trimmed = merged.slice(0, 150);
+      if (trimmed.length === 0) toast.error('Nessuna offerta trovata per i ruoli suggeriti.');
+      setJobs(trimmed);
+      setProviders(Array.from(providerSet));
       setSearched(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Errore nella ricerca delle offerte');
@@ -273,14 +423,39 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     }
   }, []);
 
+  const runRelocationSearch = useCallback(async () => {
+    setSuggesting(true);
+    setSuggestedRoles([]);
+    try {
+      const res = await fetch('/api/jobs/suggest-roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          cvData,
+          experiences: archive,
+          country,
+          desiredSalary: desiredSalary ? Number(desiredSalary) : undefined,
+        }),
+      });
+      const body = await res.json() as { roles?: string[]; error?: string };
+      if (!res.ok || !body.roles || body.roles.length === 0) throw new Error(body.error ?? 'Nessun ruolo suggerito dall\'AI');
+      const roles = body.roles.slice(0, 3);
+      setSuggestedRoles(roles);
+      await searchMulti(roles, country);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore nel suggerimento dei ruoli');
+    } finally {
+      setSuggesting(false);
+    }
+  }, [cvData, archive, country, desiredSalary, searchMulti]);
+
   // First load: a broad search so the page is never empty.
   useEffect(() => {
     void search('', '', 'it');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // A fresh set of results invalidates any previously chosen dropdown filter.
-  useEffect(() => { setFilterCity(''); setFilterRoleOrCompany(''); }, [jobs]);
 
   const countOptions = (values: string[]): Array<[string, number]> => {
     const m = new Map<string, number>();
@@ -294,22 +469,100 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   );
   const roleOptions = useMemo(() => countOptions(jobs.map(j => cleanRole(j.title))), [jobs]);
   const companyOptions = useMemo(() => countOptions(jobs.map(j => j.company)), [jobs]);
-
-  const filteredJobs = useMemo(
-    () => jobs.filter(j =>
-      (!filterCity || cleanCity(j.location) === filterCity) &&
-      (!filterRoleOrCompany || cleanRole(j.title) === filterRoleOrCompany || j.company === filterRoleOrCompany)
-    ),
-    [jobs, filterCity, filterRoleOrCompany]
+  const languageOptions = useMemo(
+    () => countOptions(jobs.flatMap(j => j.languages ?? [])),
+    [jobs]
   );
-  const hasActiveFilters = !!(filterCity || filterRoleOrCompany);
+
+  // Zero-cost proxy match score for every result, used for the "Match %" sort
+  // and as a placeholder badge until the real AI analysis (paid, on-demand) lands.
+  const heuristicScores = useMemo(() => {
+    const m: Record<string, number> = {};
+    jobs.forEach(j => { m[j.id] = heuristicMatchScore(j, cvData, archive); });
+    return m;
+  }, [jobs, cvData, archive]);
+  const matchScoreFor = useCallback(
+    (job: JobPosting) => analyses[job.id]?.compatibilita ?? heuristicScores[job.id] ?? 0,
+    [analyses, heuristicScores]
+  );
+
+  const filteredJobs = useMemo(() => {
+    const minSalary = filterMinSalary ? Number(filterMinSalary) : null;
+    const list = jobs.filter(j =>
+      (!filterCity || cleanCity(j.location) === filterCity) &&
+      (!filterRoleOrCompany || cleanRole(j.title) === filterRoleOrCompany || j.company === filterRoleOrCompany) &&
+      (!filterRemote || j.remote) &&
+      (!filterLanguage || (j.languages ?? []).includes(filterLanguage)) &&
+      (!filterEmploymentType || j.employmentType === filterEmploymentType) &&
+      // Most postings don't expose a numeric salary at all (often 0% for a
+      // given country/query), so by default jobs with no known salary stay
+      // visible rather than vanishing along with the ones that are genuinely
+      // below the threshold. `strictSalaryFilter` lets the user opt into
+      // actually hiding the unknown ones, at the cost of a much shorter list.
+      (minSalary === null || (strictSalaryFilter ? (j.salaryMax != null && j.salaryMax >= minSalary) : (j.salaryMax == null || j.salaryMax >= minSalary)))
+    );
+    if (sortBy === 'match') {
+      return [...list].sort((a, b) => matchScoreFor(b) - matchScoreFor(a));
+    }
+    if (sortBy === 'salary') {
+      return [...list].sort((a, b) => (b.salaryMax ?? b.salaryMin ?? -1) - (a.salaryMax ?? a.salaryMin ?? -1));
+    }
+    return list; // 'recent' — preserves the order already returned by the backend
+  }, [jobs, filterCity, filterRoleOrCompany, filterRemote, filterLanguage, filterEmploymentType, filterMinSalary, strictSalaryFilter, sortBy, matchScoreFor]);
+  const hasActiveFilters = !!(filterCity || filterRoleOrCompany || filterRemote || filterLanguage || filterEmploymentType || filterMinSalary);
+  const activeFilterCount = [filterCity, filterRoleOrCompany, filterLanguage, filterEmploymentType, filterMinSalary].filter(Boolean).length + Number(filterRemote);
   const salaryBenefits = useMemo(() => salaryJob ? detectBenefits(salaryJob.description) : [], [salaryJob]);
 
-  // Keep the selected job in sync with the filtered list.
+  // When the user asks to sort by AI match %, background-analyze the top
+  // heuristically-ranked results that haven't been AI-scored yet (bounded
+  // concurrency so we don't hammer the LLM), then let them naturally re-sort
+  // as real scores land in `analyses`.
   useEffect(() => {
-    if (selected && !filteredJobs.some(j => j.id === selected.id)) {
-      setSelected(filteredJobs[0] ?? null);
-    }
+    if (sortBy !== 'match' || jobs.length === 0) return;
+    const CONCURRENCY = 3;
+    const TOP_N = 12;
+    const toAnalyze = [...jobs]
+      .sort((a, b) => (heuristicScores[b.id] ?? 0) - (heuristicScores[a.id] ?? 0))
+      .filter(j => !analyses[j.id])
+      .slice(0, TOP_N);
+    if (toAnalyze.length === 0) return;
+
+    let cancelled = false;
+    let cursor = 0;
+    setBulkMatching(true);
+
+    const worker = async () => {
+      while (!cancelled && cursor < toAnalyze.length) {
+        const job = toAnalyze[cursor++]!;
+        try {
+          const res = await fetch('/api/jobs/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              job: { title: job.title, company: job.company, description: job.description },
+              cvData,
+              experiences: archive,
+            }),
+          });
+          const body = await res.json() as { success?: boolean; data?: JobAnalysis };
+          if (!cancelled && res.ok && body.success && body.data) {
+            setAnalyses(prev => (prev[job.id] ? prev : { ...prev, [job.id]: body.data! }));
+          }
+        } catch { /* best-effort background scoring — a single failure shouldn't stop the batch */ }
+      }
+    };
+
+    void Promise.all(Array.from({ length: Math.min(CONCURRENCY, toAnalyze.length) }, worker))
+      .finally(() => { if (!cancelled) setBulkMatching(false); });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, jobs]);
+
+  // If the open job gets filtered out (or a new search lands), close the popup.
+  useEffect(() => {
+    if (selected && !filteredJobs.some(j => j.id === selected.id)) setSelected(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredJobs]);
 
@@ -326,11 +579,24 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     })();
   }, [isAuthenticated]);
 
-  // Reset the "show original" toggle whenever a different job is selected.
+  // Reset the "show original" toggle whenever a different job is opened.
   useEffect(() => { setShowOriginal(false); }, [selected?.id]);
+
+  // Popup open: lock page scroll + close on Escape.
+  useEffect(() => {
+    if (!selected) return;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [selected]);
 
   const analysis = selected ? analyses[selected.id] : undefined;
   const translation = selected ? translations[selected.id] : undefined;
+  const isPreview = !!selected && selected.description.trim().length < PREVIEW_LENGTH_THRESHOLD;
 
   const handleTranslate = async () => {
     if (!selected) return;
@@ -378,7 +644,6 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
   const handleSalary = async (job: JobPosting) => {
     setSalaryJob(job);
-    setSalaryWin('open');
     setSalaryStats(null);
     setSalaryLoading(true);
     try {
@@ -394,7 +659,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
       setSalaryStats(body.salary);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Errore nella stima dello stipendio');
-      setSalaryWin('closed');
+      setSalaryJob(null);
     } finally {
       setSalaryLoading(false);
     }
@@ -410,47 +675,97 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     onNavigate('tailor');
   };
 
-  const scoreColor = (n: number) => n >= 70 ? 'var(--success)' : n >= 45 ? '#D99A2B' : 'var(--danger)';
-
   const recommended = analysis
     ? archive.filter(e => analysis.esperienzeConsigliate.includes(e.id))
     : [];
 
-  return (
-    <div className="jb">
-      <style>{JB_CSS}</style>
+  const showSalarySection = selected && salaryJob?.id === selected.id && (salaryLoading || salaryStats);
 
-      <div className="head" style={{ marginBottom: 14 }}>
-        <div>
-          <h1>Offerte di lavoro</h1>
-          <p>
-            Annunci reali dalle principali job board{providers.length > 0 ? ` (${providers.join(', ')})` : ''}. L'AI misura la compatibilità col tuo CV e ti dice cosa cambiare.
-          </p>
+  return (
+    <div className="jx">
+      <style>{JX_CSS}</style>
+
+      {/* ── HERO + COMMAND BAR ── */}
+      <div className="jx-hero">
+        <h1>Trova il lavoro giusto, ovunque</h1>
+        <p className="sub">
+          Annunci reali dalle principali job board{providers.length > 0 ? ` (${providers.join(', ')})` : ''}. Scegli dove vuoi vivere e quanto vuoi guadagnare: l'AI legge il tuo CV e ti propone le offerte più compatibili.
+        </p>
+
+        <div className="jx-quest">
+          <div className="jx-q-seg">
+            <label>Dove vuoi lavorare</label>
+            <CountrySelect
+              variant="bare"
+              options={JOB_COUNTRIES}
+              value={country}
+              onChange={cc => { setCountry(cc); void search(query, '', cc); }}
+              ariaLabel="Paese di destinazione"
+            />
+          </div>
+          <div className="jx-q-seg">
+            <label>Stipendio dei sogni (annuo lordo)</label>
+            <div className="jx-q-salrow">
+              <input
+                type="number" min={0} step={1000} placeholder="es. 45.000"
+                value={desiredSalary} onChange={e => setDesiredSalary(e.target.value)}
+              />
+              <b>{CURRENCY[country] ?? '€'}</b>
+            </div>
+          </div>
+          <button className="btn btn-gold btn-lg jx-q-cta" disabled={suggesting || searching} onClick={() => void runRelocationSearch()}>
+            <Icon d={IC.spark} size={15} />
+            {suggesting ? 'L\'AI sta analizzando il tuo CV…' : 'Trova i lavori giusti per me'}
+          </button>
         </div>
-        <div className="jb-headtools">
+
+        {suggestedRoles.length > 0 && (
+          <div className="jx-roles">
+            Ricerca AI basata sul tuo CV: {suggestedRoles.map(r => <span key={r} className="chip">{r}</span>)}
+          </div>
+        )}
+      </div>
+
+      {/* ── TOOLBAR ── */}
+      <div className="jx-bar">
+        <div className="jx-count">
           {searched && !searching && jobs.length > 0 && (
-            <div className="jb-count">
+            <>
               <b>{filteredJobs.length}</b>
               <span>{filteredJobs.length === 1 ? 'offerta' : 'offerte'}{hasActiveFilters ? ` su ${jobs.length}` : ''}</span>
-              {hasActiveFilters && (
-                <button className="jb-reset" onClick={() => { setFilterCity(''); setFilterRoleOrCompany(''); }}>
-                  Azzera
-                </button>
-              )}
-            </div>
+              {hasActiveFilters && <button className="jx-reset" onClick={resetFilterState}>Azzera filtri</button>}
+              {bulkMatching && <span className="jx-mini" style={{ marginLeft: 10 }}>analisi AI in corso</span>}
+            </>
           )}
-          <div style={{ position: 'relative' }}>
-            <button className="btn btn-line" style={{ gap: 7 }} onClick={() => setFiltersOpen(v => !v)}>
-              <Icon d={IC.sliders} size={14} /> Filtri
-              {(Number(!!filterCity) + Number(!!filterRoleOrCompany)) > 0 && (
-                <span className="jb-badge">{Number(!!filterCity) + Number(!!filterRoleOrCompany)}</span>
-              )}
-            </button>
-            {filtersOpen && (
-              <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 55 }} onClick={() => setFiltersOpen(false)} />
-                <div className="jb-pop">
-                  <div className="jb-field">
+        </div>
+
+        <div className="jx-search">
+          <Icon d={IC.search} size={14} />
+          <input
+            placeholder="Cerca ruolo, azienda, parola chiave…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') void search(query, '', country); }}
+          />
+        </div>
+
+        <select className="jx-sel" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} aria-label="Ordina per">
+          <option value="recent">Più recenti</option>
+          <option value="match">Compatibilità</option>
+          <option value="salary">Stipendio</option>
+        </select>
+
+        <div className="jx-popwrap">
+          <button className="btn btn-line" style={{ gap: 7, borderRadius: 99 }} onClick={() => setFiltersOpen(v => !v)}>
+            <Icon d={IC.sliders} size={14} /> Filtri
+            {activeFilterCount > 0 && <span className="jx-badge">{activeFilterCount}</span>}
+          </button>
+          {filtersOpen && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 65 }} onClick={() => setFiltersOpen(false)} />
+              <div className="jx-pop">
+                <div className="jx-pgrid">
+                  <div className="jx-field">
                     <label>Ruolo o azienda</label>
                     <select value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} disabled={jobs.length === 0}>
                       <option value="">Tutti i ruoli e le aziende</option>
@@ -462,195 +777,53 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                       </optgroup>
                     </select>
                   </div>
-                  <div className="jb-field">
+                  <div className="jx-field">
                     <label>Città</label>
                     <select value={filterCity} onChange={e => setFilterCity(e.target.value)} disabled={jobs.length === 0}>
                       <option value="">Tutte le città</option>
                       {cityOptions.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
                     </select>
                   </div>
-                  <div className="jb-field">
-                    <label>Paese</label>
-                    <select value={country} onChange={e => { const cc = e.target.value; setCountry(cc); void search('', '', cc); }}>
-                      {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+                  <div className="jx-field">
+                    <label>Stipendio minimo (annuo)</label>
+                    <input
+                      type="number" min={0} step={1000} placeholder="es. 30000"
+                      value={filterMinSalary} onChange={e => setFilterMinSalary(e.target.value)}
+                      disabled={jobs.length === 0}
+                    />
+                    {filterMinSalary && (
+                      <label className="jx-check" style={{ padding: '2px 0 0', fontSize: 11.5 }}>
+                        <input type="checkbox" checked={strictSalaryFilter} onChange={e => setStrictSalaryFilter(e.target.checked)} />
+                        Escludi annunci senza stipendio indicato
+                      </label>
+                    )}
+                  </div>
+                  <div className="jx-field">
+                    <label>Lingua richiesta</label>
+                    <select value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)} disabled={languageOptions.length === 0}>
+                      <option value="">Qualsiasi lingua</option>
+                      {languageOptions.map(([l, n]) => <option key={l} value={l}>{l} ({n})</option>)}
                     </select>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center', gap: 6 }} disabled={searching} onClick={() => void search('', '', country)}>
-                      {searching ? 'Ricerca…' : <><Icon d={IC.refresh} size={12} /> Aggiorna</>}
-                    </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setFiltersOpen(false)}>Chiudi</button>
+                  <div className="jx-field">
+                    <label>Tipo di contratto</label>
+                    <select value={filterEmploymentType} onChange={e => setFilterEmploymentType(e.target.value)} disabled={jobs.length === 0}>
+                      <option value="">Qualsiasi</option>
+                      <option value="full-time">Tempo pieno</option>
+                      <option value="part-time">Part-time</option>
+                      <option value="contract">A contratto</option>
+                    </select>
                   </div>
+                  <label className="jx-check" style={{ alignSelf: 'end' }}>
+                    <input type="checkbox" checked={filterRemote} onChange={e => setFilterRemote(e.target.checked)} />
+                    Solo lavoro da remoto
+                  </label>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="jb-split">
-        {/* LIST */}
-        <div className="jb-list">
-          {searching && jobs.length === 0 && (
-            <div className="jb-empty"><div className="spinner" style={{ margin: '0 auto 12px' }} />Ricerca sulle job board in corso…</div>
-          )}
-          {!searching && searched && jobs.length === 0 && (
-            <div className="jb-empty">
-              Nessuna offerta trovata per questa ricerca.<br />
-              Prova con parole più generiche o cambia paese.
-            </div>
-          )}
-          {!searching && jobs.length > 0 && filteredJobs.length === 0 && (
-            <div className="jb-empty">
-              Nessuna offerta corrisponde ai filtri selezionati.<br />
-              Prova a cambiare o azzerare i filtri.
-            </div>
-          )}
-          {filteredJobs.map(job => (
-            <button key={job.id} className={`jb-card${selected?.id === job.id ? ' on' : ''}`} onClick={() => setSelected(job)}>
-              <span className="jb-logo">{(job.company[0] ?? '?').toUpperCase()}</span>
-              <span style={{ minWidth: 0 }}>
-                <b>{job.title}</b>
-                <span className="sub">{job.company}{job.location ? ` · ${job.location}` : ''}</span>
-                <span className="meta">
-                  <span className="jb-tag src">{job.source}</span>
-                  {job.remote && <span className="jb-tag rem">Remote</span>}
-                  {job.postedAt && <span className="jb-tag">{timeAgo(job.postedAt)}</span>}
-                  {analyses[job.id] && (
-                    <span className="jb-tag" style={{ background: '#E7F5EE', color: scoreColor(analyses[job.id]!.compatibilita) }}>
-                      {analyses[job.id]!.compatibilita}% match
-                    </span>
-                  )}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* DETAIL */}
-        <div className="jb-detail">
-          {!selected ? (
-            <div className="jb-empty" style={{ paddingTop: 80 }}>Seleziona un'offerta per vedere i dettagli.</div>
-          ) : (
-            <>
-              <div className="jb-d-head">
-                <h2>{translation && !showOriginal ? translation.title : selected.title}</h2>
-                <div className="sub">
-                  {selected.company}{selected.location ? ` · ${selected.location}` : ''}
-                  {selected.salary ? ` · ${selected.salary}` : ''}
-                  {selected.postedAt ? ` · ${timeAgo(selected.postedAt)}` : ''}
-                </div>
-                <div className="jb-d-acts">
-                  <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
-                    <Icon d={IC.spark} size={13} /> Crea CV su misura per questa offerta
+                <div className="jx-pfoot">
+                  <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center', gap: 6 }} disabled={searching} onClick={() => void search(query, '', country)}>
+                    {searching ? 'Ricerca…' : <><Icon d={IC.refresh} size={12} /> Aggiorna risultati</>}
                   </button>
-                  {!analysis && (
-                    <button className="btn btn-line btn-sm" onClick={() => void handleAnalyze()} disabled={analyzing}>
-                      {analyzing ? 'Analisi in corso…' : 'Analizza col mio CV'}
-                    </button>
-                  )}
-                  <button className="btn btn-line btn-sm" style={{ gap: 6 }} onClick={() => void handleSalary(selected)} disabled={salaryLoading && salaryJob?.id === selected.id}>
-                    <Icon d={IC.coins} size={13} />
-                    {salaryLoading && salaryJob?.id === selected.id ? 'Stima in corso…' : 'Stima stipendio'}
-                  </button>
-                  {!translation && (
-                    <button className="btn btn-line btn-sm" onClick={() => void handleTranslate()} disabled={translating}>
-                      {translating ? 'Traduzione…' : 'Traduci in italiano'}
-                    </button>
-                  )}
-                  {translation && (
-                    <button className="btn btn-line btn-sm" onClick={() => setShowOriginal(v => !v)}>
-                      {showOriginal ? 'Vedi traduzione' : 'Vedi originale'}
-                    </button>
-                  )}
-                  {selected.url && (
-                    <a className="btn btn-ghost btn-sm" href={selected.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                      Annuncio originale ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <div className="jb-d-body">
-                {/* AI ANALYSIS */}
-                {analysis && (
-                  <div className="jb-ai">
-                    <div className="jb-ai-head">
-                      <div className="jb-ring" style={{ background: `conic-gradient(${scoreColor(analysis.compatibilita)} 0 ${analysis.compatibilita}%, #EDEDF2 ${analysis.compatibilita}% 100%)` }}>
-                        <span style={{ color: scoreColor(analysis.compatibilita) }}>{analysis.compatibilita}</span>
-                      </div>
-                      <div>
-                        <h3>Compatibilità col tuo CV</h3>
-                        <p className="psub">{analysis.riassunto}</p>
-                      </div>
-                    </div>
-
-                    {analysis.requisiti.length > 0 && (
-                      <>
-                        <div className="jb-sec-label">Requisiti chiave dell'annuncio</div>
-                        <div>{analysis.requisiti.map(r => <span key={r} className="jb-kw">{r}</span>)}</div>
-                      </>
-                    )}
-
-                    {analysis.puntiForti.length > 0 && (
-                      <>
-                        <div className="jb-sec-label">I tuoi punti forti</div>
-                        {analysis.puntiForti.map(p => (
-                          <div key={p} className="jb-li"><span className="dot" style={{ color: '#12805C' }}>✓</span>{p}</div>
-                        ))}
-                      </>
-                    )}
-
-                    {analysis.lacune.length > 0 && (
-                      <>
-                        <div className="jb-sec-label">Dove il CV è debole</div>
-                        {analysis.lacune.map(p => (
-                          <div key={p} className="jb-li"><span className="dot" style={{ color: 'var(--danger)' }}>✗</span>{p}</div>
-                        ))}
-                      </>
-                    )}
-
-                    {analysis.modificheCv.length > 0 && (
-                      <>
-                        <div className="jb-sec-label">Come adattare il CV</div>
-                        {analysis.modificheCv.map((p, i) => (
-                          <div key={p} className="jb-li"><span className="dot" style={{ color: 'var(--accent)' }}>{i + 1}.</span>{p}</div>
-                        ))}
-                      </>
-                    )}
-
-                    {recommended.length > 0 && (
-                      <>
-                        <div className="jb-sec-label">Dal tuo archivio: esperienze da aggiungere</div>
-                        {recommended.map(e => (
-                          <div key={e.id} className="jb-exp">
-                            <Icon d={IC.check} size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                            <div style={{ minWidth: 0 }}>
-                              <b>{e.role}</b> <span>· {e.company}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-                      <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
-                        <Icon d={IC.spark} size={13} /> Applica con il CV su misura
-                      </button>
-                      {!isAuthenticated && (
-                        <button className="btn btn-line btn-sm" onClick={onLogin}>
-                          Accedi per usare il tuo archivio
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="jb-sec-label" style={{ marginTop: 0 }}>
-                  Descrizione dell'offerta{translation && !showOriginal ? ' (tradotta)' : ''}
-                </div>
-                <div className="jb-desc">
-                  {(translation && !showOriginal ? translation.description : selected.description) || 'Descrizione non disponibile: apri l\'annuncio originale.'}
+                  <button className="btn btn-ghost btn-sm" onClick={() => setFiltersOpen(false)}>Chiudi</button>
                 </div>
               </div>
             </>
@@ -658,52 +831,255 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         </div>
       </div>
 
-      {/* FLOATING SALARY WINDOW */}
-      {salaryWin === 'open' && salaryJob && (
-        <div className="jb-sal-win">
-          <div className="jb-sal-head">
-            <h4><Icon d={IC.coins} size={14} /> Stima stipendio</h4>
-            <button className="jb-sal-ctl" title="Riduci" aria-label="Riduci" onClick={() => setSalaryWin('min')}>–</button>
-            <button className="jb-sal-ctl" title="Chiudi" aria-label="Chiudi" onClick={() => setSalaryWin('closed')}>×</button>
-          </div>
-          <div className="jb-sal-body">
-            <div className="jb-sal-job">
-              <b>{cleanRole(salaryJob.title)}</b> · {salaryJob.company}
-              {!isCountryLevel(cleanCity(salaryJob.location)) && cleanCity(salaryJob.location) ? ` · ${cleanCity(salaryJob.location)}` : ''}
+      {/* ── GRID ── */}
+      <div className="jx-grid">
+        {searching && Array.from({ length: 9 }, (_, i) => (
+          <div key={i} className="jx-sk" aria-hidden>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="b" style={{ width: 40, height: 40, borderRadius: 11 }} />
+              <div className="b" style={{ width: 64, height: 20, borderRadius: 99 }} />
             </div>
-            {salaryLoading && (
-              <div className="jb-empty" style={{ padding: '20px 0' }}>
-                <div className="spinner" style={{ margin: '0 auto 10px' }} />
-                Stima della retribuzione in corso…
-              </div>
-            )}
-            {!salaryLoading && salaryStats && (
-              <>
-                <div className="jb-sal-row"><span>25° percentile</span><b>{fmtSalary(salaryStats.p25, salaryStats.currency)}</b></div>
-                <div className="jb-sal-row mid"><span>Mediana · annuo lordo</span><b>{fmtSalary(salaryStats.median, salaryStats.currency)}</b></div>
-                <div className="jb-sal-row"><span>75° percentile</span><b>{fmtSalary(salaryStats.p75, salaryStats.currency)}</b></div>
-                {salaryBenefits.length > 0 && (
-                  <>
-                    <div className="jb-sec-label">Benefit citati nell'annuncio</div>
-                    <div>{salaryBenefits.map(b => <span key={b} className="jb-kw">{b}</span>)}</div>
-                  </>
-                )}
-                <div className="jb-sal-src">
-                  {salaryStats.source}{salaryStats.samples ? ` · ${salaryStats.samples} campioni` : ''}. Stima indicativa basata su annunci e dati di mercato.
-                </div>
-                <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={() => onNavigate('calcolo-stipendio')}>
-                  Apri il calcolatore completo
-                </button>
-              </>
-            )}
+            <div className="b" style={{ width: '85%', height: 16 }} />
+            <div className="b" style={{ width: '60%', height: 12 }} />
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <div className="b" style={{ width: 58, height: 18, borderRadius: 99 }} />
+              <div className="b" style={{ width: 48, height: 18, borderRadius: 99 }} />
+            </div>
           </div>
+        ))}
+
+        {!searching && searched && jobs.length === 0 && (
+          <div className="jx-empty">
+            <b>Nessuna offerta trovata</b>
+            Prova con parole più generiche o cambia paese.
+          </div>
+        )}
+        {!searching && jobs.length > 0 && filteredJobs.length === 0 && (
+          <div className="jx-empty">
+            <b>Nessuna offerta corrisponde ai filtri</b>
+            Prova a cambiare o azzerare i filtri.
+          </div>
+        )}
+
+        {!searching && filteredJobs.map(job => {
+          const score = matchScoreFor(job);
+          const showMatch = !!analyses[job.id] || sortBy === 'match';
+          return (
+            <button key={job.id} className="jx-card" onClick={() => setSelected(job)}>
+              <span className="jx-c-top">
+                <span className="jx-logo">{(job.company[0] ?? '?').toUpperCase()}</span>
+                {showMatch && (
+                  <span className="jx-match" style={{ background: scoreBg(score), color: scoreColor(score) }}>
+                    {score}%{!analyses[job.id] ? ' ~' : ''} match
+                  </span>
+                )}
+              </span>
+              <b className="jx-c-title">{job.title}</b>
+              <span className="jx-c-sub">{job.company}{job.location ? ` · ${job.location}` : ''}</span>
+              {job.salary && <span className="jx-c-sal">{job.salary}</span>}
+              <span className="jx-c-tags">
+                <span className="jx-tag src">{job.source}</span>
+                {job.remote && <span className="jx-tag rem">Remote</span>}
+                {job.employmentType && <span className="jx-tag">{EMPLOYMENT_LABELS[job.employmentType]}</span>}
+                {job.postedAt && <span className="jx-tag">{timeAgo(job.postedAt)}</span>}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {!searching && searched && jobs.length > 0 && hasMore && suggestedRoles.length === 0 && (
+        <div className="jx-loadmore">
+          <button className="btn btn-line" disabled={loadingMore} onClick={loadMore}>
+            {loadingMore ? 'Caricamento…' : 'Carica altri risultati'}
+          </button>
         </div>
       )}
-      {salaryWin === 'min' && salaryJob && (
-        <button className="jb-sal-pill" onClick={() => setSalaryWin('open')} title="Riapri la stima stipendio">
-          <Icon d={IC.coins} size={14} />
-          {salaryStats ? fmtSalary(salaryStats.median, salaryStats.currency) : 'Stipendio'}
-        </button>
+
+      {/* ── DETAIL POPUP ── */}
+      {selected && (
+        <div className="jx-ov" onClick={() => setSelected(null)} role="dialog" aria-modal="true">
+          <div className="jx-modal" onClick={e => e.stopPropagation()}>
+            <div className="jx-m-head">
+              <div className="jx-m-toprow">
+                <span className="jx-logo">{(selected.company[0] ?? '?').toUpperCase()}</span>
+                <div className="jx-m-titles">
+                  <h2>{translation && !showOriginal ? translation.title : selected.title}</h2>
+                  <div className="sub">
+                    {selected.company}{selected.location ? ` · ${selected.location}` : ''}
+                    {selected.postedAt ? ` · ${timeAgo(selected.postedAt)}` : ''}
+                  </div>
+                </div>
+                <button className="jx-m-close" aria-label="Chiudi" title="Chiudi (Esc)" onClick={() => setSelected(null)}>×</button>
+              </div>
+
+              <div className="jx-m-meta">
+                <span className="jx-tag src">{selected.source}</span>
+                {selected.remote && <span className="jx-tag rem">Remote</span>}
+                {selected.employmentType && <span className="jx-tag">{EMPLOYMENT_LABELS[selected.employmentType]}</span>}
+                {(selected.languages ?? []).map(l => <span key={l} className="jx-tag">{l}</span>)}
+                {selected.salary && <span className="jx-tag" style={{ background: 'var(--tint)', color: 'var(--accent)' }}>{selected.salary}</span>}
+              </div>
+
+              <div className="jx-m-acts">
+                <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
+                  <Icon d={IC.spark} size={13} /> Crea CV su misura
+                </button>
+                {!analysis && (
+                  <button className="btn btn-line btn-sm" onClick={() => void handleAnalyze()} disabled={analyzing}>
+                    {analyzing ? 'Analisi in corso…' : 'Analizza col mio CV'}
+                  </button>
+                )}
+                <button className="btn btn-line btn-sm" style={{ gap: 6 }} onClick={() => void handleSalary(selected)} disabled={salaryLoading && salaryJob?.id === selected.id}>
+                  <Icon d={IC.coins} size={13} />
+                  {salaryLoading && salaryJob?.id === selected.id ? 'Stima in corso…' : 'Stima stipendio'}
+                </button>
+                {!translation && (
+                  <button className="btn btn-line btn-sm" onClick={() => void handleTranslate()} disabled={translating}>
+                    {translating ? 'Traduzione…' : 'Traduci in italiano'}
+                  </button>
+                )}
+                {translation && (
+                  <button className="btn btn-line btn-sm" onClick={() => setShowOriginal(v => !v)}>
+                    {showOriginal ? 'Vedi traduzione' : 'Vedi originale'}
+                  </button>
+                )}
+                {selected.url && !isPreview && (
+                  <a className="btn btn-ghost btn-sm" href={selected.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                    Annuncio originale ↗
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="jx-m-body">
+              {/* AI ANALYSIS */}
+              {analysis && (
+                <div className="jx-ai">
+                  <div className="jx-ai-head">
+                    <div className="jx-ring" style={{ background: `conic-gradient(${scoreColor(analysis.compatibilita)} 0 ${analysis.compatibilita}%, #EDEDF2 ${analysis.compatibilita}% 100%)` }}>
+                      <span style={{ color: scoreColor(analysis.compatibilita) }}>{analysis.compatibilita}</span>
+                    </div>
+                    <div>
+                      <h3>Compatibilità col tuo CV</h3>
+                      <p className="psub">{analysis.riassunto}</p>
+                    </div>
+                  </div>
+
+                  {analysis.requisiti.length > 0 && (
+                    <>
+                      <div className="jx-sec-label">Requisiti chiave dell'annuncio</div>
+                      <div>{analysis.requisiti.map(r => <span key={r} className="jx-kw">{r}</span>)}</div>
+                    </>
+                  )}
+
+                  {analysis.puntiForti.length > 0 && (
+                    <>
+                      <div className="jx-sec-label">I tuoi punti forti</div>
+                      {analysis.puntiForti.map(p => (
+                        <div key={p} className="jx-li"><span className="dot" style={{ color: '#12805C' }}>✓</span>{p}</div>
+                      ))}
+                    </>
+                  )}
+
+                  {analysis.lacune.length > 0 && (
+                    <>
+                      <div className="jx-sec-label">Dove il CV è debole</div>
+                      {analysis.lacune.map(p => (
+                        <div key={p} className="jx-li"><span className="dot" style={{ color: 'var(--danger)' }}>✗</span>{p}</div>
+                      ))}
+                    </>
+                  )}
+
+                  {analysis.modificheCv.length > 0 && (
+                    <>
+                      <div className="jx-sec-label">Come adattare il CV</div>
+                      {analysis.modificheCv.map((p, i) => (
+                        <div key={p} className="jx-li"><span className="dot" style={{ color: 'var(--accent)' }}>{i + 1}.</span>{p}</div>
+                      ))}
+                    </>
+                  )}
+
+                  {recommended.length > 0 && (
+                    <>
+                      <div className="jx-sec-label">Dal tuo archivio: esperienze da aggiungere</div>
+                      {recommended.map(e => (
+                        <div key={e.id} className="jx-exp">
+                          <Icon d={IC.check} size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                          <div style={{ minWidth: 0 }}>
+                            <b>{e.role}</b> <span>· {e.company}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                    <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
+                      <Icon d={IC.spark} size={13} /> Applica con il CV su misura
+                    </button>
+                    {!isAuthenticated && (
+                      <button className="btn btn-line btn-sm" onClick={onLogin}>
+                        Accedi per usare il tuo archivio
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SALARY ESTIMATE */}
+              {showSalarySection && (
+                <div className="jx-sal">
+                  <div className="jx-sec-label" style={{ marginTop: 0 }}>Stima stipendio · {cleanRole(selected.title)}</div>
+                  {salaryLoading && (
+                    <div className="jx-empty" style={{ padding: '18px 0' }}>
+                      <div className="spinner" style={{ margin: '0 auto 10px' }} />
+                      Stima della retribuzione in corso…
+                    </div>
+                  )}
+                  {!salaryLoading && salaryStats && (
+                    <>
+                      <div className="jx-sal-row"><span>25° percentile</span><b>{fmtSalary(salaryStats.p25, salaryStats.currency)}</b></div>
+                      <div className="jx-sal-row mid"><span>Mediana · annuo lordo</span><b>{fmtSalary(salaryStats.median, salaryStats.currency)}</b></div>
+                      <div className="jx-sal-row"><span>75° percentile</span><b>{fmtSalary(salaryStats.p75, salaryStats.currency)}</b></div>
+                      {salaryBenefits.length > 0 && (
+                        <>
+                          <div className="jx-sec-label">Benefit citati nell'annuncio</div>
+                          <div>{salaryBenefits.map(b => <span key={b} className="jx-kw">{b}</span>)}</div>
+                        </>
+                      )}
+                      <div className="jx-sal-src">
+                        {salaryStats.source}{salaryStats.samples ? ` · ${salaryStats.samples} campioni` : ''}. Stima indicativa basata su annunci e dati di mercato.
+                      </div>
+                      <button className="btn btn-line btn-sm" style={{ marginTop: 10 }} onClick={() => onNavigate('calcolo-stipendio')}>
+                        Apri il calcolatore completo
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* DESCRIPTION */}
+              <div className="jx-sec-label">
+                Descrizione dell'offerta{translation && !showOriginal ? ' (tradotta)' : ''}
+              </div>
+              <div className="jx-desc">
+                {(translation && !showOriginal ? translation.description : selected.description) || 'Descrizione non disponibile: apri l\'annuncio originale.'}
+              </div>
+
+              {isPreview && selected.url && (
+                <div className="jx-preview-cta">
+                  <div>
+                    <b>Questa è un'anteprima.</b> {selected.source.split(' ·')[0]} mostra solo un estratto: il testo integrale è disponibile sul sito dell'inserzionista.
+                  </div>
+                  <a className="btn btn-gold btn-sm" href={selected.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', gap: 6, flexShrink: 0 }}>
+                    Leggi l'annuncio completo ↗
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2470,3 +2470,25 @@ nav.app-nav {
   .res-footer-inner { flex-direction: column; gap: 12px; text-align: center; }
 }
 
+/* ═══ CountrySelect — custom dropdown with real flag images ═══ */
+.cselect { position: relative; min-width: 0; }
+.cselect-trigger { display: flex; align-items: center; gap: 9px; width: 100%; border: none; background: none; cursor: pointer; font-family: var(--f-body, 'Satoshi', sans-serif); color: var(--ink, #14171F); padding: 0; text-align: left; }
+.cselect-trigger:disabled { opacity: .55; cursor: default; }
+.cselect-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cselect-chev { color: #9297A1; flex-shrink: 0; margin-left: auto; transition: transform .15s; }
+.cselect [aria-expanded="true"] .cselect-chev { transform: rotate(180deg); }
+
+.cselect.bare .cselect-trigger { font-size: 14.5px; font-weight: 600; }
+.cselect.field .cselect-trigger { background: #F7F7FA; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; font-size: 13px; transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.cselect.field .cselect-trigger:hover { border-color: var(--hair, #E3E4EA); background: #fff; }
+.cselect.field .cselect-trigger:focus-visible { background: #fff; border-color: var(--accent, #2F2AE5); box-shadow: 0 0 0 3px rgba(47,42,229,.08); outline: none; }
+.cselect.mini .cselect-trigger { border: 1px solid var(--hair, #E3E4EA); border-radius: 8px; background: #fff; padding: 6px 9px; font-size: 12px; color: var(--ink-60, #565B66); }
+.cselect.mini .cselect-trigger:hover { border-color: var(--accent, #2F2AE5); }
+
+.cselect-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 300; min-width: max(100%, 210px); max-height: 320px; overflow-y: auto; background: #fff; border: 1px solid var(--hair-soft, #EDEDF2); border-radius: 12px; box-shadow: 0 18px 44px rgba(20,23,31,.18); padding: 6px; animation: cselIn .16s cubic-bezier(0.16, 1, 0.3, 1); }
+.cselect-pop.up { top: auto; bottom: calc(100% + 8px); }
+@keyframes cselIn { from { opacity: 0; transform: translateY(-5px); } }
+.cselect-opt { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; cursor: pointer; font-family: var(--f-body, 'Satoshi', sans-serif); font-size: 13px; color: var(--ink, #14171F); padding: 9px 11px; border-radius: 8px; text-align: left; white-space: nowrap; }
+.cselect-opt:hover { background: #F7F7FA; }
+.cselect-opt.on { background: var(--tint, #EEF0FD); color: var(--accent, #2F2AE5); font-weight: 700; }
+

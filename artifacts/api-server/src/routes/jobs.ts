@@ -19,7 +19,40 @@ export interface JobPosting {
   source: string;
   postedAt: string | null;
   salary: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+  employmentType: "full-time" | "part-time" | "contract" | null;
+  languages: string[];
   remote: boolean;
+}
+
+// ── Best-effort enrichment from free-text (title/description) ─────────────────
+// No provider reliably gives us these across the board, so we detect them with
+// simple heuristics. Callers should present them as "detected", not authoritative.
+const LANGUAGE_PATTERNS: Record<string, RegExp> = {
+  Inglese: /\b(english|inglese)\b/i,
+  Italiano: /\b(italian|italiano)\b/i,
+  Spagnolo: /\b(spanish|español|spagnolo)\b/i,
+  Francese: /\b(french|français|francese)\b/i,
+  Tedesco: /\b(german|deutsch|tedesco)\b/i,
+  Arabo: /\b(arabic|arabo)\b/i,
+  Portoghese: /\b(portuguese|português|portoghese)\b/i,
+};
+
+function detectLanguages(text: string): string[] {
+  const found: string[] = [];
+  for (const [lang, pattern] of Object.entries(LANGUAGE_PATTERNS)) {
+    if (pattern.test(text)) found.push(lang);
+  }
+  return found;
+}
+
+function detectEmploymentType(text: string): JobPosting["employmentType"] {
+  if (/\b(part[\s-]?time|tempo\s+parziale)\b/i.test(text)) return "part-time";
+  if (/\b(contract(?:or)?|freelance|contratto\s+a\s+termine|stage|internship|tirocinio)\b/i.test(text)) return "contract";
+  if (/\b(full[\s-]?time|tempo\s+pieno)\b/i.test(text)) return "full-time";
+  return null;
 }
 
 function stripHtml(html: string): string {
@@ -120,7 +153,7 @@ async function searchAdzuna(q: string, location: string, country: string, page: 
   const params = new URLSearchParams({
     app_id: appId,
     app_key: appKey,
-    results_per_page: "20",
+    results_per_page: "50", // Adzuna's real per-call ceiling — verified empirically (asking for more still returns 50)
     "content-type": "application/json",
   });
   if (q) params.set("what", q);
@@ -139,24 +172,37 @@ async function searchAdzuna(q: string, location: string, country: string, page: 
       created?: string;
       salary_min?: number;
       salary_max?: number;
+      contract_time?: string;
+      contract_type?: string;
     }>;
   };
 
-  return (data.results ?? []).map(r => ({
-    id: `adzuna:${r.id}`,
-    title: stripHtml(r.title ?? ""),
-    company: r.company?.display_name ?? "Azienda riservata",
-    location: r.location?.display_name ?? location ?? "",
-    country: cc.toUpperCase(),
-    description: stripHtml(r.description ?? ""),
-    url: r.redirect_url ?? "",
-    source: "Adzuna",
-    postedAt: r.created ?? null,
-    salary: r.salary_min || r.salary_max
-      ? `${r.salary_min ? Math.round(r.salary_min).toLocaleString("it-IT") : "…"} – ${r.salary_max ? Math.round(r.salary_max).toLocaleString("it-IT") : "…"} ${getCurrencySymbol(cc)}`
-      : null,
-    remote: /remote|smart\s*working|da\s+remoto/i.test(`${r.title} ${r.description}`),
-  }));
+  return (data.results ?? []).map(r => {
+    const text = `${r.title} ${r.description}`;
+    return {
+      id: `adzuna:${r.id}`,
+      title: stripHtml(r.title ?? ""),
+      company: r.company?.display_name ?? "Azienda riservata",
+      location: r.location?.display_name ?? location ?? "",
+      country: cc.toUpperCase(),
+      description: stripHtml(r.description ?? ""),
+      url: r.redirect_url ?? "",
+      source: "Adzuna",
+      postedAt: r.created ?? null,
+      salary: r.salary_min || r.salary_max
+        ? `${r.salary_min ? Math.round(r.salary_min).toLocaleString("it-IT") : "…"} – ${r.salary_max ? Math.round(r.salary_max).toLocaleString("it-IT") : "…"} ${getCurrencySymbol(cc)}`
+        : null,
+      salaryMin: r.salary_min ?? null,
+      salaryMax: r.salary_max ?? null,
+      salaryCurrency: r.salary_min || r.salary_max ? getCurrencySymbol(cc) : null,
+      employmentType: r.contract_time === "full_time" ? "full-time"
+        : r.contract_time === "part_time" ? "part-time"
+        : r.contract_type === "contract" ? "contract"
+        : detectEmploymentType(text),
+      languages: detectLanguages(text),
+      remote: /remote|smart\s*working|da\s+remoto/i.test(text),
+    };
+  });
 }
 
 async function searchJooble(q: string, location: string, country: string, page: number): Promise<JobPosting[]> {
@@ -192,19 +238,27 @@ async function searchJooble(q: string, location: string, country: string, page: 
     }>;
   };
 
-  return (data.jobs ?? []).map(r => ({
-    id: `jooble:${r.id ?? r.link}`,
-    title: stripHtml(r.title ?? ""),
-    company: r.company || "Azienda riservata",
-    location: r.location ?? "",
-    country: country.toUpperCase(),
-    description: stripHtml(r.snippet ?? ""),
-    url: r.link ?? "",
-    source: r.source ? `Jooble · ${r.source}` : "Jooble",
-    postedAt: r.updated ?? null,
-    salary: r.salary || null,
-    remote: /remote|smart\s*working|da\s+remoto/i.test(`${r.title} ${r.snippet}`),
-  }));
+  return (data.jobs ?? []).map(r => {
+    const text = `${r.title} ${r.snippet}`;
+    return {
+      id: `jooble:${r.id ?? r.link}`,
+      title: stripHtml(r.title ?? ""),
+      company: r.company || "Azienda riservata",
+      location: r.location ?? "",
+      country: country.toUpperCase(),
+      description: stripHtml(r.snippet ?? ""),
+      url: r.link ?? "",
+      source: r.source ? `Jooble · ${r.source}` : "Jooble",
+      postedAt: r.updated ?? null,
+      salary: r.salary || null,
+      salaryMin: null,
+      salaryMax: null,
+      salaryCurrency: null,
+      employmentType: detectEmploymentType(text),
+      languages: detectLanguages(text),
+      remote: /remote|smart\s*working|da\s+remoto/i.test(text),
+    };
+  });
 }
 
 async function searchArbeitnow(q: string, location: string, country: string, page: number): Promise<JobPosting[]> {
@@ -241,19 +295,261 @@ async function searchArbeitnow(q: string, location: string, country: string, pag
       const okLoc = !locNeedle || (r.location ?? "").toLowerCase().includes(locNeedle) || !!r.remote;
       return okQ && okLoc;
     })
-    .map(r => ({
-      id: `arbeitnow:${r.slug}`,
-      title: stripHtml(r.title ?? ""),
-      company: r.company_name ?? "Azienda riservata",
-      location: r.location || (r.remote ? "Remote" : ""),
-      country: "EU",
-      description: stripHtml(r.description ?? ""),
-      url: r.url ?? "",
-      source: "Arbeitnow",
-      postedAt: r.created_at ? new Date(r.created_at * 1000).toISOString() : null,
-      salary: null,
-      remote: !!r.remote,
-    }));
+    .map(r => {
+      const text = `${r.title} ${r.description} ${(r.tags ?? []).join(" ")}`;
+      return {
+        id: `arbeitnow:${r.slug}`,
+        title: stripHtml(r.title ?? ""),
+        company: r.company_name ?? "Azienda riservata",
+        location: r.location || (r.remote ? "Remote" : ""),
+        country: "EU",
+        description: stripHtml(r.description ?? ""),
+        url: r.url ?? "",
+        source: "Arbeitnow",
+        postedAt: r.created_at ? new Date(r.created_at * 1000).toISOString() : null,
+        salary: null,
+        salaryMin: null,
+        salaryMax: null,
+        salaryCurrency: null,
+        employmentType: detectEmploymentType(text),
+        languages: detectLanguages(text),
+        remote: !!r.remote,
+      };
+    });
+}
+
+const JOBICY_GEOS: Record<string, string> = {
+  it: "italy",
+  gb: "uk",
+  de: "germany",
+  fr: "france",
+  es: "spain",
+  nl: "netherlands",
+  us: "usa",
+  ch: "switzerland",
+  ca: "canada",
+  au: "australia",
+  nz: "new-zealand",
+  ae: "united-arab-emirates",
+  ie: "ireland",
+  se: "sweden",
+  no: "norway",
+  dk: "denmark",
+  be: "belgium",
+  at: "austria",
+  sg: "singapore",
+};
+
+async function searchCareerjet(q: string, location: string, country: string, page: number, userIp: string, userAgent: string, referer: string): Promise<JobPosting[]> {
+  const key = process.env.CAREERJET_API_KEY;
+  if (!key) return [];
+
+  const localeMap: Record<string, string> = {
+    it: "it_IT", gb: "en_GB", us: "en_US", ca: "en_CA", au: "en_AU", nz: "en_NZ",
+    de: "de_DE", fr: "fr_FR", es: "es_ES", nl: "nl_NL", ae: "en_AE", sa: "en_SA",
+    qa: "en_QA", kw: "en_KW", bh: "en_BH", om: "en_OM", ie: "en_IE", se: "sv_SE",
+    no: "no_NO", dk: "da_DK", be: "fr_BE", at: "de_AT", sg: "en_SG", br: "pt_BR",
+    za: "en_ZA", in: "en_IN", pl: "pl_PL"
+  };
+  const locale = localeMap[country.toLowerCase()] || "en_GB";
+
+  const params = new URLSearchParams({
+    locale_code: locale,
+    pagesize: "50", // Careerjet's real per-call ceiling — asking for 100+ silently falls back to 20
+    page: String(page),
+    user_ip: userIp,
+    user_agent: userAgent
+  });
+  if (q) params.set("keywords", q);
+  if (location) params.set("location", location);
+
+  try {
+    const res = await fetch(`https://search.api.careerjet.net/v4/query?${params}`, {
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`${key}:`).toString("base64"),
+        "Referer": referer
+      }
+    });
+    if (!res.ok) throw new Error(`Careerjet ${res.status}`);
+    const data = await res.json() as {
+      jobs?: Array<{
+        title?: string;
+        company?: string;
+        locations?: string;
+        description?: string;
+        url?: string;
+        date?: string;
+        salary?: string;
+      }>;
+    };
+
+    return (data.jobs ?? []).map((r, idx) => {
+      const text = `${r.title} ${r.description}`;
+      return {
+        id: `careerjet:${country}:${idx}:${r.url}`,
+        title: stripHtml(r.title ?? ""),
+        company: r.company || "Azienda riservata",
+        location: r.locations ?? "",
+        country: country.toUpperCase(),
+        description: stripHtml(r.description ?? ""),
+        url: r.url ?? "",
+        source: "Careerjet",
+        postedAt: r.date ?? null,
+        salary: r.salary || null,
+        salaryMin: null,
+        salaryMax: null,
+        salaryCurrency: null,
+        employmentType: detectEmploymentType(text),
+        languages: detectLanguages(text),
+        remote: /remote|smart\s*working|da\s+remoto/i.test(text),
+      };
+    });
+  } catch (err) {
+    logger.warn({ err: String(err) }, "Careerjet search failed");
+    return [];
+  }
+}
+
+async function searchReed(q: string, location: string, country: string, page: number): Promise<JobPosting[]> {
+  const key = process.env.REED_API_KEY;
+  if (!key) return [];
+
+  // Reed is UK-centric, only query if country matches 'gb' or if it's general
+  if (country && country.toLowerCase() !== "gb") return [];
+
+  const resultsToSkip = (page - 1) * 100;
+  const params = new URLSearchParams({
+    resultsToTake: "100", // Reed's real per-call ceiling — verified empirically
+    resultsToSkip: String(resultsToSkip)
+  });
+  if (q) params.set("keywords", q);
+  if (location) params.set("locationName", location);
+
+  try {
+    const res = await fetch(`https://www.reed.co.uk/api/1.0/search?${params}`, {
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`${key}:`).toString("base64")
+      }
+    });
+    if (!res.ok) throw new Error(`Reed ${res.status}`);
+    const data = await res.json() as {
+      results?: Array<{
+        jobId?: number;
+        jobTitle?: string;
+        employerName?: string;
+        locationName?: string;
+        jobDescription?: string;
+        jobUrl?: string;
+        date?: string;
+        minimumSalary?: number;
+        maximumSalary?: number;
+        currency?: string;
+      }>;
+    };
+
+    return (data.results ?? []).map(r => {
+      const salaryStr = r.minimumSalary || r.maximumSalary
+        ? `${r.minimumSalary ? Math.round(r.minimumSalary).toLocaleString("en-GB") : "…"} – ${r.maximumSalary ? Math.round(r.maximumSalary).toLocaleString("en-GB") : "…"} ${r.currency || "£"}`
+        : null;
+      const text = `${r.jobTitle} ${r.jobDescription}`;
+
+      let postedAt: string | null = null;
+      if (r.date) {
+        const parts = r.date.split("/");
+        if (parts.length === 3) {
+          postedAt = `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+        } else {
+          postedAt = r.date;
+        }
+      }
+
+      return {
+        id: `reed:${r.jobId}`,
+        title: stripHtml(r.jobTitle ?? ""),
+        company: r.employerName || "Azienda riservata",
+        location: r.locationName ?? "",
+        country: "GB",
+        description: stripHtml(r.jobDescription ?? ""),
+        url: r.jobUrl ?? "",
+        source: "Reed",
+        postedAt,
+        salary: salaryStr,
+        salaryMin: r.minimumSalary ?? null,
+        salaryMax: r.maximumSalary ?? null,
+        salaryCurrency: r.minimumSalary || r.maximumSalary ? (r.currency || "£") : null,
+        employmentType: detectEmploymentType(text),
+        languages: detectLanguages(text),
+        remote: /remote|smart\s*working|da\s+remoto/i.test(text),
+      };
+    });
+  } catch (err) {
+    logger.warn({ err: String(err) }, "Reed search failed");
+    return [];
+  }
+}
+
+async function searchJobicy(q: string, location: string, country: string, page: number): Promise<JobPosting[]> {
+  const geo = JOBICY_GEOS[country.toLowerCase()] || "";
+  if (!geo) return [];
+
+  // Jobicy's public API has no offset/page parameter — "page" beyond 1 just
+  // re-returns this same top batch; the frontend's own id-dedup absorbs that.
+  const params = new URLSearchParams({
+    count: "100", // Jobicy's real per-call ceiling — verified empirically
+  });
+  if (q) params.set("tag", q);
+  if (geo) params.set("geo", geo);
+
+  try {
+    const res = await fetch(`https://jobicy.com/api/v2/remote-jobs?${params}`);
+    if (!res.ok) throw new Error(`Jobicy ${res.status}`);
+    const data = await res.json() as {
+      jobs?: Array<{
+        id?: number;
+        url?: string;
+        jobTitle?: string;
+        companyName?: string;
+        jobExcerpt?: string;
+        pubDate?: string;
+        salaryMin?: number | string;
+        salaryMax?: number | string;
+        salaryCurrency?: string;
+        jobGeo?: string;
+      }>;
+    };
+
+    return (data.jobs ?? []).map(r => {
+      let salaryStr: string | null = null;
+      const sMin = Number(r.salaryMin);
+      const sMax = Number(r.salaryMax);
+      const hasSalary = !isNaN(sMin) || !isNaN(sMax);
+      if (hasSalary) {
+        salaryStr = `${!isNaN(sMin) ? sMin.toLocaleString("it-IT") : "…"} – ${!isNaN(sMax) ? sMax.toLocaleString("it-IT") : "…"} ${r.salaryCurrency || "$"}`;
+      }
+      const text = `${r.jobTitle} ${r.jobExcerpt}`;
+      return {
+        id: `jobicy:${r.id}`,
+        title: stripHtml(r.jobTitle ?? ""),
+        company: r.companyName || "Azienda riservata",
+        location: r.jobGeo || "Remote",
+        country: country.toUpperCase(),
+        description: stripHtml(r.jobExcerpt ?? ""),
+        url: r.url ?? "",
+        source: "Jobicy",
+        postedAt: r.pubDate ? new Date(r.pubDate).toISOString() : null,
+        salary: salaryStr,
+        salaryMin: !isNaN(sMin) ? sMin : null,
+        salaryMax: !isNaN(sMax) ? sMax : null,
+        salaryCurrency: hasSalary ? (r.salaryCurrency || "$") : null,
+        employmentType: detectEmploymentType(text),
+        languages: detectLanguages(text),
+        remote: true,
+      };
+    });
+  } catch (err) {
+    logger.warn({ err: String(err) }, "Jobicy search failed");
+    return [];
+  }
 }
 
 // ── Search endpoint with a small in-memory TTL cache ────────────────────────
@@ -273,13 +569,20 @@ jobsRouter.get("/search", async (req: Request, res: Response) => {
     return;
   }
 
+  const userIp = (req.headers["x-forwarded-for"] as string || req.ip || "127.0.0.1").split(',')[0].trim();
+  const userAgent = req.headers["user-agent"] || "Mozilla/5.0";
+  const referer = req.headers["referer"] || process.env.FRONTEND_URL || "http://localhost:5180/";
+
   const settled = await Promise.allSettled([
     searchAdzuna(q, location, country, page),
     searchJooble(q, location, country, page),
     searchArbeitnow(q, location, country, page),
+    searchCareerjet(q, location, country, page, userIp, userAgent, referer),
+    searchReed(q, location, country, page),
+    searchJobicy(q, location, country, page),
   ]);
 
-  const providerNames = ["Adzuna", "Jooble", "Arbeitnow"];
+  const providerNames = ["Adzuna", "Jooble", "Arbeitnow", "Careerjet", "Reed", "Jobicy"];
   const activeProviders: string[] = [];
   const perProvider: JobPosting[][] = [];
   settled.forEach((s, i) => {
@@ -304,7 +607,7 @@ jobsRouter.get("/search", async (req: Request, res: Response) => {
     }
   }
 
-  const trimmed = jobs.slice(0, 40)
+  const trimmed = jobs.slice(0, 150)
     .map(j => ({ ...j, description: j.description.slice(0, 6000) }))
     .sort((a, b) => {
       const ta = a.postedAt ? Date.parse(a.postedAt) : 0;
@@ -585,5 +888,70 @@ ${description.trim().slice(0, 5000)}`;
   } catch (err: unknown) {
     logger.error({ err }, "Error translating job ad");
     res.status(500).json({ error: "Errore durante la traduzione dell'annuncio. Riprova tra qualche istante." });
+  }
+});
+
+// ── AI role suggestions for a relocation search (country + CV [+ desired salary]) ──
+jobsRouter.post("/suggest-roles", async (req: Request, res: Response) => {
+  try {
+    const { cvData, experiences, country, desiredSalary } = req.body as {
+      cvData?: {
+        title?: string; summary?: string;
+        experiences?: Array<{ role?: string; company?: string; desc?: string }>;
+        skills?: string[];
+        education?: Array<{ degree?: string; institution?: string }>;
+      };
+      experiences?: Array<{ id: string; role?: string; company?: string; description?: string | null }>;
+      country?: string;
+      desiredSalary?: number;
+    };
+
+    if (!cvData) {
+      res.status(400).json({ error: "Dati del CV mancanti." });
+      return;
+    }
+    const cc = String(country ?? "it").toLowerCase().slice(0, 2);
+    const cName = JOOBLE_COUNTRIES[cc] || cc.toUpperCase();
+    const cur = getCurrencySymbol(cc);
+
+    const cvText = [
+      cvData.title,
+      cvData.summary,
+      ...(cvData.experiences ?? []).map(e => `${e.role} presso ${e.company}: ${e.desc}`),
+      `Competenze: ${(cvData.skills ?? []).join(", ")}`,
+      ...(cvData.education ?? []).map(e => `${e.degree} — ${e.institution}`),
+      ...(experiences ?? []).slice(0, 10).map(e => `${e.role ?? ""} presso ${e.company ?? ""}: ${(e.description ?? "").slice(0, 160)}`),
+    ].filter(Boolean).join("\n").slice(0, 4000);
+
+    const salaryLine = desiredSalary
+      ? `Lo stipendio annuo lordo desiderato è circa ${Math.round(desiredSalary).toLocaleString("it-IT")} ${cur}: calibra i titoli sul livello di seniority coerente con questa cifra nel mercato locale (più junior se la cifra è sotto la media locale per questo profilo, più senior/lead se sopra).`
+      : "";
+
+    const prompt = `Sei un consulente di carriera internazionale esperto del mercato del lavoro di "${cName}".
+Analizza il CV del candidato e proponi 3-5 titoli di ricerca lavoro (job title) realistici, brevi e nella lingua/terminologia usata realmente dagli annunci in "${cName}" (es. se il paese è anglofono, i titoli vanno in inglese anche se il CV è in italiano).
+${salaryLine}
+Rispondi SOLO con un oggetto JSON valido con questa struttura esatta, senza markdown o testo aggiuntivo:
+{"roles": ["titolo 1", "titolo 2", ...]}
+
+CV DEL CANDIDATO:
+${cvText}`;
+
+    const raw = await generateText(prompt, { maxTokens: 300, temperature: 0.4 });
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    const parsed = JSON.parse(jsonStr) as { roles?: string[] };
+
+    const roles = (parsed.roles ?? [])
+      .filter((r): r is string => typeof r === "string" && r.trim().length > 0)
+      .slice(0, 5);
+
+    if (roles.length === 0) {
+      res.status(422).json({ error: "Non è stato possibile suggerire ruoli per questo CV. Prova con una ricerca manuale." });
+      return;
+    }
+
+    res.json({ roles });
+  } catch (err: unknown) {
+    logger.error({ err }, "Error suggesting roles");
+    res.status(500).json({ error: "Errore durante il suggerimento dei ruoli. Riprova tra qualche istante." });
   }
 });

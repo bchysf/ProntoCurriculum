@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import type { Page, CVData, TemplateType } from '../types';
 import { toast } from 'sonner';
 import { useSeoMeta } from '../components/EditorialChrome';
+import { CountrySelect } from '../components/CountrySelect';
+
+const LETTER_LANGS = [
+  { code: 'IT', label: 'Italiano', flag: 'it' },
+  { code: 'EN', label: 'Inglese', flag: 'gb' },
+  { code: 'FR', label: 'Francese', flag: 'fr' },
+  { code: 'DE', label: 'Tedesco', flag: 'de' },
+  { code: 'ES', label: 'Spagnolo', flag: 'es' },
+];
 
 interface CoverLetterBuilderProps {
   cvData: CVData;
@@ -249,18 +258,14 @@ ${letterData.signOff}`;
 
               <div>
                 <label style={fieldLabel}>Lingua</label>
-                <select
-                  className="input"
+                <CountrySelect
+                  variant="field"
+                  options={LETTER_LANGS}
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={setLanguage}
+                  ariaLabel="Lingua della lettera"
                   style={{ width: '100%' }}
-                >
-                  <option value="IT">🇮🇹 Italiano</option>
-                  <option value="EN">🇬🇧 Inglese</option>
-                  <option value="FR">🇫🇷 Francese</option>
-                  <option value="DE">🇩🇪 Tedesco</option>
-                  <option value="ES">🇪🇸 Spagnolo</option>
-                </select>
+                />
               </div>
             </div>
 

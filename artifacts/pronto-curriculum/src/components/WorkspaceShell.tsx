@@ -4,6 +4,7 @@ import { useT, useLanguage } from '../i18n/LanguageContext';
 import { LANG_OPTIONS } from '../i18n/translations';
 import { CARTA_INCHIOSTRO_CSS } from '../styles/carta-inchiostro';
 import BrandLogo from './BrandLogo';
+import { CountrySelect } from './CountrySelect';
 
 // Minimal stroke icon set (lucide-style paths, pipe-separated)
 function Icon({ d, size = 17, className }: { d: string; size?: number; className?: string }) {
@@ -148,28 +149,15 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
         })}
 
         <div className="side-foot" style={{ marginTop: 'auto' }}>
-          <select
+          <CountrySelect
+            variant="mini"
+            dropUp
+            options={LANG_OPTIONS.map(l => ({ code: l.code, label: l.label, flag: l.flag }))}
             value={lang}
-            onChange={e => setLang(e.target.value as typeof lang)}
-            title="App language"
-            style={{
-              width: '100%',
-              margin: '10px 0 8px',
-              padding: '5px 9px',
-              borderRadius: 8,
-              border: '1px solid var(--hair)',
-              background: '#FFFFFF',
-              fontFamily: 'var(--f-body)',
-              fontSize: 12,
-              color: 'var(--ink-60)',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            {LANG_OPTIONS.map(l => (
-              <option key={l.code} value={l.code}>{l.flag} {l.code}</option>
-            ))}
-          </select>
+            onChange={c => setLang(c as typeof lang)}
+            ariaLabel="Lingua dell'app"
+            style={{ margin: '10px 0 8px' }}
+          />
 
           {isAuthenticated && user ? (
             <div className="side-user">
