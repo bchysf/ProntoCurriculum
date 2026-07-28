@@ -3,23 +3,9 @@
   "configurations": [
     {
       "name": "pronto-curriculum",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@workspace/pronto-curriculum", "dev"],
-      "port": 5180,
-      "autoPort": true
-    },
-    {
-      "name": "mockup-sandbox",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@workspace/mockup-sandbox", "dev"],
-      "port": 5174,
-      "autoPort": true
-    },
-    {
-      "name": "api-server",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@workspace/api-server", "dev"],
-      "port": 5000
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "artifacts/pronto-curriculum"],
+      "port": 5173
     }
   ]
 }

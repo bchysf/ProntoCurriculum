@@ -3,14 +3,9 @@ import type { Page, CVData, TemplateType } from '../types';
 import { toast } from 'sonner';
 import { useSeoMeta } from '../components/EditorialChrome';
 import { CountrySelect } from '../components/CountrySelect';
+import { useT, useLanguage } from '../i18n/LanguageContext';
 
-const LETTER_LANGS = [
-  { code: 'IT', label: 'Italiano', flag: 'it' },
-  { code: 'EN', label: 'Inglese', flag: 'gb' },
-  { code: 'FR', label: 'Francese', flag: 'fr' },
-  { code: 'DE', label: 'Tedesco', flag: 'de' },
-  { code: 'ES', label: 'Spagnolo', flag: 'es' },
-];
+const LOCALE_MAP: Record<string, string> = { IT: 'it-IT', EN: 'en-US', FR: 'fr-FR', DE: 'de-DE', ES: 'es-ES', PT: 'pt-PT' };
 
 interface CoverLetterBuilderProps {
   cvData: CVData;
@@ -33,6 +28,15 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
     'Crea una lettera di presentazione professionale in italiano in pochi secondi: l\'AI la scrive a partire dal tuo CV e dall\'annuncio di lavoro, con tono formale, entusiasta o executive a scelta.',
     '/genera-lettera-presentazione',
   );
+  const t = useT();
+  const { lang } = useLanguage();
+  const LETTER_LANGS = [
+    { code: 'IT', label: t('cl.langItalian'), flag: 'it' },
+    { code: 'EN', label: t('cl.langEnglish'), flag: 'gb' },
+    { code: 'FR', label: t('cl.langFrench'), flag: 'fr' },
+    { code: 'DE', label: t('cl.langGerman'), flag: 'de' },
+    { code: 'ES', label: t('cl.langSpanish'), flag: 'es' },
+  ];
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [jobDescription, setJobDescription] = useState('');
@@ -42,17 +46,17 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
   const [isDownloading, setIsDownloading] = useState(false);
 
   const [letterData, setLetterData] = useState<CoverLetterData>({
-    recipient: 'Gentile Responsabile della Selezione,',
-    hookParagraph: 'Con la presente intendo sottoporre alla Vostra attenzione la mia candidatura per la posizione aperta all\'interno del Vostro stimato team.',
-    valueParagraph: 'Nel corso della mia esperienza professionale ho sviluppato solide competenze tecniche e relazionali, raggiungendo costantemente gli obiettivi di performance prefissati e contribuendo positivamente alla crescita dei dipartimenti in cui ho operato.',
-    cultureParagraph: 'Condivido pienamente i valori di innovazione e qualità che contraddistinguono la Vostra realtà aziendale e sono motivato/a a portare il mio entusiasmo e il mio metodo di lavoro orientato ai risultati.',
-    closingParagraph: 'Resto a Vostra completa disposizione per un colloquio conoscitivo o una breve chiamata di approfondimento. Ringraziando per l\'attenzione, porgo i miei più cordiali saluti.',
-    signOff: `Cordiali saluti,\n${cvData?.firstName ?? 'Nome'} ${cvData?.lastName ?? 'Cognome'}`
+    recipient: t('cl.defaultRecipient'),
+    hookParagraph: t('cl.defaultHook'),
+    valueParagraph: t('cl.defaultValue'),
+    cultureParagraph: t('cl.defaultCulture'),
+    closingParagraph: t('cl.defaultClosing'),
+    signOff: `${t('cl.regards')}\n${cvData?.firstName ?? t('cl.nameFallback')} ${cvData?.lastName ?? t('cl.lastNameFallback')}`
   });
 
   const handleGenerateAI = async () => {
     if (!jobTitle.trim() && !companyName.trim() && !jobDescription.trim()) {
-      toast.error('Inserisci almeno il Ruolo, l\'Azienda o l\'Annuncio di lavoro prima di generare con AI.');
+      toast.error(t('cl.errFillOne'));
       return;
     }
 
@@ -63,8 +67,8 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cvData,
-          jobTitle: jobTitle || cvData?.title || 'Candidatura',
-          companyName: companyName || 'Azienda Target',
+          jobTitle: jobTitle || cvData?.title || t('cl.applicationFallback'),
+          companyName: companyName || t('cl.targetCompanyFallback'),
           jobDescription,
           tone,
           language
@@ -73,11 +77,11 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Errore durante la generazione AI');
+        throw new Error(json.error || t('cl.errGenerate'));
       }
 
       setLetterData(json.data);
-      toast.success('Lettera di presentazione ad alta conversione generata con successo!');
+      toast.success(t('cl.generatedSuccess'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(message);
@@ -99,17 +103,17 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
           cultureParagraph: letterData.cultureParagraph,
           closingParagraph: letterData.closingParagraph,
           signOff: letterData.signOff,
-          applicantName: `${cvData?.firstName ?? ''} ${cvData?.lastName ?? ''}`.trim() || 'Candidato',
-          applicantEmail: cvData?.email || 'email@esempio.it',
+          applicantName: `${cvData?.firstName ?? ''} ${cvData?.lastName ?? ''}`.trim() || t('cl.candidateFallback'),
+          applicantEmail: cvData?.email || t('cl.exampleEmail'),
           applicantPhone: cvData?.phone || '+39 000 000000',
-          jobTitle: jobTitle || cvData?.title || 'Candidatura',
-          companyName: companyName || 'Azienda Target',
+          jobTitle: jobTitle || cvData?.title || t('cl.applicationFallback'),
+          companyName: companyName || t('cl.targetCompanyFallback'),
           template
         })
       });
 
       if (!res.ok) {
-        throw new Error('Errore durante la creazione del file Word (.docx)');
+        throw new Error(t('cl.errDocx'));
       }
 
       const blob = await res.blob();
@@ -122,7 +126,7 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success('Documento Word scaricato correttamente!');
+      toast.success(t('cl.docxDownloaded'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(message);
@@ -135,9 +139,9 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
     const fullText = `${cvData?.firstName ?? ''} ${cvData?.lastName ?? ''}
 ${jobTitle || cvData?.title || ''} · ${cvData?.email || ''} · ${cvData?.phone || ''}
 
-${new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-Spett.le ${companyName || 'Azienda Target'}
-Oggetto: Candidatura per la posizione di ${jobTitle || cvData?.title || 'Candidatura'}
+${new Date().toLocaleDateString(LOCALE_MAP[lang] ?? 'it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+${t('cl.dearCompany')} ${companyName || t('cl.targetCompanyFallback')}
+${t('cl.subjectLine')} ${jobTitle || cvData?.title || t('cl.applicationFallback')}
 
 ${letterData.recipient}
 
@@ -152,7 +156,7 @@ ${letterData.closingParagraph}
 ${letterData.signOff}`;
 
     navigator.clipboard.writeText(fullText);
-    toast.success('Testo completo copiato negli appunti!');
+    toast.success(t('cl.copiedToClipboard'));
   };
 
   const fieldLabel: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: 'var(--ink)', display: 'block', marginBottom: 4 };
@@ -164,17 +168,17 @@ ${letterData.signOff}`;
       {/* Top Header Bar */}
       <div className="head" style={{ marginBottom: 14, alignItems: 'center' }}>
         <div>
-          <h1>Lettera di presentazione</h1>
+          <h1>{t('cl.title')}</h1>
           <p>
-            L'AI analizza il tuo CV e l'annuncio per scrivere una lettera con la struttura in 4 parti dei top recruiter.
+            {t('cl.subtitle')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('builder-step2')}>
-            ← Torna al CV
+            {t('cl.backToCV')}
           </button>
-          <button className="btn btn-line btn-sm" onClick={handleCopyText} title="Copia testo negli appunti">
-            Copia testo
+          <button className="btn btn-line btn-sm" onClick={handleCopyText} title={t('cl.copyTextTitle')}>
+            {t('cl.copyText')}
           </button>
           <button
             className="btn btn-ink btn-sm"
@@ -182,7 +186,7 @@ ${letterData.signOff}`;
             disabled={isDownloading}
           >
             {isDownloading ? <span className="spinner" /> : null}
-            Scarica Word (.docx)
+            {t('cl.downloadWord')}
           </button>
         </div>
       </div>
@@ -192,15 +196,15 @@ ${letterData.signOff}`;
 
         {/* LEFT COLUMN: Input & Settings */}
         <div className="panel" style={{ margin: 0, padding: '18px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: 15, marginBottom: 2 }}>Dati della candidatura</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 2 }}>{t('cl.applicationData')}</h3>
           <p className="psub" style={{ marginBottom: 14 }}>
-            Più contesto dai all'AI, più la lettera sarà su misura.
+            {t('cl.moreContext')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
               <label style={fieldLabel}>
-                Ruolo / posizione target <span style={{ color: 'var(--accent, #2F2AE5)' }}>*</span>
+                {t('cl.roleTarget')} <span style={{ color: 'var(--accent, #2F2AE5)' }}>*</span>
               </label>
               <input
                 type="text"
@@ -214,7 +218,7 @@ ${letterData.signOff}`;
 
             <div>
               <label style={fieldLabel}>
-                Azienda target <span style={{ color: 'var(--accent, #2F2AE5)' }}>*</span>
+                {t('cl.targetCompany')} <span style={{ color: 'var(--accent, #2F2AE5)' }}>*</span>
               </label>
               <input
                 type="text"
@@ -228,12 +232,12 @@ ${letterData.signOff}`;
 
             <div>
               <label style={fieldLabel}>
-                Annuncio di lavoro <span style={{ color: 'var(--ink-40, #9297A1)', fontWeight: 500 }}>(consigliato per il match ATS)</span>
+                {t('cl.jobPosting')} <span style={{ color: 'var(--ink-40, #9297A1)', fontWeight: 500 }}>{t('cl.recommendedATS')}</span>
               </label>
               <textarea
                 className="input"
                 rows={5}
-                placeholder="Incolla il testo dell'annuncio o l'elenco dei requisiti richiesti…"
+                placeholder={t('cl.jobPostingPlaceholder')}
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 style={{ width: '100%', fontSize: 13, resize: 'vertical' }}
@@ -242,28 +246,28 @@ ${letterData.signOff}`;
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 10 }}>
               <div>
-                <label style={fieldLabel}>Tono di voce</label>
+                <label style={fieldLabel}>{t('cl.toneOfVoice')}</label>
                 <select
                   className="input"
                   value={tone}
                   onChange={(e) => setTone(e.target.value as unknown as typeof tone)}
                   style={{ width: '100%' }}
                 >
-                  <option value="formal">Formale e istituzionale</option>
-                  <option value="enthusiastic">Entusiasta e dinamico</option>
-                  <option value="concise">Conciso e diretto (KPI)</option>
-                  <option value="executive">Executive & leadership</option>
+                  <option value="formal">{t('cl.toneFormal')}</option>
+                  <option value="enthusiastic">{t('cl.toneEnthusiastic')}</option>
+                  <option value="concise">{t('cl.toneConcise')}</option>
+                  <option value="executive">{t('cl.toneExecutive')}</option>
                 </select>
               </div>
 
               <div>
-                <label style={fieldLabel}>Lingua</label>
+                <label style={fieldLabel}>{t('cl.letterLanguage')}</label>
                 <CountrySelect
                   variant="field"
                   options={LETTER_LANGS}
                   value={language}
                   onChange={setLanguage}
-                  ariaLabel="Lingua della lettera"
+                  ariaLabel={t('cl.letterLanguageAria')}
                   style={{ width: '100%' }}
                 />
               </div>
@@ -277,14 +281,14 @@ ${letterData.signOff}`;
             >
               {isGenerating ? (
                 <>
-                  <span className="spinner" /> Generazione in corso…
+                  <span className="spinner" /> {t('cl.generating')}
                 </>
               ) : (
-                <>Genera lettera con AI →</>
+                <>{t('cl.generateWithAI')}</>
               )}
             </button>
             <p style={{ fontSize: 11.5, color: 'var(--ink-40, #9297A1)', textAlign: 'center', margin: 0, lineHeight: 1.45 }}>
-              Puoi modificare ogni paragrafo direttamente nell'anteprima a destra.
+              {t('cl.editInPreview')}
             </p>
           </div>
         </div>
@@ -292,12 +296,12 @@ ${letterData.signOff}`;
         {/* RIGHT COLUMN: Live Interactive Preview */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexShrink: 0 }}>
-            <span className="mono">Anteprima documento</span>
+            <span className="mono">{t('cl.docPreview')}</span>
             <span style={{ fontSize: 10.5, background: 'var(--tint, #EEEDFC)', color: 'var(--accent, #2F2AE5)', padding: '2px 8px', borderRadius: 100, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {template}
             </span>
             <span style={{ fontSize: 11.5, color: 'var(--ink-40, #9297A1)', marginLeft: 'auto' }}>
-              Clicca su un paragrafo per modificarlo
+              {t('cl.clickToEdit')}
             </span>
           </div>
 
@@ -321,23 +325,23 @@ ${letterData.signOff}`;
             {/* Header / Applicant Info */}
             <div style={{ borderBottom: '2px solid #0B1D3A', paddingBottom: 12, marginBottom: 16 }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 3px', color: '#0B1D3A', letterSpacing: '-0.4px' }}>
-                {(cvData?.firstName ?? 'Nome').toUpperCase()} {(cvData?.lastName ?? 'Cognome').toUpperCase()}
+                {(cvData?.firstName ?? t('cl.nameFallback')).toUpperCase()} {(cvData?.lastName ?? t('cl.lastNameFallback')).toUpperCase()}
               </h2>
               <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>
-                {jobTitle || cvData?.title || 'Professionista'} · {cvData?.email || 'email@esempio.it'} · {cvData?.phone || '+39 000 000000'}
+                {jobTitle || cvData?.title || t('cl.professionalFallback')} · {cvData?.email || t('cl.exampleEmail')} · {cvData?.phone || '+39 000 000000'}
               </div>
             </div>
 
             {/* Date and Company Header */}
             <div style={{ marginBottom: 16, fontSize: 12.5 }}>
               <div style={{ color: '#64748B', marginBottom: 6 }}>
-                {new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {new Date().toLocaleDateString(LOCALE_MAP[lang] ?? 'it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
               <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 13 }}>
-                Spett.le {companyName || 'Azienda Target'}
+                {t('cl.dearCompany')} {companyName || t('cl.targetCompanyFallback')}
               </div>
               <div style={{ fontWeight: 700, color: '#0B1D3A', marginTop: 2, fontSize: 12.5 }}>
-                Oggetto: Candidatura per la posizione di {jobTitle || cvData?.title || 'Candidatura'}
+                {t('cl.subjectLine')} {jobTitle || cvData?.title || t('cl.applicationFallback')}
               </div>
             </div>
 
@@ -354,7 +358,7 @@ ${letterData.signOff}`;
             {/* 4 Paragraphs (Hook, Value, Culture, Closing) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <label style={docLabel}>1. Il gancio (hook iniziale)</label>
+                <label style={docLabel}>{t('cl.p1Label')}</label>
                 <textarea
                   rows={3}
                   value={letterData.hookParagraph}
@@ -366,7 +370,7 @@ ${letterData.signOff}`;
               </div>
 
               <div>
-                <label style={docLabel}>2. Valore concreto & risultati (KPI)</label>
+                <label style={docLabel}>{t('cl.p2Label')}</label>
                 <textarea
                   rows={4}
                   value={letterData.valueParagraph}
@@ -378,7 +382,7 @@ ${letterData.signOff}`;
               </div>
 
               <div>
-                <label style={docLabel}>3. Allineamento culturale e metodo</label>
+                <label style={docLabel}>{t('cl.p3Label')}</label>
                 <textarea
                   rows={3}
                   value={letterData.cultureParagraph}
@@ -390,7 +394,7 @@ ${letterData.signOff}`;
               </div>
 
               <div>
-                <label style={docLabel}>4. Call-to-action (richiesta colloquio)</label>
+                <label style={docLabel}>{t('cl.p4Label')}</label>
                 <textarea
                   rows={2}
                   value={letterData.closingParagraph}
@@ -414,7 +418,7 @@ ${letterData.signOff}`;
 
             {/* GDPR Privacy Clause */}
             <div style={{ marginTop: 16, paddingTop: 10, borderTop: '1px solid var(--hair-soft, rgba(20,23,31,0.07))', fontSize: 10, fontStyle: 'italic', color: '#94A3B8' }}>
-              Autorizzo il trattamento dei miei dati personali ai sensi del D.Lgs. 196/2003 e del Regolamento UE 2016/679 (GDPR).
+              {t('cl.gdprClause')}
             </div>
           </div>
         </div>

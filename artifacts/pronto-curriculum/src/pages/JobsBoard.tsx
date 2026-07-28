@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { useSeoMeta } from '../components/EditorialChrome';
 import { heuristicMatchScore } from '../lib/jobMatch';
 import { CountrySelect, JOB_COUNTRIES } from '../components/CountrySelect';
+import { useT } from '../i18n/LanguageContext';
+
+type TFn = (key: string) => string;
 
 // Offerte di lavoro — full-width card grid + modal detail popup.
 // Top: "quest bar" (destination country + dream salary + AI search) and a
@@ -54,11 +57,11 @@ interface JobsBoardProps {
   onLogin: () => void;
 }
 
-const EMPLOYMENT_LABELS: Record<string, string> = {
-  'full-time': 'Tempo pieno',
-  'part-time': 'Part-time',
-  contract: 'A contratto',
-};
+const employmentLabel = (t: TFn, type: string): string => ({
+  'full-time': t('jobs.empFullTime'),
+  'part-time': t('jobs.empPartTime'),
+  contract: t('jobs.empContract'),
+}[type] ?? type);
 
 // Mirrors the backend CURRENCY map (jobs.ts) — just for the desired-salary input suffix.
 const CURRENCY: Record<string, string> = {
@@ -90,21 +93,21 @@ const isCountryLevel = (city: string) => COUNTRY_LEVEL_LABELS.has(city.toLowerCa
 
 // Benefits are not a structured API field: detect the common ones from the posting text.
 const BENEFIT_PATTERNS: Array<[RegExp, string]> = [
-  [/buoni\s+pasto|ticket\s+restaurant|meal\s+vouchers?/i, 'Buoni pasto'],
-  [/smart\s*working|lavoro\s+da\s+remoto|remote\s+work|da\s+remoto|hybrid|ibrido/i, 'Smart working / ibrido'],
-  [/welfare/i, 'Welfare aziendale'],
-  [/assicurazione\s+sanitaria|health\s+insurance|polizza\s+sanitaria|copertura\s+sanitaria/i, 'Assicurazione sanitaria'],
-  [/auto\s+aziendale|company\s+car/i, 'Auto aziendale'],
-  [/bonus|incentiv|premi\s+di\s+(produzione|risultato)/i, 'Bonus / incentivi'],
-  [/formazione|training|corsi\s+di/i, 'Formazione'],
-  [/mensa\s+aziendale|mensa\b/i, 'Mensa'],
-  [/stock\s+option|equity|azioni\s+aziendali/i, 'Stock options / equity'],
-  [/tredicesima|quattordicesima/i, 'Tredicesima / quattordicesima'],
-  [/orario\s+flessibile|flessibilit[àa]\s+orari/i, 'Orario flessibile'],
-  [/ferie\s+aggiuntive|permessi\s+extra|unlimited\s+(pto|vacation)/i, 'Ferie extra'],
+  [/buoni\s+pasto|ticket\s+restaurant|meal\s+vouchers?/i, 'jobs.benefit.meal'],
+  [/smart\s*working|lavoro\s+da\s+remoto|remote\s+work|da\s+remoto|hybrid|ibrido/i, 'jobs.benefit.remote'],
+  [/welfare/i, 'jobs.benefit.welfare'],
+  [/assicurazione\s+sanitaria|health\s+insurance|polizza\s+sanitaria|copertura\s+sanitaria/i, 'jobs.benefit.health'],
+  [/auto\s+aziendale|company\s+car/i, 'jobs.benefit.car'],
+  [/bonus|incentiv|premi\s+di\s+(produzione|risultato)/i, 'jobs.benefit.bonus'],
+  [/formazione|training|corsi\s+di/i, 'jobs.benefit.training'],
+  [/mensa\s+aziendale|mensa\b/i, 'jobs.benefit.canteen'],
+  [/stock\s+option|equity|azioni\s+aziendali/i, 'jobs.benefit.stock'],
+  [/tredicesima|quattordicesima/i, 'jobs.benefit.thirteenth'],
+  [/orario\s+flessibile|flessibilit[àa]\s+orari/i, 'jobs.benefit.flexHours'],
+  [/ferie\s+aggiuntive|permessi\s+extra|unlimited\s+(pto|vacation)/i, 'jobs.benefit.extraLeave'],
 ];
-const detectBenefits = (desc: string) =>
-  BENEFIT_PATTERNS.filter(([re]) => re.test(desc)).map(([, label]) => label);
+const detectBenefits = (desc: string, t: TFn) =>
+  BENEFIT_PATTERNS.filter(([re]) => re.test(desc)).map(([, key]) => t(key));
 
 interface SalaryStats {
   currency: string;
@@ -117,16 +120,16 @@ interface SalaryStats {
 
 const fmtSalary = (n: number, cur: string) => `${Math.round(n).toLocaleString('it-IT')} ${cur}`;
 
-function timeAgo(iso: string | null): string {
+function timeAgo(iso: string | null, t: TFn): string {
   if (!iso) return '';
   const ms = Date.now() - Date.parse(iso);
   if (isNaN(ms) || ms < 0) return '';
   const d = Math.floor(ms / 86400000);
-  if (d === 0) return 'oggi';
-  if (d === 1) return 'ieri';
-  if (d < 30) return `${d} giorni fa`;
+  if (d === 0) return t('jobs.today');
+  if (d === 1) return t('jobs.yesterday');
+  if (d < 30) return `${d} ${t('jobs.daysAgo')}`;
   const m = Math.floor(d / 30);
-  return m === 1 ? '1 mese fa' : `${m} mesi fa`;
+  return m === 1 ? t('jobs.monthAgo') : `${m} ${t('jobs.monthsAgo')}`;
 }
 
 // Adzuna/Jooble/Careerjet all cap their API description field well under this
@@ -295,6 +298,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     '/offerte-lavoro',
   );
   const { isAuthenticated } = useAuth();
+  const t = useT();
 
   const [country, setCountry] = useState('it');
   const [query, setQuery] = useState('');
@@ -352,7 +356,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
     try {
       const params = new URLSearchParams({ q, location, country: cc, page: String(pageNum) });
       const res = await fetch(`/api/jobs/search?${params}`);
-      if (!res.ok) throw new Error(`Il server ha risposto ${res.status}`);
+      if (!res.ok) throw new Error(`${t('jobs.errServerStatus')} ${res.status}`);
       const data = await res.json() as { jobs: JobPosting[]; providers: string[] };
       setJobs(prev => {
         if (pageNum === 1) return data.jobs;
@@ -365,12 +369,12 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
       setHasMore(data.jobs.length > 0 && pageNum < 10);
       setLastQuery({ q, location, cc });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore nella ricerca delle offerte');
+      toast.error(err instanceof Error ? err.message : t('jobs.errSearch'));
     } finally {
       setSearching(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [t]);
 
   const loadMore = useCallback(() => {
     if (!lastQuery || loadingMore) return;
@@ -412,16 +416,16 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         }
       }
       const trimmed = merged.slice(0, 150);
-      if (trimmed.length === 0) toast.error('Nessuna offerta trovata per i ruoli suggeriti.');
+      if (trimmed.length === 0) toast.error(t('jobs.errNoSuggestedJobs'));
       setJobs(trimmed);
       setProviders(Array.from(providerSet));
       setSearched(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore nella ricerca delle offerte');
+      toast.error(err instanceof Error ? err.message : t('jobs.errSearch'));
     } finally {
       setSearching(false);
     }
-  }, []);
+  }, [t]);
 
   const runRelocationSearch = useCallback(async () => {
     setSuggesting(true);
@@ -439,16 +443,16 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         }),
       });
       const body = await res.json() as { roles?: string[]; error?: string };
-      if (!res.ok || !body.roles || body.roles.length === 0) throw new Error(body.error ?? 'Nessun ruolo suggerito dall\'AI');
+      if (!res.ok || !body.roles || body.roles.length === 0) throw new Error(body.error ?? t('jobs.errNoRoles'));
       const roles = body.roles.slice(0, 3);
       setSuggestedRoles(roles);
       await searchMulti(roles, country);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore nel suggerimento dei ruoli');
+      toast.error(err instanceof Error ? err.message : t('jobs.errSuggestRoles'));
     } finally {
       setSuggesting(false);
     }
-  }, [cvData, archive, country, desiredSalary, searchMulti]);
+  }, [cvData, archive, country, desiredSalary, searchMulti, t]);
 
   // First load: a broad search so the page is never empty.
   useEffect(() => {
@@ -511,7 +515,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
   }, [jobs, filterCity, filterRoleOrCompany, filterRemote, filterLanguage, filterEmploymentType, filterMinSalary, strictSalaryFilter, sortBy, matchScoreFor]);
   const hasActiveFilters = !!(filterCity || filterRoleOrCompany || filterRemote || filterLanguage || filterEmploymentType || filterMinSalary);
   const activeFilterCount = [filterCity, filterRoleOrCompany, filterLanguage, filterEmploymentType, filterMinSalary].filter(Boolean).length + Number(filterRemote);
-  const salaryBenefits = useMemo(() => salaryJob ? detectBenefits(salaryJob.description) : [], [salaryJob]);
+  const salaryBenefits = useMemo(() => salaryJob ? detectBenefits(salaryJob.description, t) : [], [salaryJob, t]);
 
   // When the user asks to sort by AI match %, background-analyze the top
   // heuristically-ranked results that haven't been AI-scored yet (bounded
@@ -608,11 +612,11 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         body: JSON.stringify({ title: selected.title, description: selected.description }),
       });
       const body = await res.json() as { success?: boolean; title?: string; description?: string; error?: string };
-      if (!res.ok || !body.success) throw new Error(body.error ?? 'Traduzione non riuscita');
+      if (!res.ok || !body.success) throw new Error(body.error ?? t('jobs.errTranslateFail'));
       setTranslations(prev => ({ ...prev, [selected.id]: { title: body.title!, description: body.description! } }));
       setShowOriginal(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante la traduzione dell'annuncio");
+      toast.error(err instanceof Error ? err.message : t('jobs.errTranslate'));
     } finally {
       setTranslating(false);
     }
@@ -633,10 +637,10 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         }),
       });
       const body = await res.json() as { success?: boolean; data?: JobAnalysis; error?: string };
-      if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? 'Analisi non riuscita');
+      if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? t('jobs.errAnalyzeFail'));
       setAnalyses(prev => ({ ...prev, [selected.id]: body.data! }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante l'analisi AI");
+      toast.error(err instanceof Error ? err.message : t('jobs.errAnalyze'));
     } finally {
       setAnalyzing(false);
     }
@@ -655,10 +659,10 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
       });
       const res = await fetch(`/api/jobs/salary?${params}`);
       const body = await res.json() as { salary?: SalaryStats; error?: string };
-      if (!res.ok || !body.salary) throw new Error(body.error ?? 'Dati retributivi non disponibili');
+      if (!res.ok || !body.salary) throw new Error(body.error ?? t('jobs.errSalaryUnavailable'));
       setSalaryStats(body.salary);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore nella stima dello stipendio');
+      toast.error(err instanceof Error ? err.message : t('jobs.errSalary'));
       setSalaryJob(null);
     } finally {
       setSalaryLoading(false);
@@ -687,24 +691,24 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
       {/* ── HERO + COMMAND BAR ── */}
       <div className="jx-hero">
-        <h1>Trova il lavoro giusto, ovunque</h1>
+        <h1>{t('jobs.heroTitle')}</h1>
         <p className="sub">
-          Annunci reali dalle principali job board{providers.length > 0 ? ` (${providers.join(', ')})` : ''}. Scegli dove vuoi vivere e quanto vuoi guadagnare: l'AI legge il tuo CV e ti propone le offerte più compatibili.
+          {t('jobs.heroSub1')}{providers.length > 0 ? ` (${providers.join(', ')})` : ''}. {t('jobs.heroSub2')}
         </p>
 
         <div className="jx-quest">
           <div className="jx-q-seg">
-            <label>Dove vuoi lavorare</label>
+            <label>{t('jobs.whereWork')}</label>
             <CountrySelect
               variant="bare"
               options={JOB_COUNTRIES}
               value={country}
               onChange={cc => { setCountry(cc); void search(query, '', cc); }}
-              ariaLabel="Paese di destinazione"
+              ariaLabel={t('jobs.destCountry')}
             />
           </div>
           <div className="jx-q-seg">
-            <label>Stipendio dei sogni (annuo lordo)</label>
+            <label>{t('jobs.dreamSalary')}</label>
             <div className="jx-q-salrow">
               <input
                 type="number" min={0} step={1000} placeholder="es. 45.000"
@@ -715,13 +719,13 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
           </div>
           <button className="btn btn-gold btn-lg jx-q-cta" disabled={suggesting || searching} onClick={() => void runRelocationSearch()}>
             <Icon d={IC.spark} size={15} />
-            {suggesting ? 'L\'AI sta analizzando il tuo CV…' : 'Trova i lavori giusti per me'}
+            {suggesting ? t('jobs.analyzingCV') : t('jobs.findRightJobs')}
           </button>
         </div>
 
         {suggestedRoles.length > 0 && (
           <div className="jx-roles">
-            Ricerca AI basata sul tuo CV: {suggestedRoles.map(r => <span key={r} className="chip">{r}</span>)}
+            {t('jobs.aiSearchBasedOn')} {suggestedRoles.map(r => <span key={r} className="chip">{r}</span>)}
           </div>
         )}
       </div>
@@ -732,9 +736,9 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
           {searched && !searching && jobs.length > 0 && (
             <>
               <b>{filteredJobs.length}</b>
-              <span>{filteredJobs.length === 1 ? 'offerta' : 'offerte'}{hasActiveFilters ? ` su ${jobs.length}` : ''}</span>
-              {hasActiveFilters && <button className="jx-reset" onClick={resetFilterState}>Azzera filtri</button>}
-              {bulkMatching && <span className="jx-mini" style={{ marginLeft: 10 }}>analisi AI in corso</span>}
+              <span>{filteredJobs.length === 1 ? t('jobs.offerSingular') : t('jobs.offerPlural')}{hasActiveFilters ? ` su ${jobs.length}` : ''}</span>
+              {hasActiveFilters && <button className="jx-reset" onClick={resetFilterState}>{t('jobs.resetFilters')}</button>}
+              {bulkMatching && <span className="jx-mini" style={{ marginLeft: 10 }}>{t('jobs.aiAnalysisRunning')}</span>}
             </>
           )}
         </div>
@@ -742,22 +746,22 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
         <div className="jx-search">
           <Icon d={IC.search} size={14} />
           <input
-            placeholder="Cerca ruolo, azienda, parola chiave…"
+            placeholder={t('jobs.searchPlaceholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') void search(query, '', country); }}
           />
         </div>
 
-        <select className="jx-sel" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} aria-label="Ordina per">
-          <option value="recent">Più recenti</option>
-          <option value="match">Compatibilità</option>
-          <option value="salary">Stipendio</option>
+        <select className="jx-sel" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} aria-label={t('jobs.sortBy')}>
+          <option value="recent">{t('jobs.sortRecent')}</option>
+          <option value="match">{t('jobs.sortMatch')}</option>
+          <option value="salary">{t('jobs.sortSalary')}</option>
         </select>
 
         <div className="jx-popwrap">
           <button className="btn btn-line" style={{ gap: 7, borderRadius: 99 }} onClick={() => setFiltersOpen(v => !v)}>
-            <Icon d={IC.sliders} size={14} /> Filtri
+            <Icon d={IC.sliders} size={14} /> {t('jobs.filters')}
             {activeFilterCount > 0 && <span className="jx-badge">{activeFilterCount}</span>}
           </button>
           {filtersOpen && (
@@ -766,26 +770,26 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
               <div className="jx-pop">
                 <div className="jx-pgrid">
                   <div className="jx-field">
-                    <label>Ruolo o azienda</label>
+                    <label>{t('jobs.roleOrCompany')}</label>
                     <select value={filterRoleOrCompany} onChange={e => setFilterRoleOrCompany(e.target.value)} disabled={jobs.length === 0}>
-                      <option value="">Tutti i ruoli e le aziende</option>
-                      <optgroup label="Ruoli">
+                      <option value="">{t('jobs.allRolesCompanies')}</option>
+                      <optgroup label={t('jobs.roles')}>
                         {roleOptions.map(([r, n]) => <option key={`r-${r}`} value={r}>{r} ({n})</option>)}
                       </optgroup>
-                      <optgroup label="Aziende">
+                      <optgroup label={t('jobs.companies')}>
                         {companyOptions.map(([c, n]) => <option key={`c-${c}`} value={c}>{c} ({n})</option>)}
                       </optgroup>
                     </select>
                   </div>
                   <div className="jx-field">
-                    <label>Città</label>
+                    <label>{t('jobs.city')}</label>
                     <select value={filterCity} onChange={e => setFilterCity(e.target.value)} disabled={jobs.length === 0}>
-                      <option value="">Tutte le città</option>
+                      <option value="">{t('jobs.allCities')}</option>
                       {cityOptions.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
                     </select>
                   </div>
                   <div className="jx-field">
-                    <label>Stipendio minimo (annuo)</label>
+                    <label>{t('jobs.minSalary')}</label>
                     <input
                       type="number" min={0} step={1000} placeholder="es. 30000"
                       value={filterMinSalary} onChange={e => setFilterMinSalary(e.target.value)}
@@ -794,36 +798,36 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                     {filterMinSalary && (
                       <label className="jx-check" style={{ padding: '2px 0 0', fontSize: 11.5 }}>
                         <input type="checkbox" checked={strictSalaryFilter} onChange={e => setStrictSalaryFilter(e.target.checked)} />
-                        Escludi annunci senza stipendio indicato
+                        {t('jobs.excludeNoSalary')}
                       </label>
                     )}
                   </div>
                   <div className="jx-field">
-                    <label>Lingua richiesta</label>
+                    <label>{t('jobs.requiredLanguage')}</label>
                     <select value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)} disabled={languageOptions.length === 0}>
-                      <option value="">Qualsiasi lingua</option>
+                      <option value="">{t('jobs.anyLanguage')}</option>
                       {languageOptions.map(([l, n]) => <option key={l} value={l}>{l} ({n})</option>)}
                     </select>
                   </div>
                   <div className="jx-field">
-                    <label>Tipo di contratto</label>
+                    <label>{t('jobs.contractType')}</label>
                     <select value={filterEmploymentType} onChange={e => setFilterEmploymentType(e.target.value)} disabled={jobs.length === 0}>
-                      <option value="">Qualsiasi</option>
-                      <option value="full-time">Tempo pieno</option>
-                      <option value="part-time">Part-time</option>
-                      <option value="contract">A contratto</option>
+                      <option value="">{t('jobs.any')}</option>
+                      <option value="full-time">{t('jobs.empFullTime')}</option>
+                      <option value="part-time">{t('jobs.empPartTime')}</option>
+                      <option value="contract">{t('jobs.empContract')}</option>
                     </select>
                   </div>
                   <label className="jx-check" style={{ alignSelf: 'end' }}>
                     <input type="checkbox" checked={filterRemote} onChange={e => setFilterRemote(e.target.checked)} />
-                    Solo lavoro da remoto
+                    {t('jobs.remoteOnly')}
                   </label>
                 </div>
                 <div className="jx-pfoot">
                   <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center', gap: 6 }} disabled={searching} onClick={() => void search(query, '', country)}>
-                    {searching ? 'Ricerca…' : <><Icon d={IC.refresh} size={12} /> Aggiorna risultati</>}
+                    {searching ? t('jobs.searching') : <><Icon d={IC.refresh} size={12} /> {t('jobs.updateResults')}</>}
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setFiltersOpen(false)}>Chiudi</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setFiltersOpen(false)}>{t('jobs.close')}</button>
                 </div>
               </div>
             </>
@@ -850,14 +854,14 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
         {!searching && searched && jobs.length === 0 && (
           <div className="jx-empty">
-            <b>Nessuna offerta trovata</b>
-            Prova con parole più generiche o cambia paese.
+            <b>{t('jobs.noJobsFound')}</b>
+            {t('jobs.tryBroaderTerms')}
           </div>
         )}
         {!searching && jobs.length > 0 && filteredJobs.length === 0 && (
           <div className="jx-empty">
-            <b>Nessuna offerta corrisponde ai filtri</b>
-            Prova a cambiare o azzerare i filtri.
+            <b>{t('jobs.noJobsMatchFilters')}</b>
+            {t('jobs.tryChangeFilters')}
           </div>
         )}
 
@@ -870,7 +874,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                 <span className="jx-logo">{(job.company[0] ?? '?').toUpperCase()}</span>
                 {showMatch && (
                   <span className="jx-match" style={{ background: scoreBg(score), color: scoreColor(score) }}>
-                    {score}%{!analyses[job.id] ? ' ~' : ''} match
+                    {score}%{!analyses[job.id] ? ' ~' : ''} {t('jobs.match')}
                   </span>
                 )}
               </span>
@@ -879,9 +883,9 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
               {job.salary && <span className="jx-c-sal">{job.salary}</span>}
               <span className="jx-c-tags">
                 <span className="jx-tag src">{job.source}</span>
-                {job.remote && <span className="jx-tag rem">Remote</span>}
-                {job.employmentType && <span className="jx-tag">{EMPLOYMENT_LABELS[job.employmentType]}</span>}
-                {job.postedAt && <span className="jx-tag">{timeAgo(job.postedAt)}</span>}
+                {job.remote && <span className="jx-tag rem">{t('jobs.remote')}</span>}
+                {job.employmentType && <span className="jx-tag">{employmentLabel(t, job.employmentType)}</span>}
+                {job.postedAt && <span className="jx-tag">{timeAgo(job.postedAt, t)}</span>}
               </span>
             </button>
           );
@@ -891,7 +895,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
       {!searching && searched && jobs.length > 0 && hasMore && suggestedRoles.length === 0 && (
         <div className="jx-loadmore">
           <button className="btn btn-line" disabled={loadingMore} onClick={loadMore}>
-            {loadingMore ? 'Caricamento…' : 'Carica altri risultati'}
+            {loadingMore ? t('jobs.loadingMore') : t('jobs.loadMore')}
           </button>
         </div>
       )}
@@ -907,46 +911,46 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                   <h2>{translation && !showOriginal ? translation.title : selected.title}</h2>
                   <div className="sub">
                     {selected.company}{selected.location ? ` · ${selected.location}` : ''}
-                    {selected.postedAt ? ` · ${timeAgo(selected.postedAt)}` : ''}
+                    {selected.postedAt ? ` · ${timeAgo(selected.postedAt, t)}` : ''}
                   </div>
                 </div>
-                <button className="jx-m-close" aria-label="Chiudi" title="Chiudi (Esc)" onClick={() => setSelected(null)}>×</button>
+                <button className="jx-m-close" aria-label={t('jobs.close')} title={t('jobs.closeEsc')} onClick={() => setSelected(null)}>×</button>
               </div>
 
               <div className="jx-m-meta">
                 <span className="jx-tag src">{selected.source}</span>
-                {selected.remote && <span className="jx-tag rem">Remote</span>}
-                {selected.employmentType && <span className="jx-tag">{EMPLOYMENT_LABELS[selected.employmentType]}</span>}
+                {selected.remote && <span className="jx-tag rem">{t('jobs.remote')}</span>}
+                {selected.employmentType && <span className="jx-tag">{employmentLabel(t, selected.employmentType)}</span>}
                 {(selected.languages ?? []).map(l => <span key={l} className="jx-tag">{l}</span>)}
                 {selected.salary && <span className="jx-tag" style={{ background: 'var(--tint)', color: 'var(--accent)' }}>{selected.salary}</span>}
               </div>
 
               <div className="jx-m-acts">
                 <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
-                  <Icon d={IC.spark} size={13} /> Crea CV su misura
+                  <Icon d={IC.spark} size={13} /> {t('jobs.tailorCVBtn')}
                 </button>
                 {!analysis && (
                   <button className="btn btn-line btn-sm" onClick={() => void handleAnalyze()} disabled={analyzing}>
-                    {analyzing ? 'Analisi in corso…' : 'Analizza col mio CV'}
+                    {analyzing ? t('jobs.analyzing') : t('jobs.analyzeWithCV')}
                   </button>
                 )}
                 <button className="btn btn-line btn-sm" style={{ gap: 6 }} onClick={() => void handleSalary(selected)} disabled={salaryLoading && salaryJob?.id === selected.id}>
                   <Icon d={IC.coins} size={13} />
-                  {salaryLoading && salaryJob?.id === selected.id ? 'Stima in corso…' : 'Stima stipendio'}
+                  {salaryLoading && salaryJob?.id === selected.id ? t('jobs.estimating') : t('jobs.estimateSalary')}
                 </button>
                 {!translation && (
                   <button className="btn btn-line btn-sm" onClick={() => void handleTranslate()} disabled={translating}>
-                    {translating ? 'Traduzione…' : 'Traduci in italiano'}
+                    {translating ? t('jobs.translating') : t('jobs.translateToItalian')}
                   </button>
                 )}
                 {translation && (
                   <button className="btn btn-line btn-sm" onClick={() => setShowOriginal(v => !v)}>
-                    {showOriginal ? 'Vedi traduzione' : 'Vedi originale'}
+                    {showOriginal ? t('jobs.seeTranslation') : t('jobs.seeOriginal')}
                   </button>
                 )}
                 {selected.url && !isPreview && (
                   <a className="btn btn-ghost btn-sm" href={selected.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                    Annuncio originale ↗
+                    {t('jobs.originalListing')}
                   </a>
                 )}
               </div>
@@ -961,21 +965,21 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                       <span style={{ color: scoreColor(analysis.compatibilita) }}>{analysis.compatibilita}</span>
                     </div>
                     <div>
-                      <h3>Compatibilità col tuo CV</h3>
+                      <h3>{t('jobs.compatibilityWithCV')}</h3>
                       <p className="psub">{analysis.riassunto}</p>
                     </div>
                   </div>
 
                   {analysis.requisiti.length > 0 && (
                     <>
-                      <div className="jx-sec-label">Requisiti chiave dell'annuncio</div>
+                      <div className="jx-sec-label">{t('jobs.keyRequirements')}</div>
                       <div>{analysis.requisiti.map(r => <span key={r} className="jx-kw">{r}</span>)}</div>
                     </>
                   )}
 
                   {analysis.puntiForti.length > 0 && (
                     <>
-                      <div className="jx-sec-label">I tuoi punti forti</div>
+                      <div className="jx-sec-label">{t('jobs.yourStrengths')}</div>
                       {analysis.puntiForti.map(p => (
                         <div key={p} className="jx-li"><span className="dot" style={{ color: '#12805C' }}>✓</span>{p}</div>
                       ))}
@@ -984,7 +988,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
                   {analysis.lacune.length > 0 && (
                     <>
-                      <div className="jx-sec-label">Dove il CV è debole</div>
+                      <div className="jx-sec-label">{t('jobs.weakSpots')}</div>
                       {analysis.lacune.map(p => (
                         <div key={p} className="jx-li"><span className="dot" style={{ color: 'var(--danger)' }}>✗</span>{p}</div>
                       ))}
@@ -993,7 +997,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
                   {analysis.modificheCv.length > 0 && (
                     <>
-                      <div className="jx-sec-label">Come adattare il CV</div>
+                      <div className="jx-sec-label">{t('jobs.howToAdapt')}</div>
                       {analysis.modificheCv.map((p, i) => (
                         <div key={p} className="jx-li"><span className="dot" style={{ color: 'var(--accent)' }}>{i + 1}.</span>{p}</div>
                       ))}
@@ -1002,7 +1006,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
                   {recommended.length > 0 && (
                     <>
-                      <div className="jx-sec-label">Dal tuo archivio: esperienze da aggiungere</div>
+                      <div className="jx-sec-label">{t('jobs.fromArchive')}</div>
                       {recommended.map(e => (
                         <div key={e.id} className="jx-exp">
                           <Icon d={IC.check} size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
@@ -1016,11 +1020,11 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
                     <button className="btn btn-ink btn-sm" style={{ gap: 6 }} onClick={() => handleTailor(selected)}>
-                      <Icon d={IC.spark} size={13} /> Applica con il CV su misura
+                      <Icon d={IC.spark} size={13} /> {t('jobs.applyTailored')}
                     </button>
                     {!isAuthenticated && (
                       <button className="btn btn-line btn-sm" onClick={onLogin}>
-                        Accedi per usare il tuo archivio
+                        {t('jobs.loginToUseArchive')}
                       </button>
                     )}
                   </div>
@@ -1030,29 +1034,29 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
               {/* SALARY ESTIMATE */}
               {showSalarySection && (
                 <div className="jx-sal">
-                  <div className="jx-sec-label" style={{ marginTop: 0 }}>Stima stipendio · {cleanRole(selected.title)}</div>
+                  <div className="jx-sec-label" style={{ marginTop: 0 }}>{t('jobs.salaryEstimateFor')} {cleanRole(selected.title)}</div>
                   {salaryLoading && (
                     <div className="jx-empty" style={{ padding: '18px 0' }}>
                       <div className="spinner" style={{ margin: '0 auto 10px' }} />
-                      Stima della retribuzione in corso…
+                      {t('jobs.estimatingSalaryEllipsis')}
                     </div>
                   )}
                   {!salaryLoading && salaryStats && (
                     <>
-                      <div className="jx-sal-row"><span>25° percentile</span><b>{fmtSalary(salaryStats.p25, salaryStats.currency)}</b></div>
-                      <div className="jx-sal-row mid"><span>Mediana · annuo lordo</span><b>{fmtSalary(salaryStats.median, salaryStats.currency)}</b></div>
-                      <div className="jx-sal-row"><span>75° percentile</span><b>{fmtSalary(salaryStats.p75, salaryStats.currency)}</b></div>
+                      <div className="jx-sal-row"><span>{t('jobs.percentile25')}</span><b>{fmtSalary(salaryStats.p25, salaryStats.currency)}</b></div>
+                      <div className="jx-sal-row mid"><span>{t('jobs.medianGross')}</span><b>{fmtSalary(salaryStats.median, salaryStats.currency)}</b></div>
+                      <div className="jx-sal-row"><span>{t('jobs.percentile75')}</span><b>{fmtSalary(salaryStats.p75, salaryStats.currency)}</b></div>
                       {salaryBenefits.length > 0 && (
                         <>
-                          <div className="jx-sec-label">Benefit citati nell'annuncio</div>
+                          <div className="jx-sec-label">{t('jobs.benefitsInListing')}</div>
                           <div>{salaryBenefits.map(b => <span key={b} className="jx-kw">{b}</span>)}</div>
                         </>
                       )}
                       <div className="jx-sal-src">
-                        {salaryStats.source}{salaryStats.samples ? ` · ${salaryStats.samples} campioni` : ''}. Stima indicativa basata su annunci e dati di mercato.
+                        {salaryStats.source}{salaryStats.samples ? ` · ${salaryStats.samples} ${t('jobs.samples')}` : ''}. {t('jobs.estimateNote')}
                       </div>
                       <button className="btn btn-line btn-sm" style={{ marginTop: 10 }} onClick={() => onNavigate('calcolo-stipendio')}>
-                        Apri il calcolatore completo
+                        {t('jobs.openFullCalculator')}
                       </button>
                     </>
                   )}
@@ -1061,19 +1065,19 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
 
               {/* DESCRIPTION */}
               <div className="jx-sec-label">
-                Descrizione dell'offerta{translation && !showOriginal ? ' (tradotta)' : ''}
+                {t('jobs.jobDescription')}{translation && !showOriginal ? ` ${t('jobs.translated')}` : ''}
               </div>
               <div className="jx-desc">
-                {(translation && !showOriginal ? translation.description : selected.description) || 'Descrizione non disponibile: apri l\'annuncio originale.'}
+                {(translation && !showOriginal ? translation.description : selected.description) || t('jobs.descNotAvailable')}
               </div>
 
               {isPreview && selected.url && (
                 <div className="jx-preview-cta">
                   <div>
-                    <b>Questa è un'anteprima.</b> {selected.source.split(' ·')[0]} mostra solo un estratto: il testo integrale è disponibile sul sito dell'inserzionista.
+                    <b>{t('jobs.previewNotice')}</b> {selected.source.split(' ·')[0]} {t('jobs.previewNoticeRest')}
                   </div>
                   <a className="btn btn-gold btn-sm" href={selected.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', gap: 6, flexShrink: 0 }}>
-                    Leggi l'annuncio completo ↗
+                    {t('jobs.readFullListing')}
                   </a>
                 </div>
               )}

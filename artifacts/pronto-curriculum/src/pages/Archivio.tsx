@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import type { Page } from '../types';
+import { useT } from '../i18n/LanguageContext';
 
 interface StoredExp {
   id: string;
@@ -68,6 +69,7 @@ interface ArchivioProps {
 
 export default function Archivio({ onNavigate }: ArchivioProps) {
   const { isAuthenticated, isLoading, login } = useAuth();
+  const t = useT();
   const [experiences, setExperiences] = useState<StoredExp[]>([]);
   const [fetching, setFetching] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -117,7 +119,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
 
   async function handleSave() {
     if (!form.company.trim() || !form.role.trim()) {
-      setError('Azienda e ruolo sono obbligatori.');
+      setError(t('arch.errRequired'));
       return;
     }
     setSaving(true);
@@ -134,7 +136,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
       });
       if (!res.ok) {
         const d = await res.json() as { error?: string };
-        setError(d.error ?? 'Errore durante il salvataggio.');
+        setError(d.error ?? t('arch.errSave'));
         return;
       }
       await load();
@@ -145,7 +147,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Eliminare questa esperienza dall\'archivio?')) return;
+    if (!confirm(t('arch.confirmDelete'))) return;
     await fetch(`/api/experiences/${id}`, { method: 'DELETE', credentials: 'include' });
     setExperiences(prev => prev.filter(e => e.id !== id));
   }
@@ -154,7 +156,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
     return (
       <div className="loading-state" style={{ minHeight: 300 }}>
         <div className="spinner" />
-        <span>Caricamento…</span>
+        <span>{t('arch.loading')}</span>
       </div>
     );
   }
@@ -162,11 +164,11 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
   if (!isAuthenticated) {
     return (
       <div className="lock-state" style={{ minHeight: '40vh' }}>
-        <h2>Accedi per vedere l'archivio</h2>
+        <h2>{t('arch.loginGate')}</h2>
         <p style={{ color: 'var(--ink-60)', fontSize: 14.5, maxWidth: 440 }}>
-          Salva le tue esperienze lavorative e importale in qualsiasi CV con un click.
+          {t('arch.loginGateSub')}
         </p>
-        <button className="btn btn-ink" onClick={login}>Accedi</button>
+        <button className="btn btn-ink" onClick={login}>{t('nav.login')}</button>
       </div>
     );
   }
@@ -175,23 +177,23 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 24px 80px' }}>
       <div className="head">
         <div>
-          <h1>Archivio esperienze</h1>
+          <h1>{t('arch.title')}</h1>
           <p>
-            Il tuo archivio personale — importa direttamente nel builder
+            {t('arch.subtitle')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-line" onClick={() => onNavigate('cover-letter')}>
-            Lettera AI
+            {t('ws.coverLetter')}
           </button>
-          <button className="btn btn-ink" onClick={openAdd}>+ Aggiungi</button>
+          <button className="btn btn-ink" onClick={openAdd}>{t('arch.add')}</button>
         </div>
       </div>
 
       {showForm && (
         <div style={{ background: 'var(--gray50)', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: '24px', marginBottom: 24 }}>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 20, marginTop: 0 }}>
-            {editId ? 'Modifica esperienza' : 'Nuova esperienza'}
+            {editId ? t('arch.editExp') : t('arch.newExp')}
           </h3>
 
           {error && (
@@ -202,29 +204,29 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Azienda *</label>
+              <label>{t('arch.company')}</label>
               <input type="text" placeholder="es. Accenture" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label>Ruolo *</label>
+              <label>{t('arch.role')}</label>
               <input type="text" placeholder="es. Project Manager" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label>Città</label>
+              <label>{t('arch.city')}</label>
               <input type="text" placeholder="es. Milano" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label>Data inizio</label>
+              <label>{t('arch.startDate')}</label>
               <input type="text" placeholder="Gen 2020" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
             </div>
           </div>
 
           <div className="form-row" style={{ alignItems: 'flex-end' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Data fine</label>
+              <label>{t('arch.endDate')}</label>
               <input
                 type="text"
                 placeholder="Dic 2023"
@@ -242,42 +244,42 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
                   onChange={e => setForm(f => ({ ...f, isCurrent: e.target.checked, endDate: e.target.checked ? '' : f.endDate }))}
                   style={{ width: 16, height: 16, accentColor: 'var(--gold)' }}
                 />
-                Lavoro ancora qui
+                {t('arch.stillWorkHere')}
               </label>
             </div>
           </div>
 
           <div className="form-group" style={{ marginTop: 12 }}>
-            <label>Descrizione</label>
-            <textarea rows={3} placeholder="Responsabilità e risultati..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            <label>{t('arch.description')}</label>
+            <textarea rows={3} placeholder={t('arch.descPlaceholder')} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
           </div>
 
           <div className="form-group">
-            <label>Competenze usate</label>
-            <input type="text" placeholder="React, TypeScript, Agile (separate da virgola)" value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} />
+            <label>{t('arch.skillsUsed')}</label>
+            <input type="text" placeholder={t('arch.skillsPlaceholder')} value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} />
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <button className="btn btn-gold" onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvataggio...' : editId ? 'Salva modifiche' : 'Salva esperienza'}
+              {saving ? t('arch.saving') : editId ? t('arch.saveChanges') : t('arch.saveExp')}
             </button>
-            <button className="btn btn-ghost" onClick={cancelForm}>Annulla</button>
+            <button className="btn btn-ghost" onClick={cancelForm}>{t('arch.cancel')}</button>
           </div>
         </div>
       )}
 
       {fetching ? (
-        <div style={{ color: 'var(--gray500)', fontSize: 14, textAlign: 'center', padding: 40 }}>Caricamento esperienze...</div>
+        <div style={{ color: 'var(--gray500)', fontSize: 14, textAlign: 'center', padding: 40 }}>{t('arch.loadingExp')}</div>
       ) : experiences.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 24px', background: 'var(--gray50)', borderRadius: 12, border: '1.5px dashed var(--gray100)' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>💼</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
-            Archivio vuoto
+            {t('arch.emptyTitle')}
           </div>
           <div style={{ color: 'var(--gray500)', fontSize: 14, marginBottom: 20 }}>
-            Aggiungi le tue esperienze lavorative per importarle rapidamente nei tuoi CV.
+            {t('arch.emptySub')}
           </div>
-          <button className="btn btn-gold" onClick={openAdd}>+ Aggiungi la prima esperienza</button>
+          <button className="btn btn-gold" onClick={openAdd}>{t('arch.addFirstExp')}</button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -291,7 +293,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
                 </div>
                 {(exp.startDate || exp.endDate || exp.isCurrent) && (
                   <div style={{ fontSize: 12, color: 'var(--gray500)', marginTop: 3 }}>
-                    {exp.startDate ?? ''}{(exp.startDate && (exp.endDate || exp.isCurrent)) ? ' → ' : ''}{exp.isCurrent ? 'Presente' : (exp.endDate ?? '')}
+                    {exp.startDate ?? ''}{(exp.startDate && (exp.endDate || exp.isCurrent)) ? ' → ' : ''}{exp.isCurrent ? t('arch.present') : (exp.endDate ?? '')}
                   </div>
                 )}
                 {exp.description && (
@@ -308,8 +310,8 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => openEdit(exp)} style={{ fontSize: 12 }}>✏ Modifica</button>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(exp.id)} style={{ fontSize: 12 }}>🗑 Elimina</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => openEdit(exp)} style={{ fontSize: 12 }}>{t('arch.edit')}</button>
+                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(exp.id)} style={{ fontSize: 12 }}>{t('arch.delete')}</button>
               </div>
             </div>
           ))}
@@ -318,7 +320,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
 
       {!showForm && experiences.length > 0 && (
         <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <button className="btn btn-ghost" onClick={openAdd}>+ Aggiungi altra esperienza</button>
+          <button className="btn btn-ghost" onClick={openAdd}>{t('arch.addAnotherExp')}</button>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Page } from '../types';
 import { BLOG_ARTICLES, BlogArticleData } from '../data/blogArticles';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
+import { useT } from '../i18n/LanguageContext';
 
 interface BlogArticleProps {
   slug?: string;
@@ -141,6 +142,7 @@ function useScrollSpy(ids: string[], slug?: string) {
 }
 
 export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
+  const t = useT();
   const article: BlogArticleData = useMemo(
     () => BLOG_ARTICLES.find(a => a.slug === slug) || BLOG_ARTICLES[0],
     [slug],
@@ -216,8 +218,8 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
           {/* HEADER */}
           <header className="ba-head">
             <div className="mono ba-crumb rv on">
-              <a onClick={() => onNavigate('home')}>Home</a><b>/</b>
-              <a onClick={() => onNavigate('blog')}>Blog & Guide</a><b>/</b>
+              <a onClick={() => onNavigate('home')}>{t('ba.home')}</a><b>/</b>
+              <a onClick={() => onNavigate('blog')}>{t('ba.blogGuide')}</a><b>/</b>
               <span>{article.category}</span>
             </div>
             <h1 className="rv on d1">{article.title}</h1>
@@ -237,7 +239,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
             <article className="ba-main" onClick={handleBodyClick}>
               {article.keyTakeaways.length > 0 && (
                 <div className="ba-takeaways rv on d3">
-                  <span className="mono">In sintesi</span>
+                  <span className="mono">{t('ba.summary')}</span>
                   <ul>
                     {article.keyTakeaways.map((point, i) => <li key={i}>{point}</li>)}
                   </ul>
@@ -252,10 +254,10 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
                   {section.callout && (
                     <div className={`ba-callout ba-callout--${section.callout.type || 'tip'}`}>
                       <span className="mono">
-                        {section.callout.type === 'ats' ? 'Analisi ATS'
-                          : section.callout.type === 'warning' ? 'Attenzione'
-                          : section.callout.type === 'quote' ? 'Esempio'
-                          : 'Consiglio pratico'}
+                        {section.callout.type === 'ats' ? t('ba.calloutAts')
+                          : section.callout.type === 'warning' ? t('ba.calloutWarning')
+                          : section.callout.type === 'quote' ? t('ba.calloutQuote')
+                          : t('ba.calloutTip')}
                       </span>
                       <b className="t">{section.callout.title}</b>
                       <p>{section.callout.text}</p>
@@ -265,14 +267,13 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
                   {idx === 1 && (
                     <div className="ba-cta">
                       <div>
-                        <b>Applica subito queste regole al tuo CV</b>
+                        <b>{t('ba.applyRulesTitle')}</b>
                         <p>
-                          L'editor AI controlla keyword, struttura e punteggio ATS in tempo reale,
-                          ed esporta un PDF impaginato alla perfezione in pochi minuti.
+                          {t('ba.applyRulesSub')}
                         </p>
                       </div>
                       <button className="btn btn-ink" onClick={(e) => { e.stopPropagation(); onNavigate('builder-step1'); }}>
-                        Crea il tuo CV gratis →
+                        {t('ba.createCvFree')}
                       </button>
                     </div>
                   )}
@@ -282,7 +283,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
               {/* FAQ */}
               {article.faq && article.faq.length > 0 && (
                 <section className="ba-section" aria-label="Domande frequenti">
-                  <h2>Domande frequenti</h2>
+                  <h2>{t('ba.faqTitle')}</h2>
                   <div className="faq">
                     {article.faq.map(f => (
                       <details key={f.q}>
@@ -298,12 +299,10 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
               <div className="ba-bio">
                 <div className="ba-ava">{article.author.initials}</div>
                 <div>
-                  <b>Scritto da {article.author.name}</b>
+                  <b>{t('ba.writtenBy')} {article.author.name}</b>
                   <span className="role">{article.author.role}</span>
                   <p>
-                    Si occupa di selezione del personale, tecnologie HR e algoritmi ATS. Collabora con
-                    università e agenzie per il lavoro italiane per definire gli standard del curriculum
-                    e della lettera di presentazione.
+                    {t('ba.authorBio')}
                   </p>
                 </div>
               </div>
@@ -311,7 +310,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
 
             {/* SIDEBAR */}
             <aside className="ba-side" aria-label="Indice dei contenuti">
-              <span className="mono">Indice</span>
+              <span className="mono">{t('ba.tocLabel')}</span>
               <nav className="ba-toc">
                 {article.sections.map(sec => (
                   <a
@@ -328,11 +327,11 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
                 ))}
               </nav>
               <div className="ba-side-cta">
-                <span className="mono">Editor ATS</span>
-                <b>Il CV che supera i filtri</b>
-                <p>Punteggio ATS in tempo reale e template verificati per il mercato italiano.</p>
+                <span className="mono">{t('ba.atsEditor')}</span>
+                <b>{t('ba.cvThatPasses')}</b>
+                <p>{t('ba.atsEditorSub')}</p>
                 <button className="btn btn-ink btn-sm" style={{ width: '100%' }} onClick={() => onNavigate('builder-step1')}>
-                  Prova il builder →
+                  {t('ba.tryBuilder')}
                 </button>
               </div>
             </aside>
@@ -342,8 +341,8 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
           {relatedArticles.length > 0 && (
             <section className="ba-related" aria-label="Articoli correlati">
               <div className="sec-head rv">
-                <h2 className="sec-title">Continua a <span className="ac">leggere.</span></h2>
-                <span className="mono sec-num">Articoli correlati</span>
+                <h2 className="sec-title">{t('ba.continueReading')} <span className="ac">{t('ba.reading')}</span></h2>
+                <span className="mono sec-num">{t('ba.relatedArticles')}</span>
               </div>
               <div className="ba-rel-grid">
                 {relatedArticles.map((rel, i) => (

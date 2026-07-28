@@ -1,19 +1,22 @@
 import { useMemo } from 'react';
 import type { ModalType, Page } from '../types';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
+import { useT } from '../i18n/LanguageContext';
 
 interface PrezziProps {
   onNavigate: (page: Page, slug?: string) => void;
   onModal: (modal: ModalType) => void;
 }
 
-const FAQ_ITEMS: Array<[string, string]> = [
-  ['Posso usare ProntoCurriculum gratis?', 'Sì. Puoi creare, ottimizzare e scaricare un CV gratuitamente senza registrazione. Il piano gratuito applica una piccola filigrana al PDF: per rimuoverla basta passare a un piano a pagamento in qualsiasi momento.'],
-  ['Che differenza c\'è tra Piano Mensile e Piano Annuale?', 'Il Piano Mensile include fino a 100 CV al mese, rephrasing AI e download senza filigrana, con addebito ricorrente ogni mese. Il Piano Annuale offre CV illimitati per 12 mesi a un prezzo forfettario più conveniente sull\'anno.'],
-  ['Cos\'è il Singolo CV?', 'È un acquisto una tantum, senza abbonamento: paghi una volta e scarichi quel CV senza filigrana. Ideale se ti serve un solo documento ben fatto per una candidatura specifica.'],
-  ['Posso disdire l\'abbonamento quando voglio?', 'Sì, puoi annullare il rinnovo in qualsiasi momento dall\'area account prima della data di rinnovo: continuerai ad avere accesso fino alla fine del periodo già pagato.'],
-  ['I pagamenti sono sicuri?', 'Tutti i pagamenti sono gestiti da Stripe, leader mondiale nei pagamenti online. ProntoCurriculum non memorizza mai i dati della tua carta.'],
-  ['Lo sconto del -30% è permanente?', 'Sì, il prezzo scontato mostrato è quello che paghi effettivamente, non un\'offerta a tempo: nessun aumento nascosto al rinnovo.'],
+type TFn = (key: string) => string;
+
+const buildFaqItems = (t: TFn): Array<[string, string]> => [
+  [t('pz.faq.q1'), t('pz.faq.a1')],
+  [t('pz.faq.q2'), t('pz.faq.a2')],
+  [t('pz.faq.q3'), t('pz.faq.a3')],
+  [t('pz.faq.q4'), t('pz.faq.a4')],
+  [t('pz.faq.q5'), t('pz.faq.a5')],
+  [t('pz.faq.q6'), t('pz.faq.a6')],
 ];
 
 const PZ_CSS = `
@@ -68,6 +71,8 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
     'Confronta i piani ProntoCurriculum: crea CV gratis con filigrana, oppure scegli il Piano Mensile, Annuale o il Singolo CV senza filigrana. Sconto -30% permanente, pagamenti sicuri con Stripe.',
     '/prezzi',
   );
+  const t = useT();
+  const FAQ_ITEMS = buildFaqItems(t);
 
   const faqSchema = useMemo(() => ({
     '@context': 'https://schema.org',
@@ -77,7 +82,7 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
       name: q,
       acceptedAnswer: { '@type': 'Answer', text: a },
     })),
-  }), []);
+  }), [FAQ_ITEMS]);
 
   return (
     <EditorialChrome onNavigate={onNavigate} active="prezzi">
@@ -86,81 +91,80 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
         <div className="shell">
           {/* HERO */}
           <section className="pz-hero">
-            <div className="mono eyebrow rv on">Prezzi trasparenti <b>·</b> Nessun costo nascosto</div>
-            <h1 className="rv on d1">Un piano per <span className="grad">ogni candidatura.</span></h1>
+            <div className="mono eyebrow rv on">{t('pz.eyebrow')}</div>
+            <h1 className="rv on d1">{t('pz.h1a')} <span className="grad">{t('pz.h1b')}</span></h1>
             <p className="sub rv on d2">
-              Inizia gratis: crea e scarica il tuo CV in pochi minuti. Passa a un piano a pagamento
-              solo quando vuoi rimuovere la filigrana e sbloccare le funzioni AI illimitate.
+              {t('pz.heroSub')}
             </p>
           </section>
 
           {/* PLANS */}
           <section className="pz-grid" aria-label="Piani disponibili">
             <div className="pz-card rv on d1">
-              <span className="pz-badge">Gratis</span>
-              <h3>Piano Free</h3>
-              <p className="pz-desc">Per provare la piattaforma senza impegno.</p>
-              <div className="pz-price">€0<span>/sempre</span></div>
+              <span className="pz-badge">{t('pz.free')}</span>
+              <h3>{t('pz.freePlan')}</h3>
+              <p className="pz-desc">{t('pz.freeDesc')}</p>
+              <div className="pz-price">€0<span>{t('pz.forever')}</span></div>
               <span className="pz-old" style={{ visibility: 'hidden' }}>€0,00</span>
               <ul className="pz-feats">
-                <li><b>✓</b> CV illimitati con filigrana</li>
-                <li><b>✓</b> Template ottimizzati ATS</li>
-                <li><b>✓</b> Punteggio ATS in tempo reale</li>
-                <li><b>✓</b> Traduzione in 6 lingue</li>
+                <li><b>✓</b> {t('pz.free1')}</li>
+                <li><b>✓</b> {t('pz.free2')}</li>
+                <li><b>✓</b> {t('pz.free3')}</li>
+                <li><b>✓</b> {t('pz.free4')}</li>
               </ul>
               <button className="btn btn-line" style={{ width: '100%' }} onClick={() => onNavigate('builder-step1')}>
-                Inizia gratis
+                {t('pz.startFree')}
               </button>
             </div>
 
             <div className="pz-card rv on d2">
               <span className="pz-badge">-30%</span>
-              <h3>Piano Mensile</h3>
-              <p className="pz-desc">Per chi cerca lavoro attivamente questo mese.</p>
-              <div className="pz-price">€6,99<span>/mese</span></div>
-              <span className="pz-old">€9,99/mese</span>
+              <h3>{t('pz.monthlyPlan')}</h3>
+              <p className="pz-desc">{t('pz.monthlyDesc')}</p>
+              <div className="pz-price">€6,99<span>{t('pz.perMonth')}</span></div>
+              <span className="pz-old">€9,99{t('pz.perMonth')}</span>
               <ul className="pz-feats">
-                <li><b>✓</b> Fino a 100 CV al mese</li>
-                <li><b>✓</b> Download senza filigrana</li>
-                <li><b>✓</b> Rephrasing AI delle esperienze</li>
-                <li><b>✓</b> CV su misura per ogni offerta</li>
+                <li><b>✓</b> {t('pz.monthly1')}</li>
+                <li><b>✓</b> {t('pz.noWatermark')}</li>
+                <li><b>✓</b> {t('pz.aiRephrasing')}</li>
+                <li><b>✓</b> {t('pz.tailoredCV')}</li>
               </ul>
               <button className="btn btn-line" style={{ width: '100%' }} onClick={() => onModal('pricing')}>
-                Scegli Mensile
+                {t('pz.chooseMonthly')}
               </button>
             </div>
 
             <div className="pz-card pz-card--hi rv on d3">
-              <span className="pz-badge">Più scelto · -30%</span>
-              <h3>Piano Annuale</h3>
-              <p className="pz-desc">Per l'intera ricerca di lavoro, al miglior prezzo.</p>
-              <div className="pz-price">€34,99<span>/anno</span></div>
-              <span className="pz-old">€49,99/anno</span>
+              <span className="pz-badge">{t('pz.mostChosen')}</span>
+              <h3>{t('pz.annualPlan')}</h3>
+              <p className="pz-desc">{t('pz.annualDesc')}</p>
+              <div className="pz-price">€34,99<span>{t('pz.perYear')}</span></div>
+              <span className="pz-old">€49,99{t('pz.perYear')}</span>
               <ul className="pz-feats">
-                <li><b>✓</b> CV illimitati per 12 mesi</li>
-                <li><b>✓</b> Download senza filigrana</li>
-                <li><b>✓</b> Rephrasing AI delle esperienze</li>
-                <li><b>✓</b> CV su misura per ogni offerta</li>
-                <li><b>✓</b> Lettere di presentazione AI</li>
+                <li><b>✓</b> {t('pz.annual1')}</li>
+                <li><b>✓</b> {t('pz.noWatermark')}</li>
+                <li><b>✓</b> {t('pz.aiRephrasing')}</li>
+                <li><b>✓</b> {t('pz.tailoredCV')}</li>
+                <li><b>✓</b> {t('pz.coverLettersAI')}</li>
               </ul>
               <button className="btn btn-ink" style={{ width: '100%' }} onClick={() => onModal('pricing')}>
-                Scegli Annuale →
+                {t('pz.chooseAnnual')}
               </button>
             </div>
 
             <div className="pz-card rv on d3">
-              <span className="pz-badge">Una tantum · -30%</span>
-              <h3>Singolo CV</h3>
-              <p className="pz-desc">Ti serve un solo CV impeccabile, senza abbonamento.</p>
-              <div className="pz-price">€1,99<span>/una volta</span></div>
+              <span className="pz-badge">{t('pz.oneTime')}</span>
+              <h3>{t('pz.singleCV')}</h3>
+              <p className="pz-desc">{t('pz.singleDesc')}</p>
+              <div className="pz-price">€1,99<span>{t('pz.once')}</span></div>
               <span className="pz-old">€2,99</span>
               <ul className="pz-feats">
-                <li><b>✓</b> 1 download senza filigrana</li>
-                <li><b>✓</b> Rephrasing AI incluso</li>
-                <li><b>✓</b> Nessun rinnovo automatico</li>
+                <li><b>✓</b> {t('pz.single1')}</li>
+                <li><b>✓</b> {t('pz.single2')}</li>
+                <li><b>✓</b> {t('pz.single3')}</li>
               </ul>
               <button className="btn btn-line" style={{ width: '100%' }} onClick={() => onModal('pricing')}>
-                Acquista singolo CV
+                {t('pz.buySingle')}
               </button>
             </div>
           </section>
@@ -168,23 +172,23 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
           {/* COMPARISON */}
           <section className="sec" style={{ padding: '48px 0 0' }} aria-label="Confronto dettagliato dei piani">
             <div className="sec-head rv">
-              <h2 className="sec-title">Confronto <span className="ac">dettagliato.</span></h2>
-              <span className="mono sec-num">Tutte le funzioni</span>
+              <h2 className="sec-title">{t('pz.compareTitle')} <span className="ac">{t('pz.compareTitleAc')}</span></h2>
+              <span className="mono sec-num">{t('pz.allFeatures')}</span>
             </div>
             <div className="pz-compare rv">
               <table>
                 <thead>
-                  <tr><th>Funzione</th><th>Free</th><th>Mensile</th><th>Annuale</th><th>Singolo</th></tr>
+                  <tr><th>{t('pz.feature')}</th><th>{t('pz.free')}</th><th>{t('pz.monthlyCol')}</th><th>{t('pz.annualCol')}</th><th>{t('pz.singleCol')}</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>Template ottimizzati ATS</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>Punteggio ATS in tempo reale</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>Download senza filigrana</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>Rephrasing AI esperienze</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>CV su misura per offerta</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
-                  <tr><td>Lettera di presentazione AI</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
-                  <tr><td>Traduzione in 6 lingue</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>CV inclusi</td><td>Illimitati</td><td>100/mese</td><td>Illimitati</td><td>1</td></tr>
+                  <tr><td>{t('pz.atsTemplates')}</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>{t('pz.atsScore')}</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>{t('pz.dlNoWatermark')}</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>{t('pz.aiRephrasingExp')}</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>{t('pz.tailoredCVOffer')}</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+                  <tr><td>{t('pz.coverLetterAI')}</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+                  <tr><td>{t('pz.translation6Langs')}</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>{t('pz.cvIncluded')}</td><td>{t('pz.unlimited')}</td><td>{t('pz.perMonthCount')}</td><td>{t('pz.unlimited')}</td><td>1</td></tr>
                 </tbody>
               </table>
             </div>
@@ -193,8 +197,8 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
           {/* FAQ */}
           <section className="sec" style={{ padding: '72px 0 0' }} aria-label="Domande frequenti sui prezzi">
             <div className="sec-head rv">
-              <h2 className="sec-title">Domande <span className="ac">frequenti.</span></h2>
-              <span className="mono sec-num">FAQ — Prezzi</span>
+              <h2 className="sec-title">{t('pz.faqTitle')} <span className="ac">{t('pz.faqTitleAc')}</span></h2>
+              <span className="mono sec-num">{t('pz.faqPricing')}</span>
             </div>
             <div className="faq rv">
               {FAQ_ITEMS.map(([q, a]) => (
@@ -210,14 +214,14 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
           <section style={{ padding: '72px 0 88px' }} aria-label="Crea il tuo CV">
             <div className="cta-band rv">
               <div>
-                <span className="mono">Nessuna carta richiesta per iniziare</span>
-                <h3>Il tuo prossimo CV parte gratis.</h3>
+                <span className="mono">{t('pz.noCardRequired')}</span>
+                <h3>{t('pz.finalCtaTitle')}</h3>
                 <p>
-                  Crea il curriculum ora e decidi solo dopo se sbloccare il download senza filigrana.
+                  {t('pz.finalCtaSub')}
                 </p>
               </div>
               <button className="btn btn-ink" onClick={() => onNavigate('builder-step1')}>
-                Crea il tuo CV →
+                {t('pz.finalCta')}
               </button>
             </div>
           </section>

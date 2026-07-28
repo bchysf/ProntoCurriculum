@@ -80,14 +80,14 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
     { key: 'dashboard', icon: IC.grid, label: t('dash.title'), page: 'dashboard', activeOn: ['dashboard'], locked: !isAuthenticated },
     { key: 'create', icon: IC.doc, label: t('ws.create'), page: 'builder-step1', activeOn: ['builder-step1', 'builder-step2'], locked: false },
     { key: 'tailor', icon: IC.spark, label: t('ws.tailor'), page: 'tailor', activeOn: ['tailor'], locked: !isAuthenticated },
-    { key: 'jobs', icon: IC.search, label: 'Offerte di lavoro', page: 'jobs', activeOn: ['jobs'], locked: false },
+    { key: 'jobs', icon: IC.search, label: t('ws.jobs'), page: 'jobs', activeOn: ['jobs'], locked: false },
     { key: 'apps', icon: IC.list, label: t('ws.applications'), page: 'candidature', activeOn: ['candidature'], locked: !isAuthenticated },
-    { key: 'letter', icon: IC.mail, label: 'Lettera AI', page: 'cover-letter', activeOn: ['cover-letter'], locked: !isAuthenticated },
+    { key: 'letter', icon: IC.mail, label: t('ws.coverLetter'), page: 'cover-letter', activeOn: ['cover-letter'], locked: !isAuthenticated },
     { key: 'archive', icon: IC.briefcase, label: t('ws.archive'), page: 'archivio', activeOn: ['archivio'], locked: !isAuthenticated },
-    { key: 'concorsi', icon: IC.building, label: 'Concorsi PA', page: 'concorsi', activeOn: ['concorsi'], locked: false },
-    { key: 'referral', icon: IC.gift, label: 'Invita & Guadagna', page: 'referral', activeOn: ['referral'], locked: !isAuthenticated },
+    { key: 'concorsi', icon: IC.building, label: t('ws.concorsi'), page: 'concorsi', activeOn: ['concorsi'], locked: false },
+    { key: 'referral', icon: IC.gift, label: t('ws.referral'), page: 'referral', activeOn: ['referral'], locked: !isAuthenticated },
     ...(user?.email?.toLowerCase() === ADMIN_EMAIL
-      ? [{ key: 'admin', icon: IC.shield, label: 'Pannello Admin', page: 'admin' as Page, activeOn: ['admin' as Page], locked: false }]
+      ? [{ key: 'admin', icon: IC.shield, label: t('ws.admin'), page: 'admin' as Page, activeOn: ['admin' as Page], locked: false }]
       : []),
   ];
 

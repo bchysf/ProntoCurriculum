@@ -77,6 +77,18 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
   // ── HEADER ──────────────────────────────────────────────────────────────────
   const fullName = `${cvData.firstName} ${cvData.lastName}`.trim() || 'Nome Cognome';
 
+  const drawPhoto = (y0: number, size = 24) => {
+    if (!cvData.photo) return;
+    const match = /^data:image\/(png|jpe?g|webp);base64,/i.exec(cvData.photo);
+    if (!match) return;
+    const format = match[1].toLowerCase().startsWith('jpe') ? 'JPEG' : match[1].toUpperCase();
+    try {
+      doc.addImage(cvData.photo, format, PAGE_W - M - size, y0, size, size);
+    } catch {
+      // corrupted/unsupported image data — skip silently, rest of the CV still renders
+    }
+  };
+
   if (spec.headerBg) {
     // coloured block header (modern / executive / professionale / europass)
     doc.setFillColor(...spec.headerBg);
@@ -110,6 +122,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     const contacts = [cvData.email, cvData.phone, cvData.city, cvData.linkedin].filter(Boolean);
     if (contacts.length) doc.text(contacts.join('   |   '), M, template === 'europass' ? 38 : 37);
 
+    drawPhoto(11, 24);
+
     y = 54;
   } else {
     // minimal — no background, just name + navy bottom border
@@ -131,6 +145,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     doc.setDrawColor(...NAVY);
     doc.setLineWidth(0.6);
     doc.line(M, 41, PAGE_W - M, 41);
+
+    drawPhoto(6, 24);
 
     y = 48;
   }

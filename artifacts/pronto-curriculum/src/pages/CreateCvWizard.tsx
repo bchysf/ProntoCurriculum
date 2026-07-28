@@ -7,6 +7,7 @@ import { Icon, IC } from '../components/StrokeIcon';
 import CVPreview from '../components/CVPreview';
 import { useSeoMeta } from '../components/EditorialChrome';
 import { FlagImg } from '../components/CountrySelect';
+import { useT } from '../i18n/LanguageContext';
 
 const BLANK_CV: CVData = {
   firstName: '', lastName: '', title: '', email: '', phone: '',
@@ -54,16 +55,18 @@ interface TplInfo {
   sample: CVData;
 }
 
-const TEMPLATES: TplInfo[] = [
-  { id: 'modern',        name: 'Moderno',       badge: 'Più scelto',   badgeBg: '#2F2AE5', sample: MARIO },
-  { id: 'minimal',       name: 'Minimal',       badge: 'Max ATS',      badgeBg: '#12805C', sample: MARIO },
-  { id: 'milano',        name: 'Milano',        badge: 'Editorial',    badgeBg: '#0B1D3A', sample: MARIO },
-  { id: 'elegante',      name: 'Elegante',      badge: 'Luxury',       badgeBg: '#8B6914', sample: GIULIA },
-  { id: 'classico',      name: 'Classico',      badge: 'Ultra ATS',    badgeBg: '#12805C', sample: MARIO },
-  { id: 'nordico',       name: 'Nordico',       badge: 'Scandinavo',   badgeBg: '#1E4E34', sample: MARIO },
-  { id: 'tecnico',       name: 'Tecnico',       badge: 'Tech & IT',    badgeBg: '#2B6CB0', sample: MARIO },
-  { id: 'corporate',     name: 'Corporate',     badge: 'Business',     badgeBg: '#2D3748', sample: GIULIA },
-  { id: 'europass',      name: 'Europass',      badge: 'EU Standard',  badgeBg: '#003399', sample: GIULIA },
+type TFn = (key: string) => string;
+
+const buildTemplates = (t: TFn): TplInfo[] => [
+  { id: 'modern',        name: t('wiz.tpl.modern'),    badge: t('wiz.badge.mostChosen'),    badgeBg: '#2F2AE5', sample: MARIO },
+  { id: 'minimal',       name: t('wiz.tpl.minimal'),   badge: t('wiz.badge.maxAts'),        badgeBg: '#12805C', sample: MARIO },
+  { id: 'milano',        name: t('wiz.tpl.milano'),    badge: t('wiz.badge.editorial'),     badgeBg: '#0B1D3A', sample: MARIO },
+  { id: 'elegante',      name: t('wiz.tpl.elegante'),  badge: t('wiz.badge.luxury'),        badgeBg: '#8B6914', sample: GIULIA },
+  { id: 'classico',      name: t('wiz.tpl.classico'),  badge: t('wiz.badge.ultraAts'),      badgeBg: '#12805C', sample: MARIO },
+  { id: 'nordico',       name: t('wiz.tpl.nordico'),   badge: t('wiz.badge.scandinavian'),  badgeBg: '#1E4E34', sample: MARIO },
+  { id: 'tecnico',       name: t('wiz.tpl.tecnico'),   badge: t('wiz.badge.techIt'),        badgeBg: '#2B6CB0', sample: MARIO },
+  { id: 'corporate',     name: t('wiz.tpl.corporate'), badge: t('wiz.badge.business'),      badgeBg: '#2D3748', sample: GIULIA },
+  { id: 'europass',      name: t('wiz.tpl.europass'),  badge: t('wiz.badge.euStandard'),    badgeBg: '#003399', sample: GIULIA },
 ];
 
 const SCALE = 0.34;
@@ -81,6 +84,8 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
     'Crea un curriculum professionale in pochi minuti: carica il PDF o LinkedIn, scegli un template ottimizzato ATS e lascia che l\'AI scriva le tue esperienze. Gratis, senza registrazione.',
     '/crea-cv',
   );
+  const t = useT();
+  const TEMPLATES = buildTemplates(t);
   const [step, setStep] = useState<Step>('source');
   const [source, setSource] = useState<Source | null>(null);
   const [linkedInTab, setLinkedInTab] = useState<'pdf' | 'paste'>('pdf');
@@ -133,8 +138,8 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
         setCvData({ ...BLANK_CV, ...data });
         setStep('language');
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
-        setError(`Impossibile convertire il testo LinkedIn: ${msg}`);
+        const msg = err instanceof Error ? err.message : t('wiz.errUnknown');
+        setError(`${t('wiz.errLinkedinConvert')} ${msg}`);
       } finally {
         setExtracting(false);
       }
@@ -155,7 +160,7 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
         text = await file.text();
       }
     } catch {
-      setError('Impossibile leggere il file. Prova con un altro formato o parti da zero.');
+      setError(t('wiz.errReadFile'));
       setExtracting(false);
       return;
     }
@@ -166,8 +171,8 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
       setCvData({ ...BLANK_CV, ...data });
       setStep('language');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Errore sconosciuto';
-      setError(`Il file è stato letto correttamente, ma l'AI non è riuscita ad analizzarlo (${msg}). Controlla la connessione e riprova tra qualche secondo.`);
+      const msg = err instanceof Error ? err.message : t('wiz.errUnknown');
+      setError(`${t('wiz.errAiParse')} (${msg}). ${t('wiz.errAiParseEnd')}`);
     } finally {
       setExtracting(false);
     }
@@ -191,27 +196,27 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
       {step === 'source' && (
         <>
           <div className="wiz-head">
-            <span className="mono">PASSO 1 DI 3</span>
-            <h1>Come vuoi iniziare?</h1>
-            <p>Importa un CV esistente e lascia che l'AI lo compili per te, oppure parti da un foglio bianco.</p>
+            <span className="mono">{t('wiz.step1of3')}</span>
+            <h1>{t('wiz.howStart')}</h1>
+            <p>{t('wiz.howStartSub')}</p>
           </div>
 
           {!source && (
             <div className="wiz-options">
               <button className="wiz-option" onClick={() => chooseUploadSource('cv')}>
                 <div className="wiz-option-icon"><Icon d={IC.upload} size={18} /></div>
-                <h3>Carica il tuo CV</h3>
-                <p>PDF o Word — l'AI estrae automaticamente dati, esperienze e formazione.</p>
+                <h3>{t('wiz.uploadCV')}</h3>
+                <p>{t('wiz.uploadCVDesc')}</p>
               </button>
               <button className="wiz-option" onClick={() => chooseUploadSource('linkedin')}>
                 <div className="wiz-option-icon"><Icon d={IC.globe} size={18} /></div>
-                <h3>Esportazione LinkedIn</h3>
-                <p>Da LinkedIn: Il tuo profilo → Altro → Salva come PDF, poi caricalo qui.</p>
+                <h3>{t('wiz.linkedinExport')}</h3>
+                <p>{t('wiz.linkedinExportDesc')}</p>
               </button>
               <button className="wiz-option" onClick={chooseBlank}>
                 <div className="wiz-option-icon"><Icon d={IC.doc} size={18} /></div>
-                <h3>Parti da zero</h3>
-                <p>Compila il CV manualmente, un campo alla volta, con l'aiuto dell'AI.</p>
+                <h3>{t('wiz.startBlank')}</h3>
+                <p>{t('wiz.startBlankDesc')}</p>
               </button>
             </div>
           )}
@@ -225,14 +230,14 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
                     onClick={() => { setLinkedInTab('pdf'); setError(''); }}
                     style={{ fontWeight: 700 }}
                   >
-                    📄 Carica PDF LinkedIn
+                    {t('wiz.uploadPdfLinkedin')}
                   </button>
                   <button
                     className={`btn btn-sm ${linkedInTab === 'paste' ? 'btn-gold' : 'btn-ghost'}`}
                     onClick={() => { setLinkedInTab('paste'); setError(''); }}
                     style={{ fontWeight: 700 }}
                   >
-                    📋 Incolla Testo o URL
+                    {t('wiz.pasteTextUrl')}
                   </button>
                 </div>
               )}
@@ -242,13 +247,13 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
                   <textarea
                     rows={8}
                     className="input"
-                    placeholder="Incolla qui tutto il testo del tuo profilo o della sezione Esperienze (es. copiatutto da LinkedIn con CTRL+A e incolla qui)..."
+                    placeholder={t('wiz.pasteLinkedinPlaceholder')}
                     value={linkedInText}
                     onChange={(e) => setLinkedInText(e.target.value)}
                     style={{ width: '100%', fontSize: 13.5, lineHeight: 1.6, padding: 12, borderRadius: 8, border: '1px solid var(--hair-soft)' }}
                   />
                   <p style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 6 }}>
-                    💡 Puoi copiare direttamente l'intero testo della tua pagina LinkedIn: l'Intelligenza Artificiale filtrerà ed estrarrà solo ruoli, date e competenze.
+                    {t('wiz.pasteLinkedinHint')}
                   </p>
                 </div>
               ) : (
@@ -271,15 +276,15 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
                     {file ? (
                       <>
                         <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>{file.name}</h3>
-                        <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>File caricato · clicca per cambiarlo</p>
+                        <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>{t('wiz.fileUploadedHint')}</p>
                       </>
                     ) : (
                       <>
                         <h3 style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>
-                          {source === 'linkedin' ? 'Trascina il PDF esportato da LinkedIn' : 'Trascina il file qui'}
+                          {source === 'linkedin' ? t('wiz.dragLinkedinPdf') : t('wiz.dragFileHere')}
                         </h3>
                         <p style={{ fontSize: 12, color: 'var(--ink-40)' }}>
-                          {source === 'linkedin' ? 'Da LinkedIn: Il tuo profilo → Altro → Salva come PDF' : 'o clicca per selezionarlo — PDF o Word'}
+                          {source === 'linkedin' ? t('wiz.dragLinkedinPdfHint') : t('wiz.orClickToSelect')}
                         </p>
                       </>
                     )}
@@ -289,13 +294,13 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
 
               {error && <div className="wiz-error">{error}</div>}
               <div className="wiz-footer">
-                <button className="btn btn-ghost" onClick={() => { setSource(null); setFile(null); setError(''); }}>← Indietro</button>
+                <button className="btn btn-ghost" onClick={() => { setSource(null); setFile(null); setError(''); }}>{t('wiz.back')}</button>
                 <button
                   className="btn btn-ink"
                   disabled={(source === 'linkedin' && linkedInTab === 'paste' ? !linkedInText.trim() : !file) || extracting}
                   onClick={() => void extractAndContinue()}
                 >
-                  {extracting ? 'Analisi LinkedIn in corso…' : 'Continua e Genera'} <Icon d={IC.arrowRight} size={15} />
+                  {extracting ? t('wiz.analyzingLinkedin') : t('wiz.continueGenerate')} <Icon d={IC.arrowRight} size={15} />
                 </button>
               </div>
             </div>
@@ -306,9 +311,9 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
       {step === 'language' && (
         <>
           <div className="wiz-head">
-            <span className="mono">PASSO 2 DI 3</span>
-            <h1>In che lingua vuoi il tuo CV?</h1>
-            <p>Potrai comunque tradurlo o modificarlo in qualsiasi momento dall'editor.</p>
+            <span className="mono">{t('wiz.step2of3')}</span>
+            <h1>{t('wiz.whichLanguage')}</h1>
+            <p>{t('wiz.whichLanguageSub')}</p>
           </div>
           <div className="wiz-langs">
             {LANGUAGES.map(l => (
@@ -322,9 +327,9 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
             ))}
           </div>
           <div className="wiz-footer">
-            <button className="btn btn-ghost" onClick={goBack}>← Indietro</button>
+            <button className="btn btn-ghost" onClick={goBack}>{t('wiz.back')}</button>
             <button className="btn btn-ink" onClick={() => setStep('template')}>
-              Continua <Icon d={IC.arrowRight} size={15} />
+              {t('wiz.continue')} <Icon d={IC.arrowRight} size={15} />
             </button>
           </div>
         </>
@@ -333,9 +338,9 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
       {step === 'template' && (
         <>
           <div className="wiz-head">
-            <span className="mono">PASSO 3 DI 3</span>
-            <h1>Scegli il template</h1>
-            <p>Anteprime reali — tutti ottimizzati ATS per il mercato italiano ed europeo.</p>
+            <span className="mono">{t('wiz.step3of3')}</span>
+            <h1>{t('wiz.chooseTemplate')}</h1>
+            <p>{t('wiz.chooseTemplateSub')}</p>
           </div>
           <div className="tpl-grid">
             {TEMPLATES.map(tpl => (
@@ -351,7 +356,7 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
             ))}
           </div>
           <div className="wiz-footer">
-            <button className="btn btn-ghost" onClick={goBack}>← Indietro</button>
+            <button className="btn btn-ghost" onClick={goBack}>{t('wiz.back')}</button>
             <div />
           </div>
         </>

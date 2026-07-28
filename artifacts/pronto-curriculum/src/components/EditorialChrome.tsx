@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import type { Page } from '../types';
+import { useT } from '../i18n/LanguageContext';
 
 // "Carta & Inchiostro" v3 — shared editorial chrome for blog, articles and tools.
 // Mirrors the Home (pc3) design system: Switzer + Satoshi + IBM Plex Mono,
@@ -237,6 +238,7 @@ interface EditorialChromeProps {
 }
 
 export default function EditorialChrome({ onNavigate, active, tagline, children }: EditorialChromeProps) {
+  const t = useT();
   return (
     <div className="pce">
       <style>{EDITORIAL_CSS}</style>
@@ -251,14 +253,14 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               {tagline && <span className="mono" style={{ marginLeft: 10, color: 'var(--ink-40)', background: 'none', WebkitTextFillColor: 'initial', fontWeight: 400 }}>{tagline}</span>}
             </div>
             <div className="nav-links">
-              <span onClick={() => onNavigate('home')}>Home</span>
-              <span className={active === 'come-funziona' ? 'active' : ''} onClick={() => onNavigate('come-funziona')}>Come Funziona</span>
-              <span className={active === 'prezzi' ? 'active' : ''} onClick={() => onNavigate('prezzi')}>Prezzi</span>
-              <span className={active === 'blog' ? 'active' : ''} onClick={() => onNavigate('blog')}>Blog & Guide</span>
-              <span className={active === 'calcolo-stipendio' ? 'active' : ''} onClick={() => onNavigate('calcolo-stipendio')}>Calcolatore Stipendio</span>
+              <span onClick={() => onNavigate('home')}>{t('ba.home')}</span>
+              <span className={active === 'come-funziona' ? 'active' : ''} onClick={() => onNavigate('come-funziona')}>{t('cf.h1')}</span>
+              <span className={active === 'prezzi' ? 'active' : ''} onClick={() => onNavigate('prezzi')}>{t('home.nav.pricing')}</span>
+              <span className={active === 'blog' ? 'active' : ''} onClick={() => onNavigate('blog')}>{t('home.nav.blogGuide')}</span>
+              <span className={active === 'calcolo-stipendio' ? 'active' : ''} onClick={() => onNavigate('calcolo-stipendio')}>{t('home.nav.salaryCalc')}</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>Crea il tuo CV</button>
+              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>{t('home.nav.createCvBtn')}</button>
             </div>
           </nav>
         </div>
@@ -274,34 +276,33 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
                 <img src="/logo-icon.png" alt="" style={{ width: 22, height: 22 }} /><span>ProntoCurriculum</span>
               </div>
               <p className="foot-about">
-                Il CV builder italiano con AI integrata: template ottimizzati ATS,
-                punteggio in tempo reale, traduzione in sei lingue e candidature tracciate.
+                {t('home.footer.about')}
               </p>
             </div>
             <nav className="foot-col" aria-label="Prodotto">
-              <h4>Prodotto</h4>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Crea il tuo CV</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('come-funziona'); }}>Come funziona</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('prezzi'); }}>Prezzi</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>CV su misura</a>
+              <h4>{t('home.footer.product')}</h4>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>{t('home.footer.createCV')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('come-funziona'); }}>{t('cf.h1')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('prezzi'); }}>{t('home.footer.pricing')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>{t('home.footer.tailorCV')}</a>
             </nav>
             <nav className="foot-col" aria-label="Risorse">
-              <h4>Risorse</h4>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog'); }}>Tutto il blog →</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'guida-cv'); }}>Guida al CV perfetto</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'punteggio-ats'); }}>Cos'è il punteggio ATS</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>Calcolo stipendio netto</a>
+              <h4>{t('home.footer.resources')}</h4>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog'); }}>{t('home.footer.blogAll')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'guida-cv'); }}>{t('home.footer.guideCv')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'punteggio-ats'); }}>{t('home.footer.atsGuide')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>{t('home.footer.salaryCalc')}</a>
             </nav>
             <nav className="foot-col" aria-label="Legale">
-              <h4>Legale</h4>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>Privacy</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>Termini</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>Cookie</a>
-              <a href="mailto:info@prontocurriculum.it">Contatti</a>
+              <h4>{t('home.footer.legal')}</h4>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>{t('home.footer.privacy')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>{t('home.footer.terms')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>{t('home.footer.cookie')}</a>
+              <a href="mailto:info@prontocurriculum.it">{t('home.footer.contact')}</a>
             </nav>
           </div>
           <div className="foot-bottom">
-            <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — Fatto a mano in Italia</span>
+            <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — {t('home.footer.madeIn')}</span>
           </div>
         </footer>
       </div>

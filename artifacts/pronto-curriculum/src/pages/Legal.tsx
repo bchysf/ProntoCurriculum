@@ -2,6 +2,7 @@ import React from "react";
 import type { Page } from "../types";
 import BrandLogo from "../components/BrandLogo";
 import { useSeoMeta } from "../components/EditorialChrome";
+import { useT } from "../i18n/LanguageContext";
 
 interface LegalProps {
   section: "privacy" | "terms" | "cookie";
@@ -21,6 +22,7 @@ const DESCRIPTIONS: Record<LegalProps["section"], string> = {
 };
 
 export default function Legal({ section, onNavigate }: LegalProps) {
+  const t = useT();
   const titles: Record<LegalProps["section"], string> = {
     privacy:
       "Informativa sulla Privacy ai sensi del Regolamento UE 2016/679 (GDPR)",
@@ -62,7 +64,7 @@ export default function Legal({ section, onNavigate }: LegalProps) {
             transition: "background 0.15s",
           }}
         >
-          <span>←</span> Torna alla Home
+          <span>←</span> {t('res.backHome').replace('← ', '')}
         </button>
         </div>
 

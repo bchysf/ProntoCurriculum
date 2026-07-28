@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Page } from '../types';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
+import { useT } from '../i18n/LanguageContext';
 
 interface SalaryCalculatorProps {
   onNavigate: (page: Page, slug?: string) => void;
@@ -204,6 +205,7 @@ function useAnimatedNumber(target: number, duration = 500) {
 const eur = (n: number) => `€${Math.round(n).toLocaleString('it-IT')}`;
 
 export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) {
+  const t = useT();
   const [ral, setRal] = useState<number>(23200);
   const [ccnl, setCcnl] = useState<CCNLType>('commercio');
   const [selectedLevelIndex, setSelectedLevelIndex] = useState<number>(4);
@@ -316,11 +318,10 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
         <div className="shell">
           {/* HERO */}
           <section className="sc-hero">
-            <div className="mono eyebrow rv on">Strumento gratuito <b>·</b> Fiscalità del lavoro 2026</div>
-            <h1 className="rv on d1">Dalla RAL al <span className="grad">netto in busta.</span></h1>
+            <div className="mono eyebrow rv on">{t('sal.eyebrow')}</div>
+            <h1 className="rv on d1">{t('sal.h1a')} <span className="grad">{t('sal.h1b')}</span></h1>
             <p className="sub rv on d2">
-              Inserisci la RAL o parti dal tuo CCNL e livello: aliquote IRPEF a 3 scaglioni,
-              esonero contributivo INPS, detrazioni e addizionali regionali, aggiornati al 2026.
+              {t('sal.heroSub')}
             </p>
           </section>
 
@@ -328,15 +329,15 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           <div className="sc-grid">
             {/* PARAMS */}
             <div className="sc-card rv on d2">
-              <h2>Parametri della busta paga</h2>
+              <h2>{t('sal.paramsTitle')}</h2>
 
               <div className="sc-field">
                 <div className="sc-seg" role="tablist" aria-label="Modalità di calcolo">
                   <button role="tab" aria-selected={!customRalMode} className={!customRalMode ? 'on' : ''} onClick={() => setCustomRalMode(false)}>
-                    Per CCNL e livello
+                    {t('sal.byCcnl')}
                   </button>
                   <button role="tab" aria-selected={customRalMode} className={customRalMode ? 'on' : ''} onClick={() => setCustomRalMode(true)}>
-                    RAL libera
+                    {t('sal.freeRal')}
                   </button>
                 </div>
               </div>
@@ -344,7 +345,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
               {!customRalMode ? (
                 <>
                   <div className="sc-field">
-                    <label className="sc-label" htmlFor="sc-ccnl">Contratto collettivo (CCNL)</label>
+                    <label className="sc-label" htmlFor="sc-ccnl">{t('sal.ccnlLabel')}</label>
                     <select
                       id="sc-ccnl"
                       className="sc-select"
@@ -357,7 +358,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                     </select>
                   </div>
                   <div className="sc-field">
-                    <label className="sc-label" htmlFor="sc-level">Livello di inquadramento</label>
+                    <label className="sc-label" htmlFor="sc-level">{t('sal.levelLabel')}</label>
                     <select
                       id="sc-level"
                       className="sc-select"
@@ -366,7 +367,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                     >
                       {levels.map((lvl, index) => (
                         <option key={lvl.level} value={index}>
-                          {lvl.level} · RAL media {eur(lvl.ral)}
+                          {lvl.level} · {t('sal.avgRal')} {eur(lvl.ral)}
                         </option>
                       ))}
                     </select>
@@ -375,7 +376,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                 </>
               ) : (
                 <div className="sc-field">
-                  <label className="sc-label" htmlFor="sc-ral">Reddito annuo lordo (RAL)</label>
+                  <label className="sc-label" htmlFor="sc-ral">{t('sal.grossIncome')}</label>
                   <input
                     id="sc-ral"
                     className="sc-input"
@@ -393,14 +394,14 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                     step={500}
                     value={Math.min(100000, Math.max(10000, ral))}
                     onChange={(e) => setRal(parseInt(e.target.value))}
-                    aria-label="Regola la RAL"
+                    aria-label={t('sal.adjustRal')}
                   />
                 </div>
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="sc-field">
-                  <label className="sc-label" htmlFor="sc-region">Regione di domicilio</label>
+                  <label className="sc-label" htmlFor="sc-region">{t('sal.region')}</label>
                   <select id="sc-region" className="sc-select" value={region} onChange={(e) => setRegion(e.target.value)}>
                     {Object.entries(REGIONS).map(([key, r]) => (
                       <option key={key} value={key}>{r.label}</option>
@@ -408,7 +409,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                   </select>
                 </div>
                 <div className="sc-field">
-                  <span className="sc-label">Mensilità</span>
+                  <span className="sc-label">{t('sal.installments')}</span>
                   <div className="sc-seg">
                     <button className={installments === 13 ? 'on' : ''} onClick={() => setInstallments(13)}>13</button>
                     <button className={installments === 14 ? 'on' : ''} onClick={() => setInstallments(14)}>14</button>
@@ -417,35 +418,34 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
               </div>
 
               <hr className="sc-divider" />
-              <div className="sc-subhead">Familiari a carico</div>
-              <p className="sc-hint" style={{ marginTop: 0, marginBottom: 10 }}>Determinano le detrazioni d'imposta applicate in busta.</p>
+              <div className="sc-subhead">{t('sal.dependentsTitle')}</div>
+              <p className="sc-hint" style={{ marginTop: 0, marginBottom: 10 }}>{t('sal.dependentsHint')}</p>
 
               <div className="sc-row">
                 <label className="sc-check">
                   <input type="checkbox" checked={hasSpouse} onChange={(e) => setHasSpouse(e.target.checked)} />
-                  Coniuge a carico
+                  {t('sal.spouseDependent')}
                 </label>
               </div>
               <div className="sc-row">
-                <span>Figli a carico (21 anni o più)</span>
+                <span>{t('sal.childrenOver21')}</span>
                 <div className="sc-step">
-                  <button aria-label="Riduci" onClick={() => setChildrenOver21(Math.max(0, childrenOver21 - 1))}>−</button>
+                  <button aria-label={t('sal.decrease')} onClick={() => setChildrenOver21(Math.max(0, childrenOver21 - 1))}>−</button>
                   <b>{childrenOver21}</b>
-                  <button aria-label="Aumenta" onClick={() => setChildrenOver21(childrenOver21 + 1)}>+</button>
+                  <button aria-label={t('sal.increase')} onClick={() => setChildrenOver21(childrenOver21 + 1)}>+</button>
                 </div>
               </div>
               <div className="sc-row">
-                <span>Figli a carico (sotto i 21 anni)</span>
+                <span>{t('sal.childrenUnder21')}</span>
                 <div className="sc-step">
-                  <button aria-label="Riduci" onClick={() => setChildrenUnder21(Math.max(0, childrenUnder21 - 1))}>−</button>
+                  <button aria-label={t('sal.decrease')} onClick={() => setChildrenUnder21(Math.max(0, childrenUnder21 - 1))}>−</button>
                   <b>{childrenUnder21}</b>
-                  <button aria-label="Aumenta" onClick={() => setChildrenUnder21(childrenUnder21 + 1)}>+</button>
+                  <button aria-label={t('sal.increase')} onClick={() => setChildrenUnder21(childrenUnder21 + 1)}>+</button>
                 </div>
               </div>
               {childrenUnder21 > 0 && (
                 <p className="sc-hint">
-                  I figli sotto i 21 anni non danno diritto a detrazioni in busta paga: sono coperti
-                  dall'<b>Assegno Unico Universale</b> erogato direttamente dall'INPS.
+                  {t('sal.under21Note1')} <b>Assegno Unico Universale</b> {t('sal.under21Note2')}
                 </p>
               )}
             </div>
@@ -453,46 +453,46 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
             {/* RESULTS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div className="sc-result rv on d3" aria-live="polite">
-                <span className="mono">Netto mensile stimato · {installments} mensilità</span>
+                <span className="mono">{t('sal.estimatedNet')} · {installments} {t('sal.installments').toLowerCase()}</span>
                 <div className="sc-net">{eur(animatedNet)}</div>
-                <div className="sc-net-sub">pari al {calc.netPercent.toFixed(1)}% della RAL</div>
+                <div className="sc-net-sub">{t('sal.ofGross').replace('{pct}', calc.netPercent.toFixed(1))}</div>
 
-                <div className="sc-kv"><span>Netto annuo totale</span><b className="hl">{eur(calc.netAnnual)}</b></div>
-                <div className="sc-kv"><span>Pressione fiscale e contributiva</span><b>{calc.taxPercent.toFixed(1)}%</b></div>
+                <div className="sc-kv"><span>{t('sal.netAnnualTotal')}</span><b className="hl">{eur(calc.netAnnual)}</b></div>
+                <div className="sc-kv"><span>{t('sal.taxPressure')}</span><b>{calc.taxPercent.toFixed(1)}%</b></div>
 
-                <div className="sc-bar" role="img" aria-label={`Ripartizione della RAL: netto ${calc.netPercent.toFixed(1)}%, IRPEF ${calc.irpefPercent.toFixed(1)}%, INPS ${calc.inpsPercent.toFixed(1)}%, addizionali ${calc.surchargePercent.toFixed(1)}%`}>
+                <div className="sc-bar" role="img" aria-label={`${t('sal.net')} ${calc.netPercent.toFixed(1)}%, IRPEF ${calc.irpefPercent.toFixed(1)}%, INPS ${calc.inpsPercent.toFixed(1)}%, ${t('sal.surcharges')} ${calc.surchargePercent.toFixed(1)}%`}>
                   <i style={{ width: `${calc.netPercent}%`, background: 'linear-gradient(90deg, #6FA5FF, #8F8CFF)' }} />
                   <i style={{ width: `${calc.irpefPercent}%`, background: '#BE9CFF' }} />
                   <i style={{ width: `${calc.inpsPercent}%`, background: 'rgba(255,255,255,0.45)' }} />
                   <i style={{ width: `${calc.surchargePercent}%`, background: 'rgba(255,255,255,0.2)' }} />
                 </div>
                 <div className="sc-legend">
-                  <span><i style={{ background: '#6FA5FF' }} />Netto {calc.netPercent.toFixed(1)}%</span>
+                  <span><i style={{ background: '#6FA5FF' }} />{t('sal.net')} {calc.netPercent.toFixed(1)}%</span>
                   <span><i style={{ background: '#BE9CFF' }} />IRPEF {calc.irpefPercent.toFixed(1)}%</span>
                   <span><i style={{ background: 'rgba(255,255,255,0.45)' }} />INPS {calc.inpsPercent.toFixed(1)}%</span>
-                  <span><i style={{ background: 'rgba(255,255,255,0.2)' }} />Addizionali {calc.surchargePercent.toFixed(1)}%</span>
+                  <span><i style={{ background: 'rgba(255,255,255,0.2)' }} />{t('sal.surcharges')} {calc.surchargePercent.toFixed(1)}%</span>
                 </div>
 
                 <div className="sc-result-cta">
-                  <b>Ti serve per una candidatura?</b>
-                  <p>Crea un CV calibrato su questo livello retributivo: l'AI scrive le esperienze in base alle richieste del mercato.</p>
+                  <b>{t('sal.ctaTitle')}</b>
+                  <p>{t('sal.ctaSub')}</p>
                   <button className="btn btn-ink btn-sm" style={{ width: '100%' }} onClick={() => onNavigate('builder-step1')}>
-                    Crea il CV per questa RAL →
+                    {t('sal.createCvForRal')}
                   </button>
                 </div>
               </div>
 
               <div className="sc-card sc-detail rv on d3">
-                <h3>Dettaglio analitico</h3>
-                <div className="sc-drow"><span>Reddito annuo lordo (RAL)</span><b>{eur(calc.grossAnnual)}</b></div>
-                <div className="sc-drow"><span>Contributi INPS a carico dipendente</span><b className="neg">−{eur(calc.inpsAnnual)}</b></div>
-                <div className="sc-drow"><span>Imponibile fiscale (IRPEF)</span><b>{eur(calc.irpefTaxable)}</b></div>
-                <div className="sc-drow"><span>IRPEF lorda</span><b>{eur(calc.grossIrpef)}</b></div>
-                <div className="sc-drow"><span>Detrazioni d'imposta applicate</span><b className="pos">+{eur(calc.totalDeductions)}</b></div>
-                <div className="sc-drow"><span>IRPEF netta dovuta</span><b className="neg">−{eur(calc.netIrpef)}</b></div>
-                <div className="sc-drow"><span>Addizionale regionale ({((REGIONS[region]?.rate ?? 0.015) * 100).toFixed(2).replace('.', ',')}%)</span><b className="neg">−{eur(calc.regionalTax)}</b></div>
-                <div className="sc-drow"><span>Addizionale comunale (media 0,8%)</span><b className="neg">−{eur(calc.municipalTax)}</b></div>
-                <div className="sc-drow tot"><span>Costo totale per l'azienda (RAL + INPS + TFR)</span><b>{eur(calc.totalEmployerCost)}</b></div>
+                <h3>{t('sal.detailTitle')}</h3>
+                <div className="sc-drow"><span>{t('sal.grossIncomeShort')}</span><b>{eur(calc.grossAnnual)}</b></div>
+                <div className="sc-drow"><span>{t('sal.inpsContrib')}</span><b className="neg">−{eur(calc.inpsAnnual)}</b></div>
+                <div className="sc-drow"><span>{t('sal.taxableIncome')}</span><b>{eur(calc.irpefTaxable)}</b></div>
+                <div className="sc-drow"><span>{t('sal.grossTax')}</span><b>{eur(calc.grossIrpef)}</b></div>
+                <div className="sc-drow"><span>{t('sal.deductionsApplied')}</span><b className="pos">+{eur(calc.totalDeductions)}</b></div>
+                <div className="sc-drow"><span>{t('sal.netTaxDue')}</span><b className="neg">−{eur(calc.netIrpef)}</b></div>
+                <div className="sc-drow"><span>{t('sal.regionalSurcharge')} ({((REGIONS[region]?.rate ?? 0.015) * 100).toFixed(2).replace('.', ',')}%)</span><b className="neg">−{eur(calc.regionalTax)}</b></div>
+                <div className="sc-drow"><span>{t('sal.municipalSurcharge')}</span><b className="neg">−{eur(calc.municipalTax)}</b></div>
+                <div className="sc-drow tot"><span>{t('sal.employerCost')}</span><b>{eur(calc.totalEmployerCost)}</b></div>
               </div>
             </div>
           </div>
@@ -500,8 +500,8 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           {/* GUIDE / SEO */}
           <section className="sec" style={{ padding: '80px 0 0' }} aria-label="Guida al calcolo dello stipendio netto">
             <div className="sec-head rv">
-              <h2 className="sec-title">Come si passa dal lordo <span className="ac">al netto.</span></h2>
-              <span className="mono sec-num">Guida — Busta paga</span>
+              <h2 className="sec-title">{t('sal.guideTitle')} <span className="ac">{t('sal.guideTitleAc')}</span></h2>
+              <span className="mono sec-num">{t('sal.guideNum')}</span>
             </div>
             <div className="sc-prose rv">
               <p>
@@ -551,8 +551,8 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                 </table>
               </div>
               <p>
-                Per approfondire bonus e sgravi che incidono sul netto, leggi la guida ai{' '}
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'bonus-busta-paga-2026'); }}>bonus in busta paga 2026</a>.
+                {t('sal.readMore')}{' '}
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'bonus-busta-paga-2026'); }}>{t('sal.bonusGuideLink')}</a>.
               </p>
             </div>
           </section>
@@ -560,8 +560,8 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           {/* FAQ */}
           <section className="sec" style={{ padding: '72px 0 0' }} aria-label="Domande frequenti sul calcolo dello stipendio">
             <div className="sec-head rv">
-              <h2 className="sec-title">Domande <span className="ac">frequenti.</span></h2>
-              <span className="mono sec-num">FAQ — Stipendio netto</span>
+              <h2 className="sec-title">{t('home.sec6.h2a')} <span className="ac">{t('home.sec6.h2b')}</span></h2>
+              <span className="mono sec-num">{t('sal.faqSalary')}</span>
             </div>
             <div className="faq rv">
               {FAQ_ITEMS.map(([q, a]) => (
@@ -577,15 +577,14 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           <section style={{ padding: '72px 0 88px' }} aria-label="Crea il tuo CV">
             <div className="cta-band rv">
               <div>
-                <span className="mono">Il passo successivo</span>
-                <h3>Prima della RAL, devi superare la selezione.</h3>
+                <span className="mono">{t('sal.nextStep')}</span>
+                <h3>{t('sal.finalCtaTitle')}</h3>
                 <p>
-                  Il CV builder certificato ATS adatta il curriculum alla job description e ti porta
-                  al colloquio dove lo stipendio si negozia davvero.
+                  {t('sal.finalCtaSub')}
                 </p>
               </div>
               <button className="btn btn-ink" onClick={() => onNavigate('builder-step1')}>
-                Ottimizza il tuo CV ora →
+                {t('sal.optimizeCta')}
               </button>
             </div>
           </section>

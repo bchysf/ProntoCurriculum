@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import type { Page } from '../types';
 import BrandLogo from '../components/BrandLogo';
+import { useT } from '../i18n/LanguageContext';
 
 interface ResourcesProps {
   section: 'guida-cv' | 'punteggio-ats' | 'cv-europass' | 'esempi-cv';
@@ -8,6 +9,7 @@ interface ResourcesProps {
 }
 
 export default function Resources({ section, onNavigate }: ResourcesProps) {
+  const t = useT();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [section]);
@@ -202,7 +204,7 @@ export default function Resources({ section, onNavigate }: ResourcesProps) {
         <div className="res-header-inner">
           <BrandLogo onClick={() => onNavigate('home')} iconSize={36} fontSize={19} />
           <button className="btn btn-line btn-sm" onClick={() => onNavigate('home')}>
-            ← Torna alla Home
+            {t('res.backHome')}
           </button>
         </div>
       </header>
@@ -215,11 +217,11 @@ export default function Resources({ section, onNavigate }: ResourcesProps) {
 
       <footer className="res-footer">
         <div className="res-footer-inner">
-          <span>© {new Date().getFullYear()} ProntoCurriculum. Tutti i diritti riservati.</span>
+          <span>© {new Date().getFullYear()} ProntoCurriculum. {t('res.allRightsReserved')}</span>
           <div className="res-footer-links">
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>Privacy</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>Termini</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>Cookie</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>{t('home.footer.privacy')}</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>{t('home.footer.terms')}</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>{t('home.footer.cookie')}</a>
           </div>
         </div>
       </footer>

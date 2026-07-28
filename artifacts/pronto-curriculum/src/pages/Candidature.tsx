@@ -3,6 +3,9 @@ import { Page, CVData, SavedTailoredCv } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { toast } from 'sonner';
+import { useT, useLanguage } from '../i18n/LanguageContext';
+
+const LOCALE_MAP: Record<string, string> = { IT: 'it-IT', EN: 'en-US', FR: 'fr-FR', DE: 'de-DE', ES: 'es-ES', PT: 'pt-PT' };
 
 interface CandidatureProps {
   onNavigate: (page: Page) => void;
@@ -11,14 +14,15 @@ interface CandidatureProps {
 }
 
 type CrmStatus = 'da_inviare' | 'inviata' | 'colloquio' | 'offerta' | 'archiviata';
+type TFn = (key: string) => string;
 
-const STATUS_CONFIG: Record<CrmStatus, { label: string; bg: string; color: string; border: string; icon: string }> = {
-  da_inviare: { label: 'Da Inviare', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '⏳' },
-  inviata:    { label: 'Inviata',    bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE', icon: '🚀' },
-  colloquio:  { label: 'Colloquio',  bg: '#FEF3C7', color: '#D97706', border: '#FDE68A', icon: '🎯' },
-  offerta:    { label: 'Offerta 🎉', bg: '#DCFCE7', color: '#16A34A', border: '#BBF7D0', icon: '🏆' },
-  archiviata: { label: 'Archiviata', bg: '#F8FAFC', color: '#94A3B8', border: '#E2E8F0', icon: '📦' },
-};
+const statusConfig = (t: TFn): Record<CrmStatus, { label: string; bg: string; color: string; border: string; icon: string }> => ({
+  da_inviare: { label: t('cand.statusToSend'), bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '⏳' },
+  inviata:    { label: t('cand.statusSent'),    bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE', icon: '🚀' },
+  colloquio:  { label: t('cand.statusInterview'), bg: '#FEF3C7', color: '#D97706', border: '#FDE68A', icon: '🎯' },
+  offerta:    { label: t('cand.statusOffer'), bg: '#DCFCE7', color: '#16A34A', border: '#BBF7D0', icon: '🏆' },
+  archiviata: { label: t('cand.statusArchived'), bg: '#F8FAFC', color: '#94A3B8', border: '#E2E8F0', icon: '📦' },
+});
 
 interface InterviewPrepData {
   questions: Array<{ question: string; category: string; suggestedAnswer: string }>;
@@ -29,6 +33,9 @@ interface InterviewPrepData {
 
 export default function Candidature({ onNavigate, onCVLoaded, onLogin }: CandidatureProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const t = useT();
+  const { lang } = useLanguage();
+  const STATUS_CONFIG = statusConfig(t);
   const [cvs, setCvs] = useState<SavedTailoredCv[]>([]);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
@@ -65,7 +72,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
     const next = { ...statusMap, [id]: st };
     setStatusMap(next);
     localStorage.setItem('pc_crm_statuses', JSON.stringify(next));
-    toast.success(`Stato aggiornato a: ${STATUS_CONFIG[st].label}`);
+    toast.success(`${t('cand.statusUpdated')} ${STATUS_CONFIG[st].label}`);
   };
 
   const saveNote = (id: string) => {
@@ -73,7 +80,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
     setNotesMap(next);
     localStorage.setItem('pc_crm_notes', JSON.stringify(next));
     setEditingNoteId(null);
-    toast.success('Nota salvata nel CRM');
+    toast.success(t('cand.noteSaved'));
   };
 
   const fetchCvs = useCallback(async () => {
@@ -83,16 +90,16 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
       const res = await fetch('/api/tailored-cvs', { credentials: 'include' });
       const data = await res.json() as { tailoredCvs?: SavedTailoredCv[]; error?: string };
       if (!res.ok) {
-        setFetchError(data.error ?? 'Errore nel caricamento delle candidature.');
+        setFetchError(data.error ?? t('cand.errLoad'));
         return;
       }
       setCvs(data.tailoredCvs ?? []);
     } catch {
-      setFetchError('Errore di rete. Controlla la connessione e riprova.');
+      setFetchError(t('cand.errNetwork'));
     } finally {
       setFetching(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -114,13 +121,13 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
       });
       if (res.ok) {
         setCvs(prev => prev.filter(c => c.id !== id));
-        toast.success('Candidatura eliminata');
+        toast.success(t('cand.deleted'));
       } else {
         const data = await res.json() as { error?: string };
-        alert(data.error ?? "Errore durante l'eliminazione.");
+        alert(data.error ?? t('cand.errDelete'));
       }
     } catch {
-      alert('Errore di rete.');
+      alert(t('cand.errNetworkShort'));
     } finally {
       setDeletingId(null);
     }
@@ -129,9 +136,9 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
   const handleQuickDownloadDOCX = async (cv: SavedTailoredCv) => {
     setDownloadingDocxId(cv.id);
     try {
-      await downloadCVAsDOCX(cv.jobTitle || 'Candidatura', cv.cvData, cv.template || 'modern');
+      await downloadCVAsDOCX(cv.jobTitle || t('cand.applicationFallback'), cv.cvData, cv.template || 'modern');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+      alert(err instanceof Error ? err.message : t('cand.errDocx'));
     } finally {
       setDownloadingDocxId(null);
     }
@@ -158,12 +165,12 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
 
       const json = await res.json() as { success?: boolean; data?: InterviewPrepData; error?: string };
       if (!res.ok || !json.success || !json.data) {
-        setPrepError(json.error || 'Errore durante la generazione dei consigli per il colloquio.');
+        setPrepError(json.error || t('cand.errInterviewPrep'));
         return;
       }
       setPrepData(json.data);
     } catch {
-      setPrepError('Errore di rete. Controlla la tua connessione.');
+      setPrepError(t('cand.errNetworkConn'));
     } finally {
       setPrepLoading(false);
     }
@@ -171,7 +178,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
 
   const formatDate = (iso: string) => {
     try {
-      return new Date(iso).toLocaleDateString('it-IT', {
+      return new Date(iso).toLocaleDateString(LOCALE_MAP[lang] ?? 'it-IT', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -186,9 +193,9 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
       {/* Header */}
       <div className="head">
         <div>
-          <h1>Candidature</h1>
+          <h1>{t('cand.title')}</h1>
           <p>
-            Traccia lo stato di ogni invio, prendi note e allenati con il Coach AI prima del colloquio.
+            {t('cand.subtitle')}
           </p>
         </div>
 
@@ -199,14 +206,14 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
               onClick={() => setViewMode('list')}
               style={{ borderRadius: 8 }}
             >
-              Lista CRM
+              {t('cand.listView')}
             </button>
             <button
               className={`btn btn-sm ${viewMode === 'kanban' ? 'btn-ink' : 'btn-ghost'}`}
               onClick={() => setViewMode('kanban')}
               style={{ borderRadius: 8 }}
             >
-              Kanban
+              {t('cand.kanban')}
             </button>
           </div>
         )}
@@ -215,36 +222,36 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
       {/* Auth gate */}
       {!isLoading && !isAuthenticated ? (
         <div className="lock-state" style={{ minHeight: '40vh' }}>
-          <h2>Accedi per gestire le tue candidature</h2>
+          <h2>{t('cand.loginGate')}</h2>
           <p style={{ color: 'var(--ink-60)', fontSize: 14.5, maxWidth: 480, lineHeight: 1.6 }}>
-            Conserva i CV su misura generati per ogni singola offerta di lavoro, monitora gli step delle selezioni e sblocca il Coach per i colloqui.
+            {t('cand.loginGateSub')}
           </p>
           <button className="btn btn-ink" onClick={onLogin}>
-            Accedi
+            {t('nav.login')}
           </button>
         </div>
       ) : fetching ? (
         <div className="loading-state" style={{ minHeight: '40vh' }}>
           <div className="spinner" />
-          <span>Caricamento CRM e candidature…</span>
+          <span>{t('cand.loadingCrm')}</span>
         </div>
       ) : fetchError ? (
         <div style={{ padding: '20px', background: '#FFF3F3', border: '1px solid #FFCECE', borderRadius: 12, color: 'var(--danger)', fontSize: 14, textAlign: 'center', maxWidth: 600, margin: '40px auto' }}>
           ⚠️ {fetchError}
           <button className="btn btn-ghost btn-sm" style={{ marginLeft: 16, fontSize: 13 }} onClick={() => void fetchCvs()}>
-            Riprova
+            {t('cand.retry')}
           </button>
         </div>
       ) : cvs.length === 0 ? (
         <div className="panel" style={{ padding: '56px 48px', textAlign: 'center', maxWidth: 640, margin: '40px auto' }}>
           <h2 style={{ fontFamily: 'var(--f-display)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 10 }}>
-            Il tuo CRM è ancora vuoto
+            {t('cand.crmEmptyTitle')}
           </h2>
           <p style={{ color: 'var(--gray500)', fontSize: 15, marginBottom: 32, lineHeight: 1.7 }}>
-            Genera il tuo primo CV calibrato al 100% sull'annuncio di lavoro. Verrà salvato nel tuo pannello personale e potrai avviare la simulazione del colloquio con l'Intelligenza Artificiale.
+            {t('cand.crmEmptySub')}
           </p>
           <button className="btn btn-gold" style={{ fontSize: 16, padding: '14px 36px', fontWeight: 700 }} onClick={() => onNavigate('tailor')}>
-            ✦ Genera Primo CV su Misura
+            {t('cand.generateFirstCV')}
           </button>
         </div>
       ) : viewMode === 'list' ? (
@@ -274,17 +281,17 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                     </div>
                     <div>
                       <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', margin: 0 }}>
-                        {cv.jobTitle || 'CV su misura per offerta'}
+                        {cv.jobTitle || t('cand.tailoredForJobFallback')}
                       </h3>
                       <div style={{ fontSize: 12.5, color: 'var(--gray500)', marginTop: 4 }}>
-                        Creata il {formatDate(cv.createdAt)} · Template: <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{cv.template || 'modern'}</span>
+                        {t('cand.createdOn')} {formatDate(cv.createdAt)} · {t('cand.template')} <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{cv.template || 'modern'}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Status Dropdown Badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: 'var(--gray500)', fontWeight: 600 }}>Stato:</span>
+                    <span style={{ fontSize: 12, color: 'var(--gray500)', fontWeight: 600 }}>{t('cand.status')}</span>
                     <select
                       value={st}
                       onChange={(e) => updateStatus(cv.id, e.target.value as CrmStatus)}
@@ -312,21 +319,21 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                 {/* Job description snippet / Notes */}
                 <div style={{ background: 'var(--gray50)', padding: '12px 16px', borderRadius: 10, fontSize: 13, color: 'var(--gray700)', marginBottom: 20, lineHeight: 1.5, borderLeft: '3px solid var(--gold)' }}>
                   <div style={{ fontWeight: 700, fontSize: 11.5, color: 'var(--gray500)', textTransform: 'uppercase', marginBottom: 4 }}>
-                    📝 Note CRM / Job Description
+                    {t('cand.crmNotesLabel')}
                   </div>
                   {editingNoteId === cv.id ? (
                     <div style={{ marginTop: 8 }}>
                       <textarea
                         rows={2}
                         className="input"
-                        placeholder="Aggiungi una nota personale (es. Riferimento HR Marco, RAL richiesta 45k, colloquio giovedì ore 15)..."
+                        placeholder={t('cand.notePlaceholder')}
                         value={tempNoteText}
                         onChange={(e) => setTempNoteText(e.target.value)}
                         style={{ width: '100%', fontSize: 13, padding: 8 }}
                       />
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button className="btn btn-gold btn-sm" onClick={() => saveNote(cv.id)}>Salva Nota</button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingNoteId(null)}>Annulla</button>
+                        <button className="btn btn-gold btn-sm" onClick={() => saveNote(cv.id)}>{t('cand.saveNote')}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingNoteId(null)}>{t('cand.cancel')}</button>
                       </div>
                     </div>
                   ) : (
@@ -339,7 +346,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                         style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 700, flexShrink: 0 }}
                         onClick={() => { setEditingNoteId(cv.id); setTempNoteText(note || ''); }}
                       >
-                        {note ? '✏️ Modifica Nota' : '+ Aggiungi Nota CRM'}
+                        {note ? t('cand.editNote') : t('cand.addCrmNote')}
                       </button>
                     </div>
                   )}
@@ -353,14 +360,14 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                       style={{ background: 'linear-gradient(135deg, #14171F, #221FB4)', color: '#F8FAFC', fontWeight: 700, padding: '8px 18px', border: 'none', borderRadius: 8 }}
                       onClick={() => void openInterviewCoach(cv)}
                     >
-                      🎯 Coach Colloquio AI
+                      {t('cand.interviewCoach')}
                     </button>
                     <button
                       className="btn btn-gold btn-sm"
                       style={{ fontSize: 13, padding: '8px 16px', fontWeight: 700 }}
                       onClick={() => handleEdit(cv)}
                     >
-                      ✏️ Apri CV nell'Editor
+                      {t('cand.openInEditor')}
                     </button>
                   </div>
 
@@ -370,9 +377,9 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                       style={{ fontSize: 13, padding: '7px 14px' }}
                       disabled={downloadingDocxId === cv.id}
                       onClick={() => void handleQuickDownloadDOCX(cv)}
-                      title="Scarica in formato Word (.docx)"
+                      title={t('cand.downloadWord')}
                     >
-                      {downloadingDocxId === cv.id ? '…' : '📄 Scarica Word (.docx)'}
+                      {downloadingDocxId === cv.id ? '…' : t('cand.downloadWordBtn')}
                     </button>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -380,7 +387,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                       disabled={deletingId === cv.id}
                       onClick={() => void handleDelete(cv.id)}
                     >
-                      {deletingId === cv.id ? '...' : '🗑️ Elimina'}
+                      {deletingId === cv.id ? '...' : t('cand.delete')}
                     </button>
                   </div>
                 </div>
@@ -410,7 +417,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                   {colCvs.map((cv) => (
                     <div key={cv.id} style={{ background: '#FFFFFF', padding: '14px', borderRadius: 10, border: '1px solid var(--hairline)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                       <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 6 }}>
-                        {cv.jobTitle || 'CV su Misura'}
+                        {cv.jobTitle || t('cand.tailoredCvFallback')}
                       </div>
                       <div style={{ fontSize: 11.5, color: 'var(--gray500)', marginBottom: 12 }}>
                         {formatDate(cv.createdAt)}
@@ -422,11 +429,11 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                           style={{ background: 'var(--navy)', color: '#fff', fontSize: 11.5, padding: '6px 10px', width: '100%' }}
                           onClick={() => void openInterviewCoach(cv)}
                         >
-                          🎯 Coach AI
+                          {t('cand.coachAI')}
                         </button>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button className="btn btn-gold btn-sm" style={{ flex: 1, fontSize: 11.5, padding: '5px' }} onClick={() => handleEdit(cv)}>
-                            ✏️ Modifica
+                            {t('cand.edit')}
                           </button>
                           <select
                             value={stKey}
@@ -443,7 +450,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                   ))}
                   {colCvs.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--gray400)', fontSize: 12, fontStyle: 'italic' }}>
-                      Nessuna candidatura in questo stato
+                      {t('cand.noAppsInStatus')}
                     </div>
                   )}
                 </div>
@@ -457,13 +464,13 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
       {cvs.length > 0 && (
         <div style={{ marginTop: 32, padding: '20px 24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--navy)' }}>Vuoi candidarti a una nuova offerta di lavoro?</h4>
+            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--navy)' }}>{t('cand.newApplyBannerTitle')}</h4>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--gray500)' }}>
-              Incolla la Job Description e l'Intelligenza Artificiale ricalibrerà istantaneamente il tuo CV per quel ruolo.
+              {t('cand.newApplyBannerSub')}
             </p>
           </div>
           <button className="btn btn-gold" style={{ padding: '10px 24px', fontWeight: 700 }} onClick={() => onNavigate('tailor')}>
-            + Nuova Candidatura su Misura
+            {t('cand.newTailoredApp')}
           </button>
         </div>
       )}
@@ -482,12 +489,12 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
             {/* Modal Header */}
             <div style={{ background: 'linear-gradient(135deg, #14171F, #221FB4)', padding: '24px 32px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span className="mono" style={{ fontSize: 11, color: '#BE9CFF', letterSpacing: 1, fontWeight: 700 }}>AI INTERVIEW COACH & SIMULATOR</span>
+                <span className="mono" style={{ fontSize: 11, color: '#BE9CFF', letterSpacing: 1, fontWeight: 700 }}>{t('cand.coachHeaderKicker')}</span>
                 <h2 style={{ fontSize: 22, fontWeight: 800, margin: '6px 0 4px', color: '#FFFFFF' }}>
-                  Preparazione al Colloquio: {prepCv.jobTitle || 'Ruolo Target'}
+                  {t('cand.coachHeaderTitle')} {prepCv.jobTitle || t('cand.targetRoleFallback')}
                 </h2>
                 <p style={{ fontSize: 13, color: '#CBD5E1', margin: 0 }}>
-                  Domande e risposte modellate sull'incrocio esatto tra il tuo CV e le richieste del recruiter.
+                  {t('cand.coachHeaderSub')}
                 </p>
               </div>
               <button
@@ -504,17 +511,17 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
                   <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
-                    L'AI sta simulando le domande del recruiter...
+                    {t('cand.simulatingQuestions')}
                   </h3>
                   <p style={{ fontSize: 14, color: 'var(--gray500)' }}>
-                    Stiamo analizzando la Job Description per estrarre le 5 domande tecniche e comportamentali più probabili.
+                    {t('cand.analyzingJD')}
                   </p>
                 </div>
               ) : prepError ? (
                 <div style={{ padding: 24, background: '#FFF3F3', border: '1px solid #FFCECE', borderRadius: 12, color: 'var(--danger)', textAlign: 'center' }}>
                   ⚠️ {prepError}
                   <div style={{ marginTop: 16 }}>
-                    <button className="btn btn-gold btn-sm" onClick={() => void openInterviewCoach(prepCv)}>Riprova Simulazione</button>
+                    <button className="btn btn-gold btn-sm" onClick={() => void openInterviewCoach(prepCv)}>{t('cand.retrySimulation')}</button>
                   </div>
                 </div>
               ) : prepData ? (
@@ -525,25 +532,25 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                       onClick={() => setActiveTab('questions')}
                       style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: activeTab === 'questions' ? 'var(--navy)' : 'transparent', color: activeTab === 'questions' ? '#fff' : 'var(--gray700)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}
                     >
-                      🗣️ Domande Recruiter ({prepData.questions?.length || 0})
+                      {t('cand.tabQuestions')} ({prepData.questions?.length || 0})
                     </button>
                     <button
                       onClick={() => setActiveTab('strengths')}
                       style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: activeTab === 'strengths' ? 'var(--navy)' : 'transparent', color: activeTab === 'strengths' ? '#fff' : 'var(--gray700)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}
                     >
-                      💪 I Tuoi Punti di Forza ({prepData.strengths?.length || 0})
+                      {t('cand.tabStrengths')} ({prepData.strengths?.length || 0})
                     </button>
                     <button
                       onClick={() => setActiveTab('objections')}
                       style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: activeTab === 'objections' ? 'var(--navy)' : 'transparent', color: activeTab === 'objections' ? '#fff' : 'var(--gray700)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}
                     >
-                      🛡️ Possibili Obiezioni ({prepData.objections?.length || 0})
+                      {t('cand.tabObjections')} ({prepData.objections?.length || 0})
                     </button>
                     <button
                       onClick={() => setActiveTab('ask')}
                       style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: activeTab === 'ask' ? 'var(--navy)' : 'transparent', color: activeTab === 'ask' ? '#fff' : 'var(--gray700)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}
                     >
-                      ❓ Cosa Chiedere Tu ({prepData.questionsToAsk?.length || 0})
+                      {t('cand.tabAsk')} ({prepData.questionsToAsk?.length || 0})
                     </button>
                   </div>
 
@@ -554,16 +561,16 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                         <div key={idx} style={{ background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 14, padding: 20 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6 }}>
-                              {q.category || 'Tecnica'}
+                              {q.category || t('cand.techCategory')}
                             </span>
-                            <span style={{ fontSize: 12, color: 'var(--gray400)' }}>Domanda #{idx + 1} di 5</span>
+                            <span style={{ fontSize: 12, color: 'var(--gray400)' }}>{t('cand.questionOf5')} #{idx + 1} {t('cand.of5')}</span>
                           </div>
                           <h4 style={{ fontSize: 16.5, fontWeight: 700, color: 'var(--navy)', margin: '0 0 12px', lineHeight: 1.4 }}>
                             "{q.question}"
                           </h4>
                           <div style={{ background: '#FFFFFF', padding: 14, borderRadius: 10, border: '1px solid var(--border-soft)', borderLeft: '4px solid #12805C' }}>
                             <div style={{ fontSize: 11.5, fontWeight: 700, color: '#12805C', textTransform: 'uppercase', marginBottom: 4 }}>
-                              💡 Risposta Suggerita (Metodo STAR con i tuoi dati):
+                              {t('cand.suggestedAnswer')}
                             </div>
                             <p style={{ margin: 0, fontSize: 13.5, color: '#334155', lineHeight: 1.6 }}>
                               {q.suggestedAnswer}
@@ -596,11 +603,11 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                       {prepData.objections?.map((o, idx) => (
                         <div key={idx} style={{ background: '#EEEDFC', border: '1px solid rgba(47, 42, 229, 0.18)', borderRadius: 14, padding: 20 }}>
                           <div style={{ fontSize: 14.5, fontWeight: 700, color: '#221FB4', marginBottom: 10 }}>
-                            ⚠️ Obiezione / Dubbio: "{o.objection}"
+                            {t('cand.objectionLabel')} "{o.objection}"
                           </div>
                           <div style={{ background: '#FFFFFF', padding: 14, borderRadius: 10, border: '1px solid rgba(47, 42, 229, 0.12)', borderLeft: '4px solid #2F2AE5' }}>
                             <div style={{ fontSize: 11.5, fontWeight: 700, color: '#2F2AE5', textTransform: 'uppercase', marginBottom: 4 }}>
-                              🛡️ Come Rispondere in Modo Assertivo:
+                              {t('cand.howToRespond')}
                             </div>
                             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--gray700)', lineHeight: 1.6 }}>
                               {o.defense}
@@ -615,7 +622,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
                   {activeTab === 'ask' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div style={{ fontSize: 13.5, color: 'var(--gray500)', marginBottom: 6 }}>
-                        Alla fine del colloquio, quando il recruiter ti chiede <i>"Ha domande per noi?"</i>, fai 2 o 3 di queste domande per mostrare visione strategica:
+                        {t('cand.askAtEnd')} <i>"{t('cand.hasQuestionsForUs')}"</i>, {t('cand.askTwoOrThree')}
                       </div>
                       {prepData.questionsToAsk?.map((qa, idx) => (
                         <div key={idx} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -634,7 +641,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
             {/* Modal Footer */}
             <div style={{ padding: '16px 32px', background: 'var(--gray50)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button className="btn btn-ink" onClick={() => setPrepCv(null)} style={{ padding: '8px 24px', fontWeight: 700 }}>
-                Chiudi Coach AI
+                {t('cand.closeCoach')}
               </button>
             </div>
           </div>

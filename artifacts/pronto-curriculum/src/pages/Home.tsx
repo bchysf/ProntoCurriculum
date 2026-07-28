@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Page, ModalType } from '../types';
 import { useAuth } from '../hooks/use-auth';
+import { useLanguage, useT } from '../i18n/LanguageContext';
+import { LANG_OPTIONS } from '../i18n/translations';
 
 // "Carta & Inchiostro" v3 — RedesignV3 integrated into the main app.
 // Switzer + Satoshi + IBM Plex Mono, white + aurora bg.
@@ -427,17 +429,15 @@ function useTilt() {
   return { stageRef, stackRef };
 }
 
-const MARQUEE = ['Moderno', 'Minimal', 'Milano', 'Elegante', 'Classico', 'Nordico', 'Tecnico', 'Corporate', 'Europass'];
-
 interface PlayerStep { title: string; desc: string; screen: ReactNode; }
 
-function ExplainerPlayer({ title, steps, dur = 4600 }: { title: string; steps: PlayerStep[]; dur?: number }) {
+function ExplainerPlayer({ title, liveLabel, stepWord, ofWord, steps, dur = 4600 }: { title: string; liveLabel: string; stepWord: string; ofWord: string; steps: PlayerStep[]; dur?: number }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (paused) return;
-    const t = setTimeout(() => setIdx(i => (i + 1) % steps.length), dur);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setIdx(i => (i + 1) % steps.length), dur);
+    return () => clearTimeout(timer);
   }, [idx, paused, dur, steps.length]);
 
   return (
@@ -445,7 +445,7 @@ function ExplainerPlayer({ title, steps, dur = 4600 }: { title: string; steps: P
       <div className="pl-chrome">
         <span className="pl-dot" /><span className="pl-dot" /><span className="pl-dot" />
         <span className="pl-title">{title}</span>
-        <span className="pl-live">Demo live</span>
+        <span className="pl-live">{liveLabel}</span>
       </div>
       <div className="pl-body">
         <div className="pl-side" role="tablist" aria-label={title}>
@@ -457,7 +457,7 @@ function ExplainerPlayer({ title, steps, dur = 4600 }: { title: string; steps: P
               className={`pl-step${i === idx ? ' active' : ''}`}
               onClick={() => setIdx(i)}
             >
-              <span className="pl-step-label">Passo {i + 1} di {steps.length}</span>
+              <span className="pl-step-label">{stepWord} {i + 1} {ofWord} {steps.length}</span>
               <div className="pl-step-title">{s.title}</div>
               <div className="pl-step-desc">{s.desc}</div>
               <span className="pl-prog">{i === idx && <i key={idx} style={{ '--dur': `${dur}ms` } as React.CSSProperties} />}</span>
@@ -476,10 +476,12 @@ function ExplainerPlayer({ title, steps, dur = 4600 }: { title: string; steps: P
   );
 }
 
-const TOUR_STEPS: PlayerStep[] = [
+type TFn = (key: string) => string;
+
+const buildTourSteps = (t: TFn): PlayerStep[] => [
   {
-    title: 'Scegli il template',
-    desc: 'Nove modelli professionali ottimizzati ATS: Moderno, Minimal, Milano, Europass e altri.',
+    title: t('home.step1.title'),
+    desc: t('home.tour1.desc'),
     screen: (
       <>
         <div className="mini-cards">
@@ -489,114 +491,104 @@ const TOUR_STEPS: PlayerStep[] = [
             </div>
           ))}
         </div>
-        <span className="pl-cap">9 template · Anteprime reali</span>
+        <span className="pl-cap">{t('home.tour1.cap')}</span>
       </>
     ),
   },
   {
-    title: "Compila con l'AI",
-    desc: "Rispondi alle domande guidate: l'AI riformula i testi con verbi d'azione e risultati misurabili.",
+    title: t('home.tour2.title'),
+    desc: t('home.tour2.desc'),
     screen: (
       <>
         <div className="mini-form"><div className="fl" /><div className="fl" /><div className="fl" /><div className="fl" /></div>
-        <span className="spark-chip">✦ AI sta riscrivendo…</span>
+        <span className="spark-chip">{t('home.tour2.chip')}</span>
       </>
     ),
   },
   {
-    title: 'Controlla il punteggio ATS',
-    desc: 'Parsing, keyword e metriche calcolati in tempo reale: sai sempre se il CV supererà i filtri.',
+    title: t('home.tour3.title'),
+    desc: t('home.tour3.desc'),
     screen: (
       <>
         <div className="mini-gauge">
           <div className="gnum">92<span style={{ fontSize: 18 }}>/100</span></div>
           <div className="gbar"><i /></div>
         </div>
-        <span className="pl-cap">ATS Score · Aggiornato mentre scrivi</span>
+        <span className="pl-cap">{t('home.tour3.cap')}</span>
       </>
     ),
   },
   {
-    title: 'Scarica il PDF',
-    desc: 'Impaginazione perfetta, formato italiano o europeo, pronto per la candidatura.',
+    title: t('home.tour4.title'),
+    desc: t('home.tour4.desc'),
     screen: (
       <>
         <div className="mini-pdf"><span className="dl">↓</span> giulia-ferraro-cv.pdf</div>
-        <span className="pl-cap">Export PDF · Un click</span>
+        <span className="pl-cap">{t('home.tour4.cap')}</span>
       </>
     ),
   },
 ];
 
-const JOB_STEPS: PlayerStep[] = [
+const buildJobSteps = (t: TFn): PlayerStep[] => [
   {
-    title: "Incolla l'annuncio",
-    desc: "L'AI legge l'offerta di lavoro ed estrae le keyword che i recruiter e i filtri ATS cercano.",
+    title: t('home.job1.title'),
+    desc: t('home.job1.desc'),
     screen: (
       <>
         <div className="kw-row">
-          {['Project management', 'SEO', 'Google Ads', 'CRM', 'Inglese C1'].map(k => <span className="kw" key={k}>{k}</span>)}
+          {['Project management', 'SEO', 'Google Ads', 'CRM', t('home.kw.englishC1')].map(k => <span className="kw" key={k}>{k}</span>)}
         </div>
-        <span className="pl-cap">Keyword estratte dall'annuncio</span>
+        <span className="pl-cap">{t('home.job1.cap')}</span>
       </>
     ),
   },
   {
-    title: 'CV su misura in un click',
-    desc: 'Il tuo CV viene adattato a quella specifica offerta: esperienze riordinate, testi mirati.',
+    title: t('home.job2.title'),
+    desc: t('home.job2.desc'),
     screen: (
       <>
         <div className="mini-form"><div className="fl" /><div className="fl" /><div className="fl" /><div className="fl" /></div>
-        <span className="spark-chip">✦ Adattamento all'offerta…</span>
+        <span className="spark-chip">{t('home.job2.chip')}</span>
       </>
     ),
   },
   {
-    title: 'Traccia le candidature',
-    desc: 'Ogni versione del CV resta legata alla sua candidatura: niente più file persi nelle cartelle.',
+    title: t('home.job3.title'),
+    desc: t('home.job3.desc'),
     screen: (
       <>
         <div className="board">
-          <div className="brow">Marketing Manager — Lumina <span className="pill pill-b">Inviata</span></div>
-          <div className="brow">Digital Lead — Adriatica <span className="pill pill-b">In review</span></div>
-          <div className="brow">Brand Manager — Velvet <span className="pill pill-g">Colloquio</span></div>
+          <div className="brow">{t('home.job3.row1')} <span className="pill pill-b">{t('home.job3.sent')}</span></div>
+          <div className="brow">{t('home.job3.row2')} <span className="pill pill-b">{t('home.job3.review')}</span></div>
+          <div className="brow">{t('home.job3.row3')} <span className="pill pill-g">{t('home.job3.interview')}</span></div>
         </div>
       </>
     ),
   },
   {
-    title: 'Arriva al colloquio',
-    desc: 'CV mirato + punteggio ATS alto = più risposte. Il resto lo fai tu.',
+    title: t('home.job4.title'),
+    desc: t('home.job4.desc'),
     screen: (
       <>
         <div className="mini-cal">
           <div className="ck">✓</div>
-          <b>Colloquio fissato</b>
-          <span>Giovedì · ore 15:00</span>
+          <b>{t('home.job4.confirmed')}</b>
+          <span>{t('home.job4.when')}</span>
         </div>
       </>
     ),
   },
 ];
 
-const FAQ_ITEMS: Array<[string, string]> = [
-  ['Posso creare un curriculum gratis?', "Sì. Il piano gratuito include un CV completo, l'anteprima live, il punteggio ATS e il download in PDF con filigrana. Nessuna carta di credito richiesta."],
-  ["Cos'è il punteggio ATS e perché conta?", "Gli ATS (Applicant Tracking System) sono i software che filtrano i CV prima che arrivino a un recruiter. ProntoCurriculum calcola in tempo reale parsing strutturale, keyword match e rigore metrico del tuo CV, così sai se supererà i filtri prima di inviarlo."],
-  ['I template vanno bene per il mercato italiano ed europeo?', 'Sì. I nove template sono progettati per gli standard italiani ed europei, incluso il formato Europass, e sono tutti verificati per la compatibilità ATS.'],
-  ['Posso tradurre il CV in altre lingue?', "Sì, in cinque lingue oltre l'italiano: inglese, francese, tedesco, spagnolo e portoghese. Puoi tradurre l'intero documento o i singoli campi."],
-  ["L'AI inventa contenuti nel mio CV?", "No. L'AI riformula quello che scrivi tu — verbi d'azione, risultati misurabili, keyword — ma non aggiunge esperienze o competenze che non hai indicato. Ogni modifica la approvi tu."],
-  ['Come funziona il CV su misura per una offerta?', "Incolli l'annuncio di lavoro: l'AI estrae le keyword rilevanti, adatta testi e ordine delle esperienze a quella posizione e salva la versione legata alla candidatura, così puoi tracciarla dalla dashboard."],
+const buildFaqItems = (t: TFn): Array<[string, string]> => [
+  [t('home.faq.q1'), t('home.faq.a1')],
+  [t('home.faq.q2'), t('home.faq.a2')],
+  [t('home.faq.q3'), t('home.faq.a3')],
+  [t('home.faq.q4'), t('home.faq.a4')],
+  [t('home.faq.q5'), t('home.faq.a5')],
+  [t('home.faq.q6'), t('home.faq.a6')],
 ];
-
-const FAQ_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: FAQ_ITEMS.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
-};
 
 function Ring({ id }: { id: string }) {
   return (
@@ -621,6 +613,25 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
   const atsRef = useAtsCounter();
   const { stageRef, stackRef } = useTilt();
   const { isAuthenticated, isLoading } = useAuth();
+  const { lang, setLang } = useLanguage();
+  const t = useT();
+
+  const MARQUEE = [
+    t('home.tpl.modern'), t('home.tpl.minimal'), t('home.tpl.milano'), t('home.tpl.elegante'),
+    t('home.tpl.classico'), t('home.tpl.nordico'), t('home.tpl.tecnico'), t('home.tpl.corporate'), t('home.tpl.europass'),
+  ];
+  const TOUR_STEPS = buildTourSteps(t);
+  const JOB_STEPS = buildJobSteps(t);
+  const FAQ_ITEMS = buildFaqItems(t);
+  const FAQ_SCHEMA = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_ITEMS.map(([q, a]) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
 
   useEffect(() => {
     let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -646,19 +657,19 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
           <nav aria-label="Navigazione principale">
             <div className="brand"><img src="/logo-icon.png" alt="" /><span>ProntoCurriculum</span></div>
             <div className="nav-links">
-              <span onClick={() => { const el = document.getElementById('steps'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Come funziona</span>
-              <span onClick={() => { const el = document.getElementById('templates'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Template</span>
-              <span onClick={() => { const el = document.getElementById('pricing'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>Prezzi</span>
-              <span onClick={() => onNavigate('blog')} style={{ cursor: 'pointer' }}>Blog & Guide</span>
-              <span onClick={() => onNavigate('calcolo-stipendio')} style={{ cursor: 'pointer' }}>Calcolatore Stipendio</span>
+              <span onClick={() => { const el = document.getElementById('steps'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>{t('home.nav.how')}</span>
+              <span onClick={() => { const el = document.getElementById('templates'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>{t('home.nav.templates')}</span>
+              <span onClick={() => { const el = document.getElementById('pricing'); el?.scrollIntoView({ behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>{t('home.nav.pricing')}</span>
+              <span onClick={() => onNavigate('blog')} style={{ cursor: 'pointer' }}>{t('home.nav.blogGuide')}</span>
+              <span onClick={() => onNavigate('calcolo-stipendio')} style={{ cursor: 'pointer' }}>{t('home.nav.salaryCalc')}</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               {!isLoading && (isAuthenticated ? (
-                <button className="btn btn-line btn-sm" onClick={() => onNavigate('dashboard')}>Dashboard</button>
+                <button className="btn btn-line btn-sm" onClick={() => onNavigate('dashboard')}>{t('dash.title')}</button>
               ) : (
-                <button className="btn btn-line btn-sm" onClick={() => onModal('signup')}>Accedi</button>
+                <button className="btn btn-line btn-sm" onClick={() => onModal('signup')}>{t('nav.login')}</button>
               ))}
-              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>Crea il tuo CV</button>
+              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>{t('home.nav.createCvBtn')}</button>
             </div>
           </nav>
         </div>
@@ -668,17 +679,17 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
       <div className="shell">
         {/* HERO */}
         <div className="hero">
-          <div className="mono eyebrow rv on">CV Builder <b>·</b> ATS-ready <b>·</b> Made in Italy</div>
-          <h1 className="rv on d1">Il curriculum che<span className="l2 grad">apre le porte.</span></h1>
+          <div className="mono eyebrow rv on">{t('home.hero.eyebrow')}</div>
+          <h1 className="rv on d1">{t('home.hero.h1a')}<span className="l2 grad">{t('home.hero.h1b')}</span></h1>
 
           <div className="hero-row">
             <div>
-              <p className="sub rv on d2">Rispondi a qualche domanda. L'AI scrive con te, il punteggio ATS sale, il PDF è pronto per l'invio.</p>
+              <p className="sub rv on d2">{t('home.hero.sub')}</p>
               <div className="cta-row rv on d2">
-                <button className="btn btn-ink" onClick={() => onNavigate('builder-step1')}>Inizia gratis</button>
-                <button className="btn btn-line" onClick={() => onNavigate('builder-step1')}>Guarda i template</button>
+                <button className="btn btn-ink" onClick={() => onNavigate('builder-step1')}>{t('home.hero.ctaPrimary')}</button>
+                <button className="btn btn-line" onClick={() => onNavigate('builder-step1')}>{t('home.hero.ctaSecondary')}</button>
               </div>
-              <div className="trust rv on d3"><b data-count="2400">0</b> CV creati questo mese — nessuna registrazione richiesta</div>
+              <div className="trust rv on d3"><b data-count="2400">0</b> {t('home.hero.trustSuffix')}</div>
             </div>
 
             <div className="demo rv on d2" ref={stageRef}>
@@ -691,21 +702,21 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
                   <div className="sheet-name">Giulia Ferraro</div>
                   <div className="sheet-role">Marketing Manager · Milano</div>
                   <hr className="rule" />
-                  <div className="slabel">Esperienza</div>
+                  <div className="slabel">{t('home.cv.exp')}</div>
                   <div className="wl" /><div className="wl" style={{ width: '82%' }} /><div className="wl" style={{ width: '90%' }} />
-                  <div className="slabel" style={{ marginTop: 16 }}>Formazione</div>
+                  <div className="slabel" style={{ marginTop: 16 }}>{t('home.cv.edu')}</div>
                   <div className="wl" style={{ width: '70%' }} /><div className="wl" style={{ width: '55%' }} />
-                  <div className="slabel" style={{ marginTop: 16 }}>Competenze</div>
+                  <div className="slabel" style={{ marginTop: 16 }}>{t('home.cv.skills')}</div>
                   <div className="wl" style={{ width: '64%' }} /><div className="wl" style={{ width: '48%' }} />
                   <div className="ats-line">
-                    <span className="ats-label">ATS SCORE</span>
+                    <span className="ats-label">{t('home.demo.atsScore')}</span>
                     <div className="ats-bar"><div className="ats-fill3" /></div>
                     <span className="ats-num" ref={atsRef}>0/100</span>
                   </div>
                 </div>
                 <div className="chip chip-ats"><b>ATS 92/100</b> ✓</div>
                 <div className="chip chip-pdf">giulia-ferraro.pdf</div>
-                <div className="stamp">PRONTO ✓</div>
+                <div className="stamp">{t('home.demo.ready')}</div>
               </div>
             </div>
           </div>
@@ -727,56 +738,56 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         {/* COME FUNZIONA */}
         <section className="sec">
           <div className="sec-head rv">
-            <h2>Dalla pagina bianca <span className="ac">al colloquio.</span></h2>
-            <span className="mono sec-num">01 — Come funziona</span>
+            <h2>{t('home.sec1.h2a')} <span className="ac">{t('home.sec1.h2b')}</span></h2>
+            <span className="mono sec-num">01 — {t('home.nav.how')}</span>
           </div>
           <div className="steps">
             {[
-              ['01', 'Scegli il template', 'Nove modelli professionali, tutti ottimizzati per i sistemi ATS italiani ed europei.'],
-              ['02', "Scrivi con l'AI", 'Rispondi alle domande guidate: la riformulazione, le keyword e i suggerimenti sono inclusi.'],
-              ['03', 'Scarica e invia', 'PDF impaginato alla perfezione, punteggio ATS verificato, pronto per la candidatura.'],
-            ].map(([n, t, d], i) => (
-              <div className={`step rv d${i}`} key={t}>
+              ['01', t('home.step1.title'), t('home.step1.desc')],
+              ['02', t('home.step2.title'), t('home.step2.desc')],
+              ['03', t('home.step3.title'), t('home.step3.desc')],
+            ].map(([n, title, d], i) => (
+              <div className={`step rv d${i}`} key={title}>
                 <div className="step-num">{n}</div>
-                <h3>{t}</h3>
+                <h3>{title}</h3>
                 <p>{d}</p>
               </div>
             ))}
           </div>
 
           <div className="rv" style={{ marginTop: 64 }}>
-            <ExplainerPlayer title="prontocurriculum.it — Tour del prodotto" steps={TOUR_STEPS} />
+            <ExplainerPlayer title={`prontocurriculum.it — ${t('home.player.tour')}`} liveLabel={t('home.player.liveDemo')} stepWord={t('home.player.step')} ofWord={t('home.player.of')} steps={TOUR_STEPS} />
           </div>
         </section>
 
         {/* FEATURES BENTO */}
         <section className="sec" style={{ paddingTop: 0 }}>
           <div className="sec-head rv">
-            <h2>Un ferro del mestiere, <span className="ac">non un giocattolo.</span></h2>
-            <span className="mono sec-num">02 — Strumenti</span>
+            <h2>{t('home.sec2.h2a')} <span className="ac">{t('home.sec2.h2b')}</span></h2>
+            <span className="mono sec-num">02 — {t('home.sec2.num')}</span>
           </div>
           <div className="bento">
             <div className="cell cell-wide rv">
-              <span className="mono">Analisi ATS</span>
-              <h3>Il punteggio che i recruiter non ti dicono</h3>
-              <p>Incolla l'annuncio di lavoro: keyword mancanti, parsing strutturale e rigore metrico, calcolati in tempo reale mentre scrivi.</p>
-              <div className="score-demo"><span className="score-big" data-count="92">0</span><span className="score-sub">/100 · PRONTO PER L'INVIO</span></div>
+              <span className="mono">{t('home.bento.ats')}</span>
+              <h3>{t('home.bento.atsTitle')}</h3>
+              <p>{t('home.bento.atsDesc')}</p>
+              <div className="score-demo"><span className="score-big" data-count="92">0</span><span className="score-sub">/100 · {t('home.bento.atsSub')}</span></div>
             </div>
             <div className="cell rv d1">
-              <span className="mono">AI Editor</span>
-              <h3>Riscrive, non inventa</h3>
-              <p>Ogni esperienza riformulata con verbi d'azione e risultati misurabili. Tu approvi, lei impagina.</p>
+              <span className="mono">{t('home.bento.aiEditor')}</span>
+              <h3>{t('home.bento.aiTitle')}</h3>
+              <p>{t('home.bento.aiDesc')}</p>
             </div>
             <div className="cell rv d1">
-              <span className="mono">Sei lingue</span>
-              <h3>Un CV, sei mercati</h3>
-              <p>Traduzione professionale di tutto il documento o dei singoli campi.</p>
+              <span className="mono">{t('home.bento.langs')}</span>
+              <h3>{t('home.bento.langsTitle')}</h3>
+              <p>{t('home.bento.langsDesc')}</p>
               <div className="langs">{['IT', 'EN', 'FR', 'DE', 'ES', 'PT'].map(l => <span className="lang" key={l}>{l}</span>)}</div>
             </div>
             <div className="cell cell-wide rv d2">
-              <span className="mono">CV su misura</span>
-              <h3>Ogni annuncio merita la sua versione</h3>
-              <p>Importa da LinkedIn o dal tuo archivio, adatta il CV a una specifica offerta e tieni traccia di ogni candidatura dalla dashboard.</p>
+              <span className="mono">{t('home.bento.tailor')}</span>
+              <h3>{t('home.bento.tailorTitle')}</h3>
+              <p>{t('home.bento.tailorDesc')}</p>
             </div>
           </div>
         </section>
@@ -784,23 +795,22 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         {/* DAL CV AL LAVORO */}
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Come ti aiutiamo a trovare lavoro">
           <div className="sec-head rv">
-            <h2>Non ti aiutiamo a fare un CV.<br /><span className="ac">Ti aiutiamo a trovare lavoro.</span></h2>
-            <span className="mono sec-num">03 — Il percorso</span>
+            <h2>{t('home.sec3.h2a')}<br /><span className="ac">{t('home.sec3.h2b')}</span></h2>
+            <span className="mono sec-num">03 — {t('home.sec3.num')}</span>
           </div>
           <p className="sub rv" style={{ maxWidth: 620, marginBottom: 48 }}>
-            Un curriculum bello non basta: deve superare i filtri automatici, parlare la lingua dell'annuncio
-            e arrivare al recruiter giusto. Ecco come ti accompagniamo dalla candidatura al colloquio.
+            {t('home.sec3.sub')}
           </p>
           <div className="rv d1">
-            <ExplainerPlayer title="prontocurriculum.it — Dal CV al colloquio" steps={JOB_STEPS} />
+            <ExplainerPlayer title={`prontocurriculum.it — ${t('home.player.jobTour')}`} liveLabel={t('home.player.liveDemo')} stepWord={t('home.player.step')} ofWord={t('home.player.of')} steps={JOB_STEPS} />
           </div>
         </section>
 
         {/* SOCIAL PROOF & TESTIMONIALS */}
         <section className="sec" style={{ paddingTop: 20 }} aria-label="Storie di successo e statistiche di affidabilità">
           <div className="sec-head rv">
-            <h2>I risultati di chi ha scelto <span className="ac">ProntoCurriculum.</span></h2>
-            <span className="mono sec-num">04 — Risultati</span>
+            <h2>{t('home.sec4.h2a')} <span className="ac">ProntoCurriculum.</span></h2>
+            <span className="mono sec-num">04 — {t('home.sec4.num')}</span>
           </div>
 
           {/* Metrics Bar */}
@@ -811,10 +821,10 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
             marginBottom: 56,
           }}>
             {([
-              ['+14.850', "CV su Misura Generati dall'AI"],
-              ['3,4x', 'Più Colloqui Ottenuti in 30 Giorni'],
-              ['8 Minuti', 'Da Zero al Download PDF/Word'],
-              ['4.9 ★', 'Valutazione Media in Italia'],
+              ['+14.850', t('home.metric1')],
+              ['3,4x', t('home.metric2')],
+              [t('home.metric3value'), t('home.metric3')],
+              ['4.9 ★', t('home.metric4')],
             ] as [string, string][]).map(([num, label]) => (
               <div key={label} style={{ background: 'var(--card)', border: '1px solid var(--hair-soft)', borderRadius: 16, padding: '24px 20px', textAlign: 'center' }}>
                 <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--f-display)', letterSpacing: '-0.02em' }}>{num}</div>
@@ -831,18 +841,9 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
             marginBottom: 36,
           }}>
             {[
-              {
-                initials: 'MR', name: 'Marco R.', role: 'Senior Software Engineer', hired: 'Assunto',
-                quote: "Avevo il solito Europass di 4 pagine che nessuno leggeva. Con ProntoCurriculum ho importato il mio profilo LinkedIn con un click e usato l'editor AI. Risultato? 3 colloqui fissati nella prima settimana a Milano.",
-              },
-              {
-                initials: 'EV', name: 'Elena V.', role: 'Marketing Specialist', hired: 'Assunta',
-                quote: "La funzione CV su Misura è formidabile. Ho incollato la Job Description di un'agenzia internazionale e il sistema ha ricalibrato ogni singolo bullet point del mio percorso. Mi hanno assunta al primo colpo.",
-              },
-              {
-                initials: 'DS', name: 'Davide S.', role: 'Junior Financial Analyst', hired: 'Assunto',
-                quote: "Zero esperienza pregressa e il terrore di inviare candidature a vuoto. Il Coach AI integrato mi ha preparato le 5 domande esatte che la direttrice HR mi ha poi fatto al colloquio. Strumento pazzesco!",
-              },
+              { initials: 'MR', name: 'Marco R.', role: t('home.tst1.role'), hired: t('home.tst1.hired'), quote: t('home.tst1.quote') },
+              { initials: 'EV', name: 'Elena V.', role: t('home.tst2.role'), hired: t('home.tst2.hired'), quote: t('home.tst2.quote') },
+              { initials: 'DS', name: 'Davide S.', role: t('home.tst3.role'), hired: t('home.tst3.hired'), quote: t('home.tst3.quote') },
             ].map(tst => (
               <div key={tst.initials} style={{
                 background: 'var(--card)',
@@ -877,24 +878,24 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         {/* GUIDA EDITORIALE */}
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Guida al curriculum perfetto">
           <div className="sec-head rv">
-            <h2>La piccola guida al <span className="ac">curriculum perfetto.</span></h2>
-            <span className="mono sec-num">05 — Guida</span>
+            <h2>{t('home.sec5.h2a')} <span className="ac">{t('home.sec5.h2b')}</span></h2>
+            <span className="mono sec-num">05 — {t('home.sec5.num')}</span>
           </div>
           <div className="guide">
             <article className="rv">
-              <h3>Cosa cercano davvero i sistemi ATS</h3>
-              <p>Oltre il 70% delle aziende medio-grandi filtra i curriculum con un software prima che un essere umano li legga. Un ATS cerca struttura pulita, date complete e le stesse keyword dell'annuncio di lavoro.</p>
-              <p>Per questo ogni template di ProntoCurriculum è verificato per il parsing automatico, e il <a href="#">punteggio ATS</a> ti dice in tempo reale come sta andando.</p>
+              <h3>{t('home.guide1.title')}</h3>
+              <p>{t('home.guide1.p1')}</p>
+              <p>{t('home.guide1.p2')} <a href="#">{t('home.guide1.p2link')}</a> {t('home.guide1.p2end')}</p>
             </article>
             <article className="rv d1">
-              <h3>Formato italiano o europeo?</h3>
-              <p>Il formato Europass resta richiesto nei concorsi pubblici e in molte candidature UE, ma per le aziende private un CV moderno di una pagina, con risultati misurabili, funziona meglio.</p>
-              <p>Con lo stesso contenuto puoi generare entrambi: scegli il template <a href="#">Europass</a> o uno dei modelli professionali e il documento si reimpagina da solo.</p>
+              <h3>{t('home.guide2.title')}</h3>
+              <p>{t('home.guide2.p1')}</p>
+              <p>{t('home.guide2.p2')} <a href="#">{t('home.guide2.p2link')}</a> {t('home.guide2.p2end')}</p>
             </article>
             <article className="rv d2">
-              <h3>Quanto deve essere lungo un CV</h3>
-              <p>Una pagina se hai meno di dieci anni di esperienza, due al massimo. I recruiter dedicano in media 7 secondi alla prima lettura: ogni riga deve guadagnarsi il suo posto.</p>
-              <p>L'<a href="#">AI Editor</a> taglia le ridondanze e trasforma le mansioni in risultati: meno testo, più colloqui.</p>
+              <h3>{t('home.guide3.title')}</h3>
+              <p>{t('home.guide3.p1')}</p>
+              <p>{t('home.guide3.p2')} <a href="#">{t('home.guide3.p2link')}</a> {t('home.guide3.p2end')}</p>
             </article>
           </div>
         </section>
@@ -902,7 +903,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         {/* FAQ */}
         <section className="sec" style={{ paddingTop: 0 }} aria-label="Domande frequenti">
           <div className="sec-head rv">
-            <h2>Domande <span className="ac">frequenti.</span></h2>
+            <h2>{t('home.sec6.h2a')} <span className="ac">{t('home.sec6.h2b')}</span></h2>
             <span className="mono sec-num">06 — FAQ</span>
           </div>
           <div className="faq rv">
@@ -921,9 +922,9 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         <div className="halo" aria-hidden="true" />
         <Ring id="rg-night" />
         <div className="shell">
-          <span className="mono rv">Nessuna carta di credito · Gratis per sempre</span>
-          <h2 className="rv d1">Il tuo prossimo lavoro<br />comincia da <span className="grad">una pagina.</span></h2>
-          <button className="btn btn-ink rv d2" style={{ fontSize: 15, padding: '15px 32px' }} onClick={() => onNavigate('builder-step1')}>Crea il tuo CV — è gratis</button>
+          <span className="mono rv">{t('home.finale.noCard')}</span>
+          <h2 className="rv d1">{t('home.finale.h2a')}<br /><span className="grad">{t('home.finale.h2b')}</span></h2>
+          <button className="btn btn-ink rv d2" style={{ fontSize: 15, padding: '15px 32px' }} onClick={() => onNavigate('builder-step1')}>{t('home.finale.cta')}</button>
         </div>
       </div>
       </main>
@@ -935,39 +936,53 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
               <div>
                 <div className="brand" style={{ fontSize: 17 }}><img src="/logo-icon.png" alt="" style={{ width: 22, height: 22 }} /><span>ProntoCurriculum</span></div>
                 <p className="foot-about">
-                  Il CV builder italiano con AI integrata: template ottimizzati ATS,
-                  punteggio in tempo reale, traduzione in sei lingue e candidature tracciate.
+                  {t('home.footer.about')}
                 </p>
                 <div className="foot-langs" aria-label="Lingue disponibili">
-                  {['IT', 'EN', 'FR', 'DE', 'ES', 'PT'].map(l => <span key={l}>{l}</span>)}
+                  {LANG_OPTIONS.map(l => (
+                    <button
+                      key={l.code}
+                      type="button"
+                      onClick={() => setLang(l.code)}
+                      aria-pressed={lang === l.code}
+                      title={l.label}
+                      style={{
+                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                        font: 'inherit', color: lang === l.code ? 'var(--accent, #2F2AE5)' : 'inherit',
+                        fontWeight: lang === l.code ? 700 : 400,
+                      }}
+                    >
+                      {l.code}
+                    </button>
+                  ))}
                 </div>
               </div>
               <nav className="foot-col" aria-label="Prodotto">
-                <h4>Prodotto</h4>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Crea il tuo CV</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>Template ATS</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>CV su misura</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onModal('pricing'); }}>Prezzi</a>
+                <h4>{t('home.footer.product')}</h4>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>{t('home.footer.createCV')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('builder-step1'); }}>{t('home.footer.templatesATS')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('tailor'); }}>{t('home.footer.tailorCV')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onModal('pricing'); }}>{t('home.footer.pricing')}</a>
               </nav>
               <nav className="foot-col" aria-label="Risorse">
-                <h4>Risorse</h4>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog'); }}>Tutto il blog →</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('guida-cv'); }}>Guida al CV perfetto</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('punteggio-ats'); }}>Cos'è il punteggio ATS</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cv-europass'); }}>CV Europass</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('esempi-cv'); }}>Esempi di CV</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>Calcolo Stipendio Netto</a>
+                <h4>{t('home.footer.resources')}</h4>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog'); }}>{t('home.footer.blogAll')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('guida-cv'); }}>{t('home.footer.guideCv')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('punteggio-ats'); }}>{t('home.footer.atsGuide')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cv-europass'); }}>{t('home.footer.europassCV')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('esempi-cv'); }}>{t('home.footer.cvExamples')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>{t('home.footer.salaryCalc')}</a>
               </nav>
               <nav className="foot-col" aria-label="Legale">
-                <h4>Legale</h4>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>Privacy</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>Termini</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>Cookie</a>
-                <a href="mailto:info@prontocurriculum.it">Contatti</a>
+                <h4>{t('home.footer.legal')}</h4>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy'); }}>{t('home.footer.privacy')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('terms'); }}>{t('home.footer.terms')}</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookie'); }}>{t('home.footer.cookie')}</a>
+                <a href="mailto:info@prontocurriculum.it">{t('home.footer.contact')}</a>
               </nav>
             </div>
             <div className="foot-bottom">
-              <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — Fatto a mano in Italia</span>
+              <span className="mono">© {new Date().getFullYear()} ProntoCurriculum — {t('home.footer.madeIn')}</span>
             </div>
           </div>
         </footer>

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { CVData, Experience, Page } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { useSeoMeta } from '../components/EditorialChrome';
+import { useT } from '../i18n/LanguageContext';
 
 interface TailorCvProps {
   onNavigate: (page: Page) => void;
@@ -24,6 +25,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
     '/cv-su-misura',
   );
   const { isAuthenticated, isLoading } = useAuth();
+  const t = useT();
   const [mode, setMode] = useState<InputMode>('text');
   const [urlInput, setUrlInput] = useState('');
   const [jobText, setJobText] = useState('');
@@ -73,7 +75,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       });
       const data = await res.json() as { text?: string; error?: string };
       if (!res.ok || !data.text) {
-        setUrlError(data.error ?? 'Impossibile estrarre il testo. Prova a incollarlo manualmente.');
+        setUrlError(data.error ?? t('tc.errExtract'));
         setMode('text');
         return;
       }
@@ -81,7 +83,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       setUrlLoaded(true);
       setMode('text');
     } catch {
-      setUrlError("Errore di rete. Incolla il testo dell'offerta manualmente.");
+      setUrlError(t('tc.errNetworkPaste'));
       setMode('text');
     } finally {
       setFetchingUrl(false);
@@ -91,7 +93,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
   const handleGenerate = async (excludeExperienceIds?: string[], excludedExps?: Experience[]) => {
     const description = jobText.trim();
     if (description.length < 50) {
-      setGenError("L'offerta di lavoro è troppo corta. Aggiungi più dettagli (minimo 50 caratteri).");
+      setGenError(t('tc.errTooShort'));
       return;
     }
     setGenerating(true);
@@ -113,7 +115,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       });
       const data = await res.json() as { cvData?: CVData; error?: string };
       if (!res.ok || !data.cvData) {
-        setGenError(data.error ?? 'Errore nella generazione del CV. Riprova tra qualche secondo.');
+        setGenError(data.error ?? t('tc.errGenerateCV'));
         return;
       }
       setPreviewData({ cvData: data.cvData });
@@ -128,7 +130,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       }
       setViewState('preview');
     } catch {
-      setGenError('Errore di rete. Controlla la connessione e riprova.');
+      setGenError(t('tc.errNetworkRetry'));
     } finally {
       setGenerating(false);
     }
@@ -170,11 +172,11 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       setConfirming(false);
     }
     if (saveError) {
-      toast.warning('CV aperto nell\'editor, ma il salvataggio in "Le mie candidature" non è riuscito.', {
+      toast.warning(t('tc.savedWarning'), {
         duration: 5000,
       });
     } else {
-      toast.success('CV salvato in "Le mie candidature"', {
+      toast.success(t('tc.savedSuccess'), {
         duration: 4000,
       });
     }
@@ -240,12 +242,11 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               style={{ marginBottom: 10, marginLeft: -12 }}
               onClick={() => setViewState('form')}
             >
-              ← Torna all'offerta
+              {t('tc.backToOffer')}
             </button>
-            <h1>Anteprima selezione AI</h1>
+            <h1>{t('tc.previewTitle')}</h1>
             <p style={{ maxWidth: 560 }}>
-              L'AI ha selezionato {cvData.experiences.length} esperienze dal tuo archivio e le ha riscritte per questa offerta.
-              Deseleziona quelle che non vuoi includere, poi conferma.
+              {t('tc.previewSub1')} {cvData.experiences.length} {t('tc.previewSub2')}
             </p>
           </div>
         </div>
@@ -269,7 +270,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                   <div style={{ fontSize: 18 }}>🎯</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', flex: 1 }}>Titolo e profilo generati dall'AI</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', flex: 1 }}>{t('tc.aiTitleProfile')}</div>
                   <button
                     onClick={() => {
                       if (editingTitleSummary) {
@@ -293,7 +294,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {editingTitleSummary ? '✓ Chiudi' : wasEdited ? '✏️ Modificato' : '✏️ Modifica'}
+                    {editingTitleSummary ? t('tc.close') : wasEdited ? t('tc.edited') : t('tc.editBtn')}
                   </button>
                 </div>
                 {editingTitleSummary ? (
@@ -354,7 +355,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>💼</span>
-              <span>Esperienze selezionate</span>
+              <span>{t('tc.selectedExps')}</span>
               <span style={{
                 padding: '2px 10px',
                 background: confirmedCount > 0 ? 'rgba(var(--gold-rgb),0.15)' : 'rgba(220,53,69,0.1)',
@@ -363,7 +364,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                 fontSize: 12,
                 fontWeight: 600,
               }}>
-                {confirmedCount} / {cvData.experiences.length} selezionate
+                {confirmedCount} / {cvData.experiences.length} {t('tc.selectedCount')}
               </span>
             </div>
 
@@ -472,7 +473,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {isEditing ? '✓ Chiudi' : wasEdited ? '✏️ Modificato' : '✏️ Modifica'}
+                            {isEditing ? t('tc.close') : wasEdited ? t('tc.edited') : t('tc.editBtn')}
                           </button>
                         </div>
 
@@ -545,14 +546,14 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                   {excludedSectionOpen ? '▾' : '▸'}
                 </span>
                 <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--gray500)', flex: 1 }}>
-                  Esperienze non incluse dall'AI ({excludedExperiences.length})
+                  {t('tc.excludedByAI')} ({excludedExperiences.length})
                 </span>
                 <span style={{
                   fontSize: 11,
                   color: 'var(--gray500)',
                   fontWeight: 500,
                 }}>
-                  Clicca per vedere · puoi aggiungerle manualmente
+                  {t('tc.clickToSeeAdd')}
                 </span>
               </button>
 
@@ -630,7 +631,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                           (e.currentTarget as HTMLButtonElement).style.color = 'var(--navy)';
                         }}
                       >
-                        + Aggiungi
+                        {t('tc.add')}
                       </button>
                     </div>
                   ))}
@@ -649,7 +650,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>🔧</span>
-                <span>Skill selezionate per questa offerta</span>
+                <span>{t('tc.skillsForOffer')}</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {cvData.skills.map(skill => (
@@ -687,8 +688,8 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                     fontSize: 13,
                   }}>
                     {allExcluded
-                      ? '⚠️ Hai escluso tutte le esperienze — aggiungi almeno una per rigenerare o confermare.'
-                      : '⚠️ Seleziona almeno un\'esperienza per continuare.'}
+                      ? t('tc.excludedAllWarning')
+                      : t('tc.selectAtLeastOne')}
                   </div>
                 )}
 
@@ -702,15 +703,15 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                     }}
                     onClick={allExcluded || generating ? undefined : handleRegenerate}
                     disabled={allExcluded || generating}
-                    title={allExcluded ? 'Hai escluso tutte le esperienze — aggiungi almeno una per rigenerare' : undefined}
+                    title={allExcluded ? t('tc.excludedAllTitle') : undefined}
                   >
                     {generating ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
-                        Rigenerazione...
+                        {t('tc.regenerating')}
                       </span>
                     ) : (
-                      '🔄 Rigenera'
+                      t('tc.regenerate')
                     )}
                   </button>
                   <button
@@ -727,10 +728,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                     {confirming ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span className="ai-pulse-ring" style={{ width: 16, height: 16, margin: 0 }} />
-                        Salvataggio...
+                        {t('tc.saving')}
                       </span>
                     ) : (
-                      'Conferma e apri nel builder →'
+                      t('tc.confirmOpenBuilder')
                     )}
                   </button>
                 </div>
@@ -746,11 +747,11 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
               <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
               <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-                AI sta rigenerando il CV...
+                {t('tc.regeneratingTitle')}
               </div>
               <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
-                Nuova selezione delle esperienze in corso.<br />
-                <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
+                {t('tc.regeneratingSub')}<br />
+                <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{t('tc.takesSeconds')}</span>
               </div>
             </div>
           </div>
@@ -765,9 +766,9 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       {/* Header */}
       <div className="head">
         <div>
-          <h1>CV su misura per l'offerta</h1>
+          <h1>{t('tc.mainTitle')}</h1>
           <p style={{ maxWidth: 560 }}>
-            Incolla il testo o l'URL dell'offerta di lavoro. L'AI selezionerà le tue esperienze più rilevanti, le riscriverà con le keyword richieste e genererà un CV ottimizzato.
+            {t('tc.mainSub')}
           </p>
         </div>
       </div>
@@ -775,12 +776,12 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
       {/* Auth gate */}
       {!isLoading && !isAuthenticated ? (
         <div className="lock-state" style={{ minHeight: '40vh' }}>
-          <h2>Accedi per creare il tuo CV su misura</h2>
+          <h2>{t('tc.loginGate')}</h2>
           <p style={{ color: 'var(--ink-60)', fontSize: 14.5, maxWidth: 440, lineHeight: 1.6 }}>
-            L'AI usa le esperienze salvate nel tuo archivio personale. Accedi per continuare.
+            {t('tc.loginGateSub')}
           </p>
           <button className="btn btn-ink" onClick={onLogin}>
-            Accedi
+            {t('nav.login')}
           </button>
         </div>
       ) : (
@@ -808,7 +809,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                   transition: 'all 0.2s',
                 }}
               >
-                🔗 Incolla l'URL dell'offerta
+                {t('tc.tabUrl')}
               </button>
               <button
                 onClick={() => setMode('text')}
@@ -824,7 +825,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                   transition: 'all 0.2s',
                 }}
               >
-                📝 Incolla il testo
+                {t('tc.tabText')}
               </button>
             </div>
 
@@ -832,10 +833,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               {mode === 'url' ? (
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, color: 'var(--navy)', fontSize: 14, marginBottom: 8 }}>
-                    URL dell'offerta di lavoro
+                    {t('tc.urlLabel')}
                   </label>
                   <p style={{ color: 'var(--gray500)', fontSize: 12, marginBottom: 12 }}>
-                    Incolla il link da Indeed, LinkedIn, InfoJobs, Glassdoor, ecc. Il backend tenterà di estrarre il testo automaticamente.
+                    {t('tc.urlHint')}
                   </p>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <input
@@ -852,7 +853,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                       onClick={() => void handleFetchUrl()}
                       disabled={fetchingUrl || !urlInput.trim()}
                     >
-                      {fetchingUrl ? '⏳ Caricamento...' : '📥 Carica'}
+                      {fetchingUrl ? t('tc.loadingBtn') : t('tc.loadBtn')}
                     </button>
                   </div>
                   {urlError && (
@@ -864,19 +865,19 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               ) : (
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, color: 'var(--navy)', fontSize: 14, marginBottom: 8 }}>
-                    Descrizione dell'offerta di lavoro
+                    {t('tc.textLabel')}
                     {urlLoaded && (
                       <span style={{ marginLeft: 8, padding: '2px 8px', background: 'rgba(var(--success-rgb),0.1)', color: 'var(--success)', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-                        ✓ Caricata dall'URL
+                        {t('tc.loadedFromURL')}
                       </span>
                     )}
                   </label>
                   <p style={{ color: 'var(--gray500)', fontSize: 12, marginBottom: 12 }}>
-                    Incolla il testo completo dell'offerta: titolo, descrizione del ruolo, requisiti e preferibilmente anche le responsabilità.
+                    {t('tc.textHint')}
                   </p>
                   <textarea
                     rows={14}
-                    placeholder="Incolla qui il testo dell'offerta di lavoro...&#10;&#10;Esempio:&#10;Cerchiamo un Senior Backend Developer per unirsi al nostro team...&#10;Requisiti: 5+ anni di esperienza con Python, familiarità con AWS..."
+                    placeholder={t('tc.textPlaceholder')}
                     value={jobText}
                     onChange={e => { setJobText(e.target.value); setGenError(''); }}
                     style={{
@@ -894,14 +895,14 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                     <span style={{ fontSize: 12, color: charCount < 50 ? 'var(--danger)' : 'var(--success)' }}>
-                      {charCount < 50 ? `${50 - charCount} caratteri ancora necessari` : `✓ ${charCount} caratteri — pronto`}
+                      {charCount < 50 ? `${50 - charCount} ${t('tc.charsNeeded')}` : `✓ ${charCount} ${t('tc.charsReady')}`}
                     </span>
                     <button
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: 11 }}
                       onClick={() => { setMode('url'); setUrlLoaded(false); }}
                     >
-                      Carica da URL →
+                      {t('tc.loadFromURL')}
                     </button>
                   </div>
                 </div>
@@ -920,10 +921,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             flexWrap: 'wrap',
           }}>
             {[
-              { icon: '🔍', label: 'Analisi', desc: "L'AI legge l'offerta e identifica le keyword chiave" },
-              { icon: '💼', label: 'Selezione', desc: "Sceglie le esperienze più rilevanti dal tuo archivio" },
-              { icon: '✍️', label: 'Anteprima', desc: 'Puoi vedere e modificare la selezione prima di confermare' },
-              { icon: '🎯', label: 'CV pronto', desc: 'Genera summary e skill list su misura per il ruolo' },
+              { icon: '🔍', label: t('tc.step1Label'), desc: t('tc.step1Desc') },
+              { icon: '💼', label: t('tc.step2Label'), desc: t('tc.step2Desc') },
+              { icon: '✍️', label: t('tc.step3Label'), desc: t('tc.step3Desc') },
+              { icon: '🎯', label: t('tc.step4Label'), desc: t('tc.step4Desc') },
             ].map(step => (
               <div key={step.label} style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ fontSize: 20 }}>{step.icon}</div>
@@ -954,14 +955,14 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               style={{ fontSize: 14 }}
               onClick={() => onNavigate('archivio')}
             >
-              💼 Gestisci archivio
+              {t('tc.manageArchive')}
             </button>
             <button
               className="btn btn-ghost"
               style={{ fontSize: 14 }}
               onClick={() => onNavigate('candidature')}
             >
-              📋 Le mie candidature
+              {t('tc.myApplications')}
             </button>
             {previewData && (
               <button
@@ -970,7 +971,7 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
                 onClick={() => setViewState('preview')}
                 disabled={generating}
               >
-                ← Torna all'anteprima
+                {t('tc.backToPreview')}
               </button>
             )}
             <button
@@ -987,10 +988,10 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
               {generating ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span className="ai-pulse-ring" style={{ width: 18, height: 18, margin: 0 }} />
-                  AI sta analizzando l'offerta...
+                  {t('tc.analyzingOffer')}
                 </span>
               ) : (
-                previewData ? '🔄 Rigenera CV' : '✦ Genera CV su misura'
+                previewData ? t('tc.regenerateCV') : t('tc.generateTailoredCV')
               )}
             </button>
           </div>
@@ -1005,15 +1006,15 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             color: 'var(--gray500)',
             lineHeight: 1.6,
           }}>
-            💡 <strong>Consiglio:</strong> Per ottenere il miglior risultato, assicurati di avere esperienze salvate nel tuo{' '}
+            💡 <strong>{t('tc.tipStrong')}</strong> {t('tc.tipText1')}{' '}
             <button
               className="btn btn-ghost btn-sm"
               style={{ fontSize: 12, padding: '1px 6px', display: 'inline' }}
               onClick={() => onNavigate('archivio')}
             >
-              archivio personale →
+              {t('tc.personalArchive')}
             </button>
-            {' '}L'AI selezionerà quelle più rilevanti per questa offerta.
+            {' '}{t('tc.tipText2')}
           </div>
         </div>
       )}
@@ -1025,13 +1026,13 @@ export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvPr
             <div className="ai-pulse-ring" style={{ margin: '0 auto 24px' }} />
             <div style={{ fontSize: 40, marginBottom: 16 }}>✦</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>
-              AI sta creando il tuo CV...
+              {t('tc.creatingCV')}
             </div>
             <div style={{ color: 'var(--gray500)', fontSize: 14, lineHeight: 1.7 }}>
-              Analisi dell'offerta in corso.<br />
-              Selezione delle esperienze più rilevanti.<br />
-              Riscrittura con le keyword richieste.<br />
-              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Ci vogliono 15-30 secondi.</span>
+              {t('tc.analyzingJobStep')}<br />
+              {t('tc.selectingExpsStep')}<br />
+              {t('tc.rewritingKwStep')}<br />
+              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{t('tc.takesSeconds')}</span>
             </div>
           </div>
         </div>

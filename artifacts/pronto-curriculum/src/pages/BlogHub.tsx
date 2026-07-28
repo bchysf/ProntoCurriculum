@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { Page } from '../types';
 import { BLOG_ARTICLES } from '../data/blogArticles';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
+import { useT } from '../i18n/LanguageContext';
 
 interface BlogHubProps {
   onNavigate: (page: Page, slug?: string) => void;
@@ -84,6 +85,7 @@ const HUB_CSS = `
 `;
 
 export default function BlogHub({ onNavigate }: BlogHubProps) {
+  const t = useT();
   const [selectedCategory, setSelectedCategory] = useState<string>('TUTTI');
   const [searchQuery, setSearchQuery] = useState('');
   const [emailInput, setEmailInput] = useState('');
@@ -129,20 +131,19 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
         <div className="shell">
           {/* HERO + FEATURED */}
           <section className="bh-hero">
-            <div className="mono bh-eyebrow rv on">Blog & Guide <b>·</b> Risorse per la carriera</div>
-            <h1 className="rv on d1">Leggi oggi, <span className="grad">firmi domani.</span></h1>
+            <div className="mono bh-eyebrow rv on">{t('bh.eyebrow')}</div>
+            <h1 className="rv on d1">{t('bh.h1a')} <span className="grad">{t('bh.h1b')}</span></h1>
             <p className="sub rv on d2">
-              Guide pratiche su CV, algoritmi ATS, colloqui e stipendi — scritte da chi
-              seleziona candidati ogni giorno, senza fuffa motivazionale.
+              {t('bh.heroSub')}
             </p>
 
             <article
               className="bh-featured rv on d2"
               onClick={() => onNavigate('blog-article', featuredArticle.slug)}
-              aria-label={`Articolo in evidenza: ${featuredArticle.title}`}
+              aria-label={`${t('bh.featured')}: ${featuredArticle.title}`}
             >
               <div className="bh-featured__body">
-                <span className="mono">In evidenza · {featuredArticle.category}</span>
+                <span className="mono">{t('bh.featured')} · {featuredArticle.category}</span>
                 <h2>{featuredArticle.title}</h2>
                 <p>{featuredArticle.subtitle}</p>
                 <div className="bh-featured__meta">
@@ -152,16 +153,16 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
                     <div className="bh-meta-role">{featuredArticle.author.role} · {featuredArticle.readTime}</div>
                   </div>
                 </div>
-                <button className="btn btn-ink">Leggi l'articolo →</button>
+                <button className="btn btn-ink">{t('bh.readArticle')}</button>
               </div>
               <div className="bh-featured__visual" aria-hidden="true">
                 <div className="bh-quote">
-                  "La differenza tra un CV scartato e una convocazione sta nei primi <i>6 secondi</i> di lettura."
+                  "{t('bh.quote')} <i>6 sec</i> {t('bh.quoteEnd')}"
                 </div>
                 <div className="bh-stats">
-                  <div className="bh-stat"><b>75%</b><span>CV filtrati da ATS</span></div>
-                  <div className="bh-stat"><b>6 sec</b><span>Prima scansione recruiter</span></div>
-                  <div className="bh-stat"><b>+85%</b><span>Colloqui col tailoring</span></div>
+                  <div className="bh-stat"><b>75%</b><span>{t('bh.stat1')}</span></div>
+                  <div className="bh-stat"><b>6 sec</b><span>{t('bh.stat2')}</span></div>
+                  <div className="bh-stat"><b>+85%</b><span>{t('bh.stat3')}</span></div>
                 </div>
               </div>
             </article>
@@ -179,29 +180,29 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
                     className={`bh-tab${selectedCategory === cat ? ' bh-tab--on' : ''}`}
                     onClick={() => setSelectedCategory(cat)}
                   >
-                    {cat === 'TUTTI' ? 'Tutti gli articoli' : cat}
+                    {cat === 'TUTTI' ? t('bh.allArticles') : cat}
                   </button>
                 ))}
               </div>
               <div className="bh-search">
                 <input
                   type="text"
-                  placeholder="Cerca guide o parole chiave…"
+                  placeholder={t('bh.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Cerca articoli"
+                  aria-label={t('bh.allArticles')}
                 />
-                {searchQuery && <button className="clr" onClick={() => setSearchQuery('')} aria-label="Cancella ricerca">×</button>}
+                {searchQuery && <button className="clr" onClick={() => setSearchQuery('')} aria-label={t('bh.clearSearch')}>×</button>}
               </div>
             </div>
 
             {/* GRID */}
             {filteredArticles.length === 0 ? (
               <div className="bh-empty rv on">
-                <h3>Nessun articolo trovato{searchQuery ? ` per "${searchQuery}"` : ''}</h3>
-                <p>Prova con una parola chiave diversa o cambia categoria.</p>
+                <h3>{t('bh.noArticlesFound')}{searchQuery ? ` per "${searchQuery}"` : ''}</h3>
+                <p>{t('bh.tryDifferentKeyword')}</p>
                 <button className="btn btn-line btn-sm" onClick={() => { setSearchQuery(''); setSelectedCategory('TUTTI'); }}>
-                  Reset filtri
+                  {t('bh.resetFilters')}
                 </button>
               </div>
             ) : (
@@ -238,15 +239,14 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
           <section style={{ padding: '72px 0 0' }} aria-label="Calcolatore stipendio netto">
             <div className="cta-band rv">
               <div>
-                <span className="mono">Strumenti gratuiti</span>
-                <h3>Quanto vale davvero quella RAL?</h3>
+                <span className="mono">{t('bh.freeTools')}</span>
+                <h3>{t('bh.salaryCtaTitle')}</h3>
                 <p>
-                  Stai valutando un'offerta? Trasforma il lordo annuo in netto mensile con aliquote IRPEF,
-                  esonero contributivo e addizionali regionali aggiornate al 2026.
+                  {t('bh.salaryCtaSub')}
                 </p>
               </div>
               <button className="btn btn-ink" onClick={() => onNavigate('calcolo-stipendio')}>
-                Calcola lo stipendio netto →
+                {t('bh.calcSalaryCta')}
               </button>
             </div>
           </section>
@@ -255,11 +255,10 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
           <section style={{ padding: '28px 0 88px' }} aria-label="Newsletter">
             <div className="bh-news rv">
               <div>
-                <span className="mono">Newsletter di carriera</span>
-                <h2>I segreti dei recruiter, ogni martedì nella tua inbox.</h2>
+                <span className="mono">{t('bh.newsletterLabel')}</span>
+                <h2>{t('bh.newsletterTitle')}</h2>
                 <p>
-                  Un riassunto di 3 minuti con strategie per i colloqui, modelli CV di tendenza e
-                  aggiornamenti sugli algoritmi ATS. Oltre 14.000 iscritti in Italia.
+                  {t('bh.newsletterSub')}
                 </p>
               </div>
               <div>
@@ -267,8 +266,8 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
                   <div className="ok">
                     <span className="ck">✓</span>
                     <div>
-                      <b>Iscrizione completata!</b>
-                      <span>Controlla la posta per confermare l'indirizzo e scaricare il kit di 5 modelli CV.</span>
+                      <b>{t('bh.subscribed')}</b>
+                      <span>{t('bh.subscribedSub')}</span>
                     </div>
                   </div>
                 ) : (
@@ -276,15 +275,15 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
                     <form onSubmit={handleSubscribe}>
                       <input
                         type="email"
-                        placeholder="La tua email professionale"
+                        placeholder={t('bh.emailPlaceholder')}
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
                         required
-                        aria-label="Email per la newsletter"
+                        aria-label={t('bh.newsletterLabel')}
                       />
-                      <button type="submit" className="btn btn-ink">Iscriviti gratis</button>
+                      <button type="submit" className="btn btn-ink">{t('bh.subscribeFree')}</button>
                     </form>
-                    <span className="priv">100% gratuito · niente spam · cancellazione in un clic</span>
+                    <span className="priv">{t('bh.privacyNote')}</span>
                   </>
                 )}
               </div>
