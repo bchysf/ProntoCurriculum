@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import type { Page } from '../types';
-import { useT } from '../i18n/LanguageContext';
+import { useT, useLanguage } from '../i18n/LanguageContext';
+import { LANG_OPTIONS } from '../i18n/translations';
 
 // "Carta & Inchiostro" v3 — shared editorial chrome for blog, articles and tools.
 // Mirrors the Home (pc3) design system: Switzer + Satoshi + IBM Plex Mono,
@@ -132,6 +133,19 @@ export const EDITORIAL_CSS = `
 .pce .foot-bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 22px 0 36px; border-top: 1px solid var(--hair-soft); }
 .pce footer .mono { color: var(--ink-40); }
 
+/* Language switcher */
+.pce .lang-switch { display: flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--hair); border-radius: 8px; }
+.pce .lang-switch button { background: none; border: none; padding: 4px 7px; border-radius: 5px; cursor: pointer; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--ink-40); }
+.pce .lang-switch button:hover { color: var(--ink); }
+.pce .lang-switch button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.pce .foot-langs { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+.pce .foot-langs button { font-family: var(--f-mono); font-size: 10px; letter-spacing: .06em; border: 1px solid var(--hair-soft); border-radius: 5px; padding: 3px 7px; background: none; cursor: pointer; color: var(--ink-40); }
+.pce .foot-langs button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); font-weight: 700; }
+@media (max-width: 560px) {
+  .pce .lang-switch { padding: 3px; }
+  .pce .lang-switch button { padding: 3px 5px; font-size: 9.5px; }
+}
+
 @media (max-width: 900px) {
   .pce .shell { padding: 0 22px; }
   .pce .nav-links { display: none; }
@@ -239,6 +253,7 @@ interface EditorialChromeProps {
 
 export default function EditorialChrome({ onNavigate, active, tagline, children }: EditorialChromeProps) {
   const t = useT();
+  const { lang, setLang } = useLanguage();
   return (
     <div className="pce">
       <style>{EDITORIAL_CSS}</style>
@@ -259,7 +274,20 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <span className={active === 'blog' ? 'active' : ''} onClick={() => onNavigate('blog')}>{t('home.nav.blogGuide')}</span>
               <span className={active === 'calcolo-stipendio' ? 'active' : ''} onClick={() => onNavigate('calcolo-stipendio')}>{t('home.nav.salaryCalc')}</span>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div className="lang-switch" aria-label="Lingua">
+                {LANG_OPTIONS.map(l => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => setLang(l.code)}
+                    aria-pressed={lang === l.code}
+                    title={l.label}
+                  >
+                    {l.code}
+                  </button>
+                ))}
+              </div>
               <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}>{t('home.nav.createCvBtn')}</button>
             </div>
           </nav>
@@ -278,6 +306,19 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <p className="foot-about">
                 {t('home.footer.about')}
               </p>
+              <div className="foot-langs" aria-label="Lingue disponibili">
+                {LANG_OPTIONS.map(l => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => setLang(l.code)}
+                    aria-pressed={lang === l.code}
+                    title={l.label}
+                  >
+                    {l.code}
+                  </button>
+                ))}
+              </div>
             </div>
             <nav className="foot-col" aria-label="Prodotto">
               <h4>{t('home.footer.product')}</h4>

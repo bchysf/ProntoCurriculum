@@ -53,12 +53,12 @@ const CF_CSS = `
 
 export default function ComeFunziona({ onNavigate }: ComeFunzionaProps) {
   useReveal();
+  const t = useT();
   useSeoMeta(
-    'Come Funziona ProntoCurriculum — CV, CV su Misura e Candidature | ProntoCurriculum',
-    'Scopri come ProntoCurriculum crea il tuo CV con l\'AI in pochi minuti, lo adatta a ogni offerta di lavoro e ti aiuta a tracciare le candidature, dal template al colloquio.',
+    t('seo.comeFunziona.title'),
+    t('seo.comeFunziona.desc'),
     '/come-funziona',
   );
-  const t = useT();
   const BUILDER_STEPS = buildBuilderSteps(t);
   const TAILOR_STEPS = buildTailorSteps(t);
   const FAQ_ITEMS = buildFaqItems(t);

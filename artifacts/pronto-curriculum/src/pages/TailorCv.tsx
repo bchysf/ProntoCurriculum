@@ -19,13 +19,13 @@ interface PreviewData {
 }
 
 export default function TailorCv({ onNavigate, onCVLoaded, onLogin }: TailorCvProps) {
-  useSeoMeta(
-    'CV su Misura per Ogni Offerta con l\'AI | ProntoCurriculum',
-    'Incolla l\'annuncio di lavoro e lascia che l\'AI adatti il tuo CV: seleziona le esperienze più rilevanti, riscrive titolo e sommario e massimizza la compatibilità con l\'offerta.',
-    '/cv-su-misura',
-  );
   const { isAuthenticated, isLoading } = useAuth();
   const t = useT();
+  useSeoMeta(
+    t('seo.tailorCv.title'),
+    t('seo.tailorCv.desc'),
+    '/cv-su-misura',
+  );
   const [mode, setMode] = useState<InputMode>('text');
   const [urlInput, setUrlInput] = useState('');
   const [jobText, setJobText] = useState('');

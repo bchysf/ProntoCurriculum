@@ -24,50 +24,50 @@ const CCNL_LABELS: Record<CCNLType, string> = {
 
 const CCNL_LEVELS: Record<CCNLType, CCNLLevel[]> = {
   commercio: [
-    { level: 'Quadro', ral: 48500, description: 'Direttori, institori e responsabili di filiale' },
-    { level: '1° Livello', ral: 36200, description: 'Capi servizio, coordinatori di area e specialisti senior' },
-    { level: '2° Livello', ral: 30800, description: 'Impiegati di concetto ad elevata specializzazione' },
-    { level: '3° Livello', ral: 26400, description: 'Impiegati tecnici e amministrativi qualificati' },
-    { level: '4° Livello', ral: 23200, description: 'Livello base impiegatizio, contabili, addetti vendite senior' },
-    { level: '5° Livello', ral: 21100, description: 'Addetti alle vendite e impiegati d’ordine' },
-    { level: '6° Livello', ral: 19200, description: 'Personale ausiliario ed esecutivo' },
-    { level: '7° Livello', ral: 17800, description: 'Mansioni di pulizia o prima occupazione' },
+    { level: 'Quadro', ral: 48500, description: 'sal.lvl.commercio.0' },
+    { level: '1° Livello', ral: 36200, description: 'sal.lvl.commercio.1' },
+    { level: '2° Livello', ral: 30800, description: 'sal.lvl.commercio.2' },
+    { level: '3° Livello', ral: 26400, description: 'sal.lvl.commercio.3' },
+    { level: '4° Livello', ral: 23200, description: 'sal.lvl.commercio.4' },
+    { level: '5° Livello', ral: 21100, description: 'sal.lvl.commercio.5' },
+    { level: '6° Livello', ral: 19200, description: 'sal.lvl.commercio.6' },
+    { level: '7° Livello', ral: 17800, description: 'sal.lvl.commercio.7' },
   ],
   metalmeccanico: [
-    { level: 'A1 (ex 8S/Quadro)', ral: 52000, description: 'Quadri e alte professionalità direttive' },
-    { level: 'B3 (ex 7S)', ral: 39500, description: 'Specialisti di processo e coordinatori tecnici' },
-    { level: 'B2 (ex 7)', ral: 35000, description: 'Progettisti, programmatori e tecnici senior' },
-    { level: 'B1 (ex 6)', ral: 31200, description: 'Impiegati tecnici e operai altamente specializzati' },
-    { level: 'C3 (ex 5S)', ral: 28400, description: 'Tecnici intermedi, programmatori junior, capireparto' },
-    { level: 'C2 (ex 5)', ral: 25800, description: 'Operai specializzati e impiegati amministrativi' },
-    { level: 'C1 (ex 4)', ral: 23800, description: 'Operai qualificati e impiegati d’ordine' },
-    { level: 'D1 (ex 3)', ral: 21900, description: 'Personale operativo d’ingresso' },
+    { level: 'A1 (ex 8S/Quadro)', ral: 52000, description: 'sal.lvl.metalmeccanico.0' },
+    { level: 'B3 (ex 7S)', ral: 39500, description: 'sal.lvl.metalmeccanico.1' },
+    { level: 'B2 (ex 7)', ral: 35000, description: 'sal.lvl.metalmeccanico.2' },
+    { level: 'B1 (ex 6)', ral: 31200, description: 'sal.lvl.metalmeccanico.3' },
+    { level: 'C3 (ex 5S)', ral: 28400, description: 'sal.lvl.metalmeccanico.4' },
+    { level: 'C2 (ex 5)', ral: 25800, description: 'sal.lvl.metalmeccanico.5' },
+    { level: 'C1 (ex 4)', ral: 23800, description: 'sal.lvl.metalmeccanico.6' },
+    { level: 'D1 (ex 3)', ral: 21900, description: 'sal.lvl.metalmeccanico.7' },
   ],
   turismo: [
-    { level: 'Quadro', ral: 44000, description: 'Direttori d’albergo e capi settore complessi' },
-    { level: '1° Livello', ral: 33500, description: 'Capi servizio e responsabili di reparto senior' },
-    { level: '2° Livello', ral: 28200, description: 'Maître, chef di cucina, impiegati di concetto' },
-    { level: '3° Livello', ral: 24200, description: 'Receptionist esperti, barman qualificati, cuochi' },
-    { level: '4° Livello', ral: 21800, description: 'Camerieri di sala, receptionist, segretari d’ordine' },
-    { level: '5° Livello', ral: 19800, description: 'Camerieri ai piani, aiuto cuoco, personale comune' },
-    { level: '6° Livello', ral: 18200, description: 'Personale esecutivo d’ordine' },
-    { level: '7° Livello', ral: 16900, description: 'Addetti alle pulizie e mansioni semplici' },
+    { level: 'Quadro', ral: 44000, description: 'sal.lvl.turismo.0' },
+    { level: '1° Livello', ral: 33500, description: 'sal.lvl.turismo.1' },
+    { level: '2° Livello', ral: 28200, description: 'sal.lvl.turismo.2' },
+    { level: '3° Livello', ral: 24200, description: 'sal.lvl.turismo.3' },
+    { level: '4° Livello', ral: 21800, description: 'sal.lvl.turismo.4' },
+    { level: '5° Livello', ral: 19800, description: 'sal.lvl.turismo.5' },
+    { level: '6° Livello', ral: 18200, description: 'sal.lvl.turismo.6' },
+    { level: '7° Livello', ral: 16900, description: 'sal.lvl.turismo.7' },
   ],
   studi_professionali: [
-    { level: 'Quadro', ral: 42500, description: 'Responsabili di area complessa negli studi' },
-    { level: '1° Livello', ral: 32400, description: 'Praticanti abilitati, coordinatori di segreteria' },
-    { level: '2° Livello', ral: 27200, description: 'Impiegati di concetto con autonomia organizzativa' },
-    { level: '3° Livello', ral: 23800, description: 'Contabili esperti, segretari di direzione' },
-    { level: '4° Livello', ral: 21400, description: 'Archiviazione, inserimento dati, segretari base' },
-    { level: '5° Livello', ral: 19500, description: 'Personale addetto a servizi ausiliari' },
+    { level: 'Quadro', ral: 42500, description: 'sal.lvl.studi_professionali.0' },
+    { level: '1° Livello', ral: 32400, description: 'sal.lvl.studi_professionali.1' },
+    { level: '2° Livello', ral: 27200, description: 'sal.lvl.studi_professionali.2' },
+    { level: '3° Livello', ral: 23800, description: 'sal.lvl.studi_professionali.3' },
+    { level: '4° Livello', ral: 21400, description: 'sal.lvl.studi_professionali.4' },
+    { level: '5° Livello', ral: 19500, description: 'sal.lvl.studi_professionali.5' },
   ],
 };
 
 const REGIONS: Record<string, { label: string; rate: number; note: string }> = {
-  lombardia: { label: 'Lombardia', rate: 0.016, note: 'Aliquote a scaglioni, agevolazioni per famiglie con figli' },
-  piemonte: { label: 'Piemonte', rate: 0.019, note: 'Tra le più alte d’Italia, maggiorata sopra i 15.000€' },
-  veneto: { label: 'Veneto', rate: 0.0123, note: 'Aliquota base tra le più competitive del Nord' },
-  altre: { label: 'Altre regioni', rate: 0.015, note: 'Valore medio nazionale indicativo' },
+  lombardia: { label: 'Lombardia', rate: 0.016, note: 'sal.region.lombardia.note' },
+  piemonte: { label: 'Piemonte', rate: 0.019, note: 'sal.region.piemonte.note' },
+  veneto: { label: 'Veneto', rate: 0.0123, note: 'sal.region.veneto.note' },
+  altre: { label: 'sal.region.altre.label', rate: 0.015, note: 'sal.region.altre.note' },
 };
 
 const FAQ_ITEMS: Array<[string, string]> = [
@@ -218,8 +218,8 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
 
   useReveal();
   useSeoMeta(
-    'Calcolo Stipendio Netto dalla RAL 2026 — CCNL e Livelli | ProntoCurriculum',
-    'Calcola lo stipendio netto mensile dalla RAL: aliquote IRPEF 2026 a 3 scaglioni, esonero contributivo INPS, detrazioni e addizionali regionali. Gratis.',
+    t('seo.salaryCalc.title'),
+    t('seo.salaryCalc.desc'),
     '/calcolo-stipendio',
   );
 
@@ -371,7 +371,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                         </option>
                       ))}
                     </select>
-                    <p className="sc-hint">{levels[selectedLevelIndex]?.description}</p>
+                    <p className="sc-hint">{levels[selectedLevelIndex] && t(levels[selectedLevelIndex].description)}</p>
                   </div>
                 </>
               ) : (
@@ -404,7 +404,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
                   <label className="sc-label" htmlFor="sc-region">{t('sal.region')}</label>
                   <select id="sc-region" className="sc-select" value={region} onChange={(e) => setRegion(e.target.value)}>
                     {Object.entries(REGIONS).map(([key, r]) => (
-                      <option key={key} value={key}>{r.label}</option>
+                      <option key={key} value={key}>{key === 'altre' ? t(r.label) : r.label}</option>
                     ))}
                   </select>
                 </div>
@@ -445,7 +445,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
               </div>
               {childrenUnder21 > 0 && (
                 <p className="sc-hint">
-                  {t('sal.under21Note1')} <b>Assegno Unico Universale</b> {t('sal.under21Note2')}
+                  {t('sal.under21Note1')} <b>{t('sal.under21NoteBonus')}</b> {t('sal.under21Note2')}
                 </p>
               )}
             </div>
@@ -504,47 +504,33 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
               <span className="mono sec-num">{t('sal.guideNum')}</span>
             </div>
             <div className="sc-prose rv">
-              <p>
-                Gli annunci di lavoro indicano quasi sempre la retribuzione come <b>RAL (Reddito Annuo Lordo)</b>,
-                ma quello che entra sul conto a fine mese è un'altra cifra. Conoscere il proprio netto — e il
-                costo aziendale complessivo — è la base di ogni trattativa salariale consapevole.
-              </p>
-              <p>Dal lordo al netto si applicano tre passaggi in cascata:</p>
+              <p>{t('sal.guideP1')}</p>
+              <p>{t('sal.guideP2')}</p>
               <ol>
                 <li>
-                  <b>Contributi previdenziali INPS:</b> l'aliquota standard a carico del dipendente privato è il
-                  <b> 9,19%</b> della retribuzione imponibile. Le misure sul cuneo fiscale confermate per il 2026
-                  prevedono un esonero del 7% per retribuzioni fino a circa 25.000€ di RAL e del 6% fino a 35.000€,
-                  che aumenta sensibilmente il netto dei redditi medio-bassi.
+                  <b>{t('sal.guideInpsLabel')}</b> {t('sal.guideInpsText')}
                 </li>
                 <li>
-                  <b>IRPEF:</b> si calcola sull'imponibile fiscale (RAL meno contributi INPS) con
-                  <b> 3 scaglioni</b>: 23% fino a 28.000€, 35% tra 28.000€ e 50.000€, 43% oltre i 50.000€.
+                  <b>{t('sal.guideIrpefLabel')}</b> {t('sal.guideIrpefText')}
                 </li>
                 <li>
-                  <b>Detrazioni d'imposta:</b> riducono l'IRPEF dovuta. Le principali sono la detrazione per
-                  lavoro dipendente (decrescente al crescere del reddito) e quelle per coniuge e figli a carico
-                  dai 21 anni in su. Le misure per i figli più piccoli passano
-                  dall'<b>Assegno Unico Universale</b> erogato dall'INPS.
+                  <b>{t('sal.guideDeductionsLabel')}</b> {t('sal.guideDeductionsText1')}<b>{t('sal.under21NoteBonus')}</b> {t('sal.guideDeductionsText2')}
                 </li>
               </ol>
 
-              <h3>Le addizionali regionali: Lombardia, Piemonte e Veneto a confronto</h3>
-              <p>
-                Oltre all'IRPEF nazionale, la busta paga sconta le addizionali regionale e comunale,
-                che variano in base al domicilio fiscale:
-              </p>
+              <h3>{t('sal.guideRegionsH3')}</h3>
+              <p>{t('sal.guideRegionsP')}</p>
               <div style={{ overflowX: 'auto' }}>
                 <table className="sc-table">
                   <thead>
-                    <tr><th>Regione</th><th>Aliquota media stimata</th><th>Note</th></tr>
+                    <tr><th>{t('sal.tableRegion')}</th><th>{t('sal.tableRateEstimate')}</th><th>{t('sal.tableNotes')}</th></tr>
                   </thead>
                   <tbody>
                     {(['lombardia', 'piemonte', 'veneto'] as const).map(key => (
                       <tr key={key}>
                         <td>{REGIONS[key].label}</td>
                         <td>{(REGIONS[key].rate * 100).toFixed(2).replace('.', ',')}%</td>
-                        <td>{REGIONS[key].note}</td>
+                        <td>{t(REGIONS[key].note)}</td>
                       </tr>
                     ))}
                   </tbody>

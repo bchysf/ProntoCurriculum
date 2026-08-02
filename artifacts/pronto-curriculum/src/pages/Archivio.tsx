@@ -205,22 +205,22 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
           <div className="form-row">
             <div className="form-group">
               <label>{t('arch.company')}</label>
-              <input type="text" placeholder="es. Accenture" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
+              <input type="text" placeholder={t('arch.placeholderCompany')} value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
             </div>
             <div className="form-group">
               <label>{t('arch.role')}</label>
-              <input type="text" placeholder="es. Project Manager" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
+              <input type="text" placeholder={t('arch.placeholderRole')} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>{t('arch.city')}</label>
-              <input type="text" placeholder="es. Milano" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
+              <input type="text" placeholder={t('arch.placeholderCity')} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
             </div>
             <div className="form-group">
               <label>{t('arch.startDate')}</label>
-              <input type="text" placeholder="Gen 2020" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+              <input type="text" placeholder={t('arch.placeholderStartDate')} value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
             </div>
           </div>
 
@@ -229,7 +229,7 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
               <label>{t('arch.endDate')}</label>
               <input
                 type="text"
-                placeholder="Dic 2023"
+                placeholder={t('arch.placeholderEndDate')}
                 value={form.endDate}
                 disabled={form.isCurrent}
                 onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}

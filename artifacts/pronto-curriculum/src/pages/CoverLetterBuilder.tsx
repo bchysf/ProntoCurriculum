@@ -23,12 +23,12 @@ interface CoverLetterData {
 }
 
 export default function CoverLetterBuilder({ cvData, template = 'modern', onNavigate }: CoverLetterBuilderProps) {
+  const t = useT();
   useSeoMeta(
-    'Genera Lettera di Presentazione con l\'AI | ProntoCurriculum',
-    'Crea una lettera di presentazione professionale in italiano in pochi secondi: l\'AI la scrive a partire dal tuo CV e dall\'annuncio di lavoro, con tono formale, entusiasta o executive a scelta.',
+    t('seo.coverLetter.title'),
+    t('seo.coverLetter.desc'),
     '/genera-lettera-presentazione',
   );
-  const t = useT();
   const { lang } = useLanguage();
   const LETTER_LANGS = [
     { code: 'IT', label: t('cl.langItalian'), flag: 'it' },
@@ -209,7 +209,7 @@ ${letterData.signOff}`;
               <input
                 type="text"
                 className="input"
-                placeholder="es. Senior Growth Marketing Manager"
+                placeholder={t('cl.placeholderRole')}
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 style={{ width: '100%' }}
@@ -223,7 +223,7 @@ ${letterData.signOff}`;
               <input
                 type="text"
                 className="input"
-                placeholder="es. Bending Spoons, Ferrari, Enel"
+                placeholder={t('cl.placeholderCompany')}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 style={{ width: '100%' }}

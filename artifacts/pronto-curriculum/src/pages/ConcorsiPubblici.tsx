@@ -11,12 +11,12 @@ interface ConcorsiPubbliciProps {
 }
 
 export default function ConcorsiPubblici({ onNavigate, cvData, onCVChange, onTemplateChange }: ConcorsiPubbliciProps) {
+  const t = useT();
   useSeoMeta(
-    'CV per Concorsi Pubblici: Punteggio Titoli e Template PA | ProntoCurriculum',
-    'Calcola il punteggio titoli stimato per i concorsi pubblici e genera un CV in formato Europass/PA, con laurea, servizio in PA e certificazioni valorizzati secondo i bandi.',
+    t('seo.concorsi.title'),
+    t('seo.concorsi.desc'),
     '/concorsi-pubblici',
   );
-  const t = useT();
   const [laureaScore, setLaureaScore] = useState<number>(110);
   const [hasLode, setHasLode] = useState<boolean>(true);
   const [paYears, setPaYears] = useState<number>(2);

@@ -66,12 +66,12 @@ const PZ_CSS = `
 
 export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
   useReveal();
+  const t = useT();
   useSeoMeta(
-    'Prezzi ProntoCurriculum — CV Gratis o Illimitati da €1,99 | ProntoCurriculum',
-    'Confronta i piani ProntoCurriculum: crea CV gratis con filigrana, oppure scegli il Piano Mensile, Annuale o il Singolo CV senza filigrana. Sconto -30% permanente, pagamenti sicuri con Stripe.',
+    t('seo.prezzi.title'),
+    t('seo.prezzi.desc'),
     '/prezzi',
   );
-  const t = useT();
   const FAQ_ITEMS = buildFaqItems(t);
 
   const faqSchema = useMemo(() => ({

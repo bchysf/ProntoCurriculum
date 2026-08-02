@@ -292,13 +292,13 @@ const JX_CSS = `
 `;
 
 export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProps) {
-  useSeoMeta(
-    'Offerte di Lavoro in Italia con Analisi AI di Compatibilità | ProntoCurriculum',
-    'Cerca offerte di lavoro aggregate dai principali portali italiani ed europei e scopri con l\'AI quanto il tuo CV è compatibile con ogni annuncio, con suggerimenti per candidarti al meglio.',
-    '/offerte-lavoro',
-  );
   const { isAuthenticated } = useAuth();
   const t = useT();
+  useSeoMeta(
+    t('seo.jobsBoard.title'),
+    t('seo.jobsBoard.desc'),
+    '/offerte-lavoro',
+  );
 
   const [country, setCountry] = useState('it');
   const [query, setQuery] = useState('');
@@ -711,7 +711,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
             <label>{t('jobs.dreamSalary')}</label>
             <div className="jx-q-salrow">
               <input
-                type="number" min={0} step={1000} placeholder="es. 45.000"
+                type="number" min={0} step={1000} placeholder={t('jobs.placeholderDreamSalary')}
                 value={desiredSalary} onChange={e => setDesiredSalary(e.target.value)}
               />
               <b>{CURRENCY[country] ?? '€'}</b>
@@ -791,7 +791,7 @@ export default function JobsBoard({ cvData, onNavigate, onLogin }: JobsBoardProp
                   <div className="jx-field">
                     <label>{t('jobs.minSalary')}</label>
                     <input
-                      type="number" min={0} step={1000} placeholder="es. 30000"
+                      type="number" min={0} step={1000} placeholder={t('jobs.placeholderMinSalary')}
                       value={filterMinSalary} onChange={e => setFilterMinSalary(e.target.value)}
                       disabled={jobs.length === 0}
                     />

@@ -79,12 +79,12 @@ interface CreateCvWizardProps {
 }
 
 export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
+  const t = useT();
   useSeoMeta(
-    'Crea il tuo CV Gratis con l\'AI — Template ATS | ProntoCurriculum',
-    'Crea un curriculum professionale in pochi minuti: carica il PDF o LinkedIn, scegli un template ottimizzato ATS e lascia che l\'AI scriva le tue esperienze. Gratis, senza registrazione.',
+    t('seo.createCv.title'),
+    t('seo.createCv.desc'),
     '/crea-cv',
   );
-  const t = useT();
   const TEMPLATES = buildTemplates(t);
   const [step, setStep] = useState<Step>('source');
   const [source, setSource] = useState<Source | null>(null);
