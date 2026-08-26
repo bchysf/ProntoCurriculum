@@ -1,11 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db } from "@workspace/db";
+import { db, subscriptionsTable } from "@workspace/db";
 import { userCvsTable, experiencesTable } from "@workspace/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
+const FREE_CV_LIMIT = 1;
 
 function getUserId(req: Request, res: Response): string | null {
   const userId = req.user?.id;
@@ -14,6 +15,17 @@ function getUserId(req: Request, res: Response): string | null {
     return null;
   }
   return userId;
+}
+
+async function isProUser(userId: string | undefined): Promise<boolean> {
+  if (!userId) return false;
+  const [sub] = await db
+    .select({ plan: subscriptionsTable.plan })
+    .from(subscriptionsTable)
+    .where(
+      sql`${subscriptionsTable.userId} = ${userId} and ${subscriptionsTable.status} = 'active' and ${subscriptionsTable.plan} <> 'free' and ${subscriptionsTable.currentPeriodEnd} > now()`
+    );
+  return !!sub;
 }
 
 interface CVExperience {
@@ -126,6 +138,15 @@ router.post("/cvs", async (req: Request, res: Response) => {
       .where(eq(userCvsTable.userId, userId))
       .orderBy(desc(userCvsTable.updatedAt));
 
+    const isPro = await isProUser(userId);
+    if (!isPro && existing.length >= FREE_CV_LIMIT) {
+      res.status(403).json({
+        error: "Il piano gratuito include 1 CV salvato. Passa a Pro per salvarne di più.",
+        code: "FREE_CV_LIMIT_REACHED",
+      });
+      return;
+    }
+
     if (existing.length >= MAX_SAVED_CVS) {
       for (const row of existing.slice(MAX_SAVED_CVS - 1)) {
         await db.delete(userCvsTable).where(eq(userCvsTable.id, row.id));
@@ -220,8 +241,8 @@ router.post("/cvs/export/docx", async (req: Request, res: Response) => {
       return;
     }
 
-    // Determine watermark based on user tier if logged in, or fallback to parameter / true
-    const isPro = req.user && (req.user as unknown as { tier?: string }).tier !== "free";
+    // Determine watermark based on user's active subscription plan if logged in, or fallback to parameter / true
+    const isPro = await isProUser(req.user?.id);
     const watermark = isPro ? false : (includeWatermark !== undefined ? includeWatermark : true);
 
     const buffer = await generateDocxBuffer({
@@ -260,7 +281,7 @@ router.get("/cvs/:id/export/docx", async (req: Request, res: Response) => {
       return;
     }
 
-    const isPro = req.user && (req.user as unknown as { tier?: string }).tier !== "free";
+    const isPro = await isProUser(req.user?.id);
     const buffer = await generateDocxBuffer({
       cvData: cv.cvData as DocxExportInput["cvData"],
       template: cv.template || "modern",

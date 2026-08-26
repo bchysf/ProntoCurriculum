@@ -245,9 +245,12 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
   const handleDeleteCV = async (id: string) => {
     setDeletingId(id);
     try {
-      await fetch(`/api/cvs/${id}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`/api/cvs/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Errore durante l\'eliminazione del CV');
       setSavedCVs(prev => prev.filter(c => c.id !== id));
-    } catch { } finally { setDeletingId(null); }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Errore durante l\'eliminazione del CV');
+    } finally { setDeletingId(null); }
   };
 
   const handleRenameCV = async (id: string) => {
@@ -257,11 +260,12 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ name: renameValue }),
       });
-      if (res.ok) {
-        const data = await res.json() as { cv: SavedCV };
-        setSavedCVs(prev => prev.map(c => c.id === id ? data.cv : c));
-      }
-    } catch { } finally { setRenamingId(null); setRenameValue(''); }
+      if (!res.ok) throw new Error('Errore durante la rinomina del CV');
+      const data = await res.json() as { cv: SavedCV };
+      setSavedCVs(prev => prev.map(c => c.id === id ? data.cv : c));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Errore durante la rinomina del CV');
+    } finally { setRenamingId(null); setRenameValue(''); }
   };
 
   const handleQuickDownloadDOCX = async (cv: SavedCV) => {
@@ -293,14 +297,15 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify(body),
       });
-      if (res.ok) {
-        const data = await res.json() as { profile: UserProfile };
-        setProfile(data.profile);
-        setEditingProfile(false);
-        setProfileSaved(true);
-        setTimeout(() => setProfileSaved(false), 2500);
-      }
-    } catch { } finally { setProfileSaving(false); }
+      if (!res.ok) throw new Error('Errore durante il salvataggio del profilo');
+      const data = await res.json() as { profile: UserProfile };
+      setProfile(data.profile);
+      setEditingProfile(false);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Errore durante il salvataggio del profilo');
+    } finally { setProfileSaving(false); }
   };
 
   const handleSyncFromCV = () => {
