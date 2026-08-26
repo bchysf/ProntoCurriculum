@@ -16,15 +16,9 @@ const ai = new GoogleGenAI(
       }
 );
 
-function isRateLimitError(err: unknown): boolean {
-  const status = (err as { status?: number })?.status;
-  const code = (err as { error?: { error?: { code?: string } } })?.error?.error?.code;
-  return status === 429 || code === 'rate_limit_exceeded';
-}
-
 async function generateWithGroq(prompt: string, temperature: number, maxTokens: number): Promise<string> {
   const completion = await groq.chat.completions.create({
-    model: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
+    model: process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: maxTokens,
     temperature,
@@ -43,17 +37,23 @@ async function generateWithGemini(prompt: string, temperature: number): Promise<
   return response.text?.trim() ?? '';
 }
 
-// Groq first (fast). Falls back to Gemini automatically if Groq is rate-limited or unreachable.
+// Groq first (fast). Falls back to Gemini automatically on ANY Groq failure —
+// rate limits, transient outages, or a model being renamed/deprecated
+// (Groq has done this before and broke every AI feature with no fallback).
 export async function generateText(prompt: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string> {
   const temperature = opts?.temperature ?? 0.7;
   const maxTokens = opts?.maxTokens ?? 1500;
 
   try {
     return await generateWithGroq(prompt, temperature, maxTokens);
-  } catch (err) {
-    if (!isRateLimitError(err)) throw err;
-    console.warn('[ai] Groq rate-limited, falling back to Gemini');
-    return await generateWithGemini(prompt, temperature);
+  } catch (groqErr) {
+    console.warn('[ai] Groq call failed, falling back to Gemini:', (groqErr as { message?: string })?.message ?? groqErr);
+    try {
+      return await generateWithGemini(prompt, temperature);
+    } catch (geminiErr) {
+      console.error('[ai] Gemini fallback also failed:', (geminiErr as { message?: string })?.message ?? geminiErr);
+      throw groqErr;
+    }
   }
 }
 
