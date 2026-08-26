@@ -78,6 +78,66 @@ router.get('/auth/user', (req: Request, res: Response) => {
   );
 });
 
+type SupaUser = Awaited<ReturnType<ReturnType<typeof supabaseAdmin>['auth']['getUser']>>['data']['user'];
+
+// Shared by /auth/sync, /auth/login and /auth/signup: turns a verified Supabase
+// user + access token into our own app session (upsert, referral, welcome email, cookie).
+async function establishSession(
+  supaUser: NonNullable<SupaUser>,
+  accessToken: string,
+  referralCode: string | undefined,
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const metadata = supaUser.user_metadata as { full_name?: string; name?: string; avatar_url?: string; picture?: string };
+  const nameParts = (metadata.full_name ?? metadata.name ?? '').split(' ');
+  const firstName = nameParts[0] || null;
+  const lastName = nameParts.slice(1).join(' ') || null;
+
+  const dbUser = await upsertUser({
+    id: supaUser.id,
+    email: supaUser.email ?? null,
+    firstName,
+    lastName,
+    profileImageUrl: metadata.avatar_url ?? metadata.picture ?? null,
+  });
+
+  // Automatically claim referral code if provided upon sign-in
+  if (referralCode && typeof referralCode === 'string' && dbUser.email) {
+    claimReferralCode(referralCode, dbUser.id, dbUser.email, firstName).catch(err => {
+      req.log.error({ err, referralCode }, 'Background referral claim failed');
+    });
+  }
+
+  // Send onboarding welcome email (asynchronously, non-blocking)
+  if (dbUser.email) {
+    sendEmail({
+      to: dbUser.email,
+      subject: '🎉 Benvenuto in ProntoCurriculum — Il Primo CV Builder AI in Italia',
+      html: getWelcomeEmailHtml(firstName || 'Utente'),
+    }).catch(err => {
+      req.log.error({ err }, 'Background welcome email failed');
+    });
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const sessionData: SessionData = {
+    user: {
+      id: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
+      profileImageUrl: dbUser.profileImageUrl,
+    },
+    access_token: accessToken,
+    expires_at: now + 3600,
+  };
+
+  const sid = await createSession(sessionData);
+  setSessionCookie(res, sid);
+  res.json({ user: sessionData.user });
+}
+
 // POST /api/auth/sync — called from frontend after Supabase Google Sign-In
 // Verifies the Supabase access token and creates/updates a session
 router.post('/auth/sync', async (req: Request, res: Response) => {
@@ -93,58 +153,60 @@ router.post('/auth/sync', async (req: Request, res: Response) => {
     if (error || !data.user) {
       throw error ?? new Error('Utente non trovato');
     }
-    const supaUser = data.user;
-
-    const metadata = supaUser.user_metadata as { full_name?: string; name?: string; avatar_url?: string; picture?: string };
-    const nameParts = (metadata.full_name ?? metadata.name ?? '').split(' ');
-    const firstName = nameParts[0] || null;
-    const lastName = nameParts.slice(1).join(' ') || null;
-
-    const dbUser = await upsertUser({
-      id: supaUser.id,
-      email: supaUser.email ?? null,
-      firstName,
-      lastName,
-      profileImageUrl: metadata.avatar_url ?? metadata.picture ?? null,
-    });
-
-    // Automatically claim referral code if provided upon sign-in
-    if (referralCode && typeof referralCode === 'string' && dbUser.email) {
-      claimReferralCode(referralCode, dbUser.id, dbUser.email, firstName).catch(err => {
-        req.log.error({ err, referralCode }, 'Background referral claim failed');
-      });
-    }
-
-    // Send onboarding welcome email (asynchronously, non-blocking)
-    if (dbUser.email) {
-      sendEmail({
-        to: dbUser.email,
-        subject: '🎉 Benvenuto in ProntoCurriculum — Il Primo CV Builder AI in Italia',
-        html: getWelcomeEmailHtml(firstName || 'Utente'),
-      }).catch(err => {
-        req.log.error({ err }, 'Background welcome email failed');
-      });
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    const sessionData: SessionData = {
-      user: {
-        id: dbUser.id,
-        email: dbUser.email,
-        firstName: dbUser.firstName,
-        lastName: dbUser.lastName,
-        profileImageUrl: dbUser.profileImageUrl,
-      },
-      access_token: accessToken,
-      expires_at: now + 3600,
-    };
-
-    const sid = await createSession(sessionData);
-    setSessionCookie(res, sid);
-    res.json({ user: sessionData.user });
+    await establishSession(data.user, accessToken, referralCode, req, res);
   } catch (err) {
     req.log.error({ err }, 'auth/sync error');
     res.status(401).json({ error: 'Token non valido o scaduto' });
+  }
+});
+
+// POST /api/auth/login — email/password sign-in.
+// Runs server-side against Supabase so the browser never has to reach a
+// third-party auth domain directly (avoids client-side network blockers).
+router.post('/auth/login', async (req: Request, res: Response) => {
+  const { email, password, referralCode } = req.body as { email?: string; password?: string; referralCode?: string };
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email e password sono obbligatorie' });
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin().auth.signInWithPassword({ email, password });
+    if (error || !data.session || !data.user) {
+      res.status(401).json({ error: error?.message ?? 'Credenziali non valide' });
+      return;
+    }
+    await establishSession(data.user, data.session.access_token, referralCode, req, res);
+  } catch (err) {
+    req.log.error({ err }, 'auth/login error');
+    res.status(500).json({ error: 'Errore durante l\'accesso' });
+  }
+});
+
+// POST /api/auth/signup — email/password sign-up.
+// Same server-side rationale as /auth/login.
+router.post('/auth/signup', async (req: Request, res: Response) => {
+  const { email, password, referralCode } = req.body as { email?: string; password?: string; referralCode?: string };
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email e password sono obbligatorie' });
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin().auth.signUp({ email, password });
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    if (!data.session || !data.user) {
+      // Email confirmation required by project settings — no session yet.
+      res.json({ user: null, requiresConfirmation: true });
+      return;
+    }
+    await establishSession(data.user, data.session.access_token, referralCode, req, res);
+  } catch (err) {
+    req.log.error({ err }, 'auth/signup error');
+    res.status(500).json({ error: 'Errore durante la registrazione' });
   }
 });
 

@@ -84,18 +84,41 @@ export function useAuth(): AuthState {
     // Browser navigates away to Google and back — onAuthStateChange handles the rest.
   }, []);
 
+  // Password auth runs server-side (POST /api/auth/login|signup) instead of calling
+  // Supabase directly from the browser, so a client-side network blocker on the
+  // third-party auth domain can't take login/signup down.
   const loginWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error?.message ?? null;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json() as { user?: AuthUser; error?: string };
+      if (!res.ok) return data.error ?? 'Errore durante l\'accesso';
+      if (data.user) setUser(data.user);
+      return null;
+    } catch {
+      return 'Errore di rete durante l\'accesso';
+    }
   }, []);
 
   const signUpWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    return error?.message ?? null;
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json() as { user?: AuthUser; error?: string; requiresConfirmation?: boolean };
+      if (!res.ok) return data.error ?? 'Errore durante la registrazione';
+      if (data.user) setUser(data.user);
+      return null;
+    } catch {
+      return 'Errore di rete durante la registrazione';
+    }
   }, []);
 
   const logout = useCallback(async () => {
