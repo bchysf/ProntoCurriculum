@@ -10,6 +10,7 @@ import cvsRouter from "./cvs";
 import profileRouter from "./profile";
 import billingRouter from "./billing";
 import coverLetterRouter from "./coverLetter";
+import cvAssistantRouter from "./cvAssistant";
 import { emailRouter } from "./email";
 import { adminRouter } from "./admin";
 import { referralRouter } from "./referral";
@@ -52,6 +53,7 @@ router.use(
     "/tailored-cvs/interview-prep",
     "/jobs/analyze",
     "/jobs/translate",
+    "/cv-assistant/chat",
   ],
   aiRateLimit,
 );
@@ -60,5 +62,6 @@ router.use(parseCvRouter);
 router.use(optimizeCvRouter);
 router.use(tailorCvRouter);
 router.use(translateCvRouter);
+router.use(cvAssistantRouter);
 
 export default router;

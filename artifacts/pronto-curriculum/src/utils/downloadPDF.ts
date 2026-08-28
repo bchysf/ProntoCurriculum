@@ -38,7 +38,19 @@ const SPECS: Record<string, TemplateSpec> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
+// Below this scale, shrinking further hurts readability more than it helps —
+// beyond this floor we let the CV spill onto a genuine second page instead.
+const MIN_FIT_SCALE = 0.8;
+
+interface BuildPDFOptions {
+  scale?: number;
+  // Skips pagination so `finalY` reports the true content height, used to
+  // decide how much (if any) shrinking is needed to fit one page.
+  measureOnly?: boolean;
+}
+
+async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', opts: BuildPDFOptions = {}) {
+  const { scale = 1, measureOnly = false } = opts;
   const { jsPDF } = await import('jspdf');
   const spec = SPECS[template] ?? SPECS.modern;
   const L = CV_LABELS[lang] ?? CV_LABELS.IT;
@@ -51,13 +63,18 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
 
   let y = 0;
 
+  // Font size and vertical spacing scale together so shrinking stays proportional.
+  const fs = (base: number) => Math.round(base * scale * 100) / 100;
+  const sp = (base: number) => base * scale;
+
   const checkPage = (need = 20) => {
-    if (y > PAGE_H - need) { doc.addPage(); y = 20; }
+    if (measureOnly) return;
+    if (y > PAGE_H - sp(need)) { doc.addPage(); y = 20; }
   };
 
   const setBody = (bold = false, size = 10) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(size);
+    doc.setFontSize(fs(size));
     doc.setTextColor(...GRAY7);
   };
 
@@ -65,12 +82,12 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     checkPage(30);
     doc.setTextColor(...spec.sectionColor);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(fs(10));
     doc.text(title.toUpperCase(), M, y);
     doc.setDrawColor(...spec.sectionColor);
     doc.setLineWidth(0.4);
     doc.line(M, y + 1.5, PAGE_W - M, y + 1.5);
-    y += 7;
+    y += sp(7);
     setBody();
   };
 
@@ -158,12 +175,12 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     doc.setTextColor(...GRAY7);
     const lines = doc.splitTextToSize(cvData.summary, CW);
     doc.text(lines, M, y);
-    y += lines.length * 5 + 5;
+    y += lines.length * sp(5) + sp(5);
   }
 
   // ── SKILLS ──────────────────────────────────────────────────────────────────
   const effectiveSkills = cvData.skillCategories?.length
-    ? cvData.skillCategories.flatMap(c => c.skills)
+    ? cvData.skillCategories.flatMap(c => c.skills ?? [])
     : cvData.skills;
   if (effectiveSkills?.length) {
     checkPage(25);
@@ -172,7 +189,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     doc.setTextColor(...GRAY7);
     const skillLines = doc.splitTextToSize(effectiveSkills.join(' • '), CW);
     doc.text(skillLines, M, y);
-    y += skillLines.length * 5 + 5;
+    y += skillLines.length * sp(5) + sp(5);
   }
 
   // ── EXPERIENCES ──────────────────────────────────────────────────────────────
@@ -188,8 +205,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
-      doc.text(meta, M, y + 5);
-      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + 5, { align: 'right' });
+      doc.text(meta, M, y + sp(5));
+      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
 
       if (template === 'minimal') {
@@ -198,7 +215,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
         doc.rect(M - 3, y - 3, 1.5, 11, 'F');
       }
 
-      y += 10;
+      y += sp(10);
 
       if (exp.desc?.trim()) {
         setBody(false, 9.5);
@@ -209,11 +226,11 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
           for (let i = 0; i < wrapped.length; i++) {
             checkPage(8);
             doc.text((i === 0 ? '• ' : '  ') + wrapped[i], M + 2, y);
-            y += 4.5;
+            y += sp(4.5);
           }
         }
       }
-      y += 4;
+      y += sp(4);
     }
   }
 
@@ -231,12 +248,12 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
       const inst = [edu.institution, edu.grade ? `${L.grade}: ${edu.grade}` : ''].filter(Boolean).join('  —  ');
-      doc.text(inst, M, y + 5);
-      doc.text(`${edu.from || ''} – ${edu.to || L.present}`, PAGE_W - M, y + 5, { align: 'right' });
+      doc.text(inst, M, y + sp(5));
+      doc.text(`${edu.from || ''} – ${edu.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
-      y += 13;
+      y += sp(13);
     }
-    y += 2;
+    y += sp(2);
   }
 
   // ── CERTIFICATIONS ──────────────────────────────────────────────────────────
@@ -249,9 +266,9 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
       doc.setTextColor(...GRAY7);
       const parts = [cert.name, cert.issuer, cert.date].filter(Boolean);
       doc.text(parts.join('  —  '), M, y);
-      y += 5.5;
+      y += sp(5.5);
     }
-    y += 2;
+    y += sp(2);
   }
 
   // ── LANGUAGES ────────────────────────────────────────────────────────────────
@@ -263,20 +280,57 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
       checkPage(8);
       doc.setTextColor(...GRAY7);
       doc.text(`${cvLang.name}${cvLang.level ? '  —  ' + cvLang.level : ''}`, M, y);
-      y += 5.5;
+      y += sp(5.5);
+    }
+  }
+
+  // ── ADDITIONAL EXPERIENCE ─────────────────────────────────────────────────────
+  if (cvData.additionalExperiences?.some(e => e.company || e.role)) {
+    sectionTitle(L.additionalExperience);
+    for (const exp of cvData.additionalExperiences.filter(e => e.company || e.role)) {
+      checkPage(25);
+
+      setBody(true, 10.5);
+      doc.setTextColor(...NAVY);
+      doc.text(exp.role || '', M, y);
+
+      setBody(false, 9.5);
+      doc.setTextColor(...GRAY5);
+      const meta = [exp.company, exp.city].filter(Boolean).join(', ');
+      doc.text(meta, M, y + sp(5));
+      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
+      doc.setTextColor(...GRAY7);
+
+      y += sp(10);
+
+      if (exp.desc?.trim()) {
+        setBody(false, 9.5);
+        doc.setTextColor(...GRAY7);
+        const raw = exp.desc.split('\n').map(l => l.replace(/^•\s*/, '').trim()).filter(Boolean);
+        for (const line of raw) {
+          const wrapped = doc.splitTextToSize(line, CW - 5);
+          for (let i = 0; i < wrapped.length; i++) {
+            checkPage(8);
+            doc.text((i === 0 ? '• ' : '  ') + wrapped[i], M + 2, y);
+            y += sp(4.5);
+          }
+        }
+      }
+      y += sp(4);
     }
   }
 
   // ── GDPR PRIVACY CLAUSE ─────────────────────────────────────────────────────
   checkPage(18);
-  y += 6;
+  y += sp(6);
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7);
+  doc.setFontSize(fs(7));
   doc.setTextColor(150, 150, 150);
   const clauseLines = doc.splitTextToSize(L.privacyClause, CW);
   doc.text(clauseLines, M, y);
+  y += clauseLines.length * sp(3.2);
 
-  return doc;
+  return { doc, finalY: y };
 }
 
 // Diagonal watermark + footer note on every page — free plan only.
@@ -321,10 +375,23 @@ export async function downloadCVAsPDF(
   template = 'modern',
   lang: CvLang = 'IT',
 ): Promise<void> {
-  const [doc, isPaid] = await Promise.all([
-    buildPDF(cvData, template, lang),
+  const PAGE_H = 297;
+  const BOTTOM_MARGIN = 15;
+
+  const [{ finalY }, isPaid] = await Promise.all([
+    buildPDF(cvData, template, lang, { measureOnly: true }),
     hasActivePaidPlan(),
   ]);
+
+  // Shrink font size and spacing just enough to fit one page — but not below
+  // MIN_FIT_SCALE, past which we let the CV spill onto a genuine second page
+  // rather than making the text unreadably small.
+  const available = PAGE_H - BOTTOM_MARGIN;
+  const scale = finalY > available
+    ? Math.max(MIN_FIT_SCALE, Math.min(1, available / finalY))
+    : 1;
+
+  const { doc } = await buildPDF(cvData, template, lang, { scale });
   if (!isPaid) applyFreeWatermark(doc);
   const filename = name
     ? `CV_${name.replace(/\s+/g, '_')}.pdf`

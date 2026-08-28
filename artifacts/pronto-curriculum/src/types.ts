@@ -54,6 +54,7 @@ export interface CVData {
   skillCategories?: SkillCategory[];
   languages: Language[];
   certifications?: Certification[];
+  additionalExperiences?: Experience[];
   photo?: string;
 }
 

@@ -50,6 +50,14 @@ export interface DocxExportInput {
       issuer?: string;
       date?: string;
     }>;
+    additionalExperiences?: Array<{
+      company?: string;
+      role?: string;
+      city?: string;
+      from?: string;
+      to?: string;
+      desc?: string;
+    }>;
   };
   template?: string;
   lang?: CvLang;
@@ -65,6 +73,7 @@ const LABELS: Record<
     skills: string;
     languages: string;
     certifications: string;
+    additionalExperience: string;
     privacyClause: string;
     watermark: string;
   }
@@ -76,6 +85,7 @@ const LABELS: Record<
     skills: "Competenze",
     languages: "Lingue conosciute",
     certifications: "Certificazioni",
+    additionalExperience: "Esperienze aggiuntive",
     privacyClause:
       "Autorizzo il trattamento dei miei dati personali ai sensi del D.Lgs. 196/2003 e del Regolamento UE 2016/679 (GDPR).",
     watermark: "Generato con ProntoCurriculum.it",
@@ -87,6 +97,7 @@ const LABELS: Record<
     skills: "Skills",
     languages: "Languages",
     certifications: "Certifications",
+    additionalExperience: "Additional Experience",
     privacyClause:
       "I hereby authorize the processing of my personal data pursuant to EU Regulation 2016/679 (GDPR).",
     watermark: "Generated with ProntoCurriculum.it",
@@ -98,6 +109,7 @@ const LABELS: Record<
     skills: "Compétences",
     languages: "Langues",
     certifications: "Certifications",
+    additionalExperience: "Expériences complémentaires",
     privacyClause:
       "J'autorise le traitement de mes données personnelles conformément au Règlement UE 2016/679 (RGPD).",
     watermark: "Généré avec ProntoCurriculum.it",
@@ -109,6 +121,7 @@ const LABELS: Record<
     skills: "Kompetenzen",
     languages: "Sprachen",
     certifications: "Zertifizierungen",
+    additionalExperience: "Zusätzliche Erfahrungen",
     privacyClause:
       "Ich erkläre mich mit der Verarbeitung meiner personenbezogenen Daten gemäß EU-Verordnung 2016/679 (DSGVO) einverstanden.",
     watermark: "Erstellt mit ProntoCurriculum.it",
@@ -120,6 +133,7 @@ const LABELS: Record<
     skills: "Competencias",
     languages: "Idiomas",
     certifications: "Certificaciones",
+    additionalExperience: "Experiencia adicional",
     privacyClause:
       "Autorizo el tratamiento de mis datos personales conforme al Reglamento UE 2016/679 (RGPD).",
     watermark: "Generado con ProntoCurriculum.it",
@@ -131,6 +145,7 @@ const LABELS: Record<
     skills: "Competências",
     languages: "Idiomas",
     certifications: "Certificações",
+    additionalExperience: "Experiência adicional",
     privacyClause:
       "Autorizo o tratamento dos meus dados pessoais nos termos do Regulamento UE 2016/679 (RGPD).",
     watermark: "Gerado com ProntoCurriculum.it",
@@ -554,7 +569,87 @@ export async function generateDocxBuffer(
     );
   }
 
-  // 10. Mandatory Privacy Clause at bottom
+  // 10. Additional Experience (secondary/volunteer work, freelance, etc.)
+  if (
+    Array.isArray(cvData.additionalExperiences) &&
+    cvData.additionalExperiences.some((e) => e.role || e.company)
+  ) {
+    addSectionHeading(t.additionalExperience);
+    for (const exp of cvData.additionalExperiences) {
+      if (!exp.role && !exp.company) continue;
+
+      const dateStr = [exp.from, exp.to].filter(Boolean).join(" – ").trim();
+      const metaStr = [exp.company, exp.city].filter(Boolean).join(", ");
+
+      paragraphs.push(
+        new Paragraph({
+          spacing: { before: 120, after: 40 },
+          children: [
+            new TextRun({
+              text: exp.role || "Ruolo",
+              bold: true,
+              size: 22,
+              color: "0F172A",
+              font: "Arial",
+            }),
+            ...(dateStr
+              ? [
+                  new TextRun({
+                    text: `   (${dateStr})`,
+                    size: 19,
+                    color: "64748B",
+                    font: "Arial",
+                  }),
+                ]
+              : []),
+          ],
+        })
+      );
+
+      if (metaStr) {
+        paragraphs.push(
+          new Paragraph({
+            spacing: { after: 60 },
+            children: [
+              new TextRun({
+                text: metaStr,
+                italics: true,
+                size: 20,
+                color: "334155",
+                font: "Arial",
+              }),
+            ],
+          })
+        );
+      }
+
+      if (exp.desc?.trim()) {
+        const bulletLines = exp.desc
+          .split("\n")
+          .map((l) => (l.trim().startsWith("•") ? l.trim().slice(1).trim() : l.trim()))
+          .filter(Boolean);
+
+        for (const bl of bulletLines) {
+          paragraphs.push(
+            new Paragraph({
+              bullet: { level: 0 },
+              spacing: { after: 60 },
+              children: [
+                new TextRun({
+                  text: bl,
+                  size: 20,
+                  color: "1E293B",
+                  font: "Arial",
+                }),
+              ],
+            })
+          );
+        }
+      }
+    }
+  }
+
+  // 11. Mandatory Privacy Clause at bottom
   paragraphs.push(
     new Paragraph({
       spacing: { before: 360, after: 60 },

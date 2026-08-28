@@ -27,10 +27,8 @@ interface CoverLetterPayload {
       to?: string;
       desc: string;
     }[];
-    skills?: {
-      hard?: string[];
-      soft?: string[];
-    };
+    skills?: string[];
+    skillCategories?: { name?: string; skills?: string[] }[];
   };
   jobTitle?: string;
   companyName?: string;
@@ -66,7 +64,10 @@ router.post("/cover-letter/generate", async (req: Request, res: Response) => {
       .map(e => `- ${e.role} presso ${e.company}: ${e.desc}`)
       .join("\n");
 
-    const hardSkills = (cvData?.skills?.hard ?? []).slice(0, 8).join(", ");
+    const effectiveSkills = cvData?.skillCategories?.length
+      ? cvData.skillCategories.flatMap(c => c.skills ?? [])
+      : (cvData?.skills ?? []);
+    const hardSkills = effectiveSkills.slice(0, 8).join(", ");
 
     const prompt = `Sei il più autorevole consulente di carriera e copywriter di Cover Letter al mondo.
 Il tuo obiettivo è scrivere una Lettera di Presentazione (Cover Letter) su misura che convinca il selezionatore (recruiter o hiring manager) a convocare il candidato a colloquio nei primi 30 secondi di lettura.
@@ -90,6 +91,12 @@ ${jobDescription || "Nessuna descrizione fornita. Basati sul titolo del ruolo e 
 DIRETTIVE SUL TONO DI VOCE:
 ${toneGuidance}
 
+VALUTAZIONE DI COMPATIBILITÀ (fai questo ragionamento PRIMA di scrivere la lettera):
+Confronta onestamente l'esperienza del candidato con i requisiti dell'offerta. Stima un punteggio di compatibilità da 0 a 100 (fitScore) e scrivi una nota di 1 frase che lo giustifica (fitNote), in ${langName}.
+- Se fitScore è ALTO (≥70): scrivi una lettera sicura e diretta, senza toccare eventuali gap — il candidato è un match solido.
+- Se fitScore è MEDIO o BASSO (<70): nel GANCIO o nel VALORE CONCRETO, affronta la discrepanza con sicurezza e riformulazione positiva invece di ignorarla o scusarti — esempio di tono: "pur non avendo esperienza diretta in X, la mia esperienza in Y mi ha dato competenze direttamente trasferibili in Z". Non essere remissivo, sii propositivo: trasforma il gap in una prospettiva diversa che porta valore.
+Non inventare esperienze o competenze che il candidato non ha per far salire artificialmente il punteggio — la valutazione deve riflettere onestamente i dati forniti.
+
 STRUTTURA OBBLIGATORIA (in 4 parti concise ma persuasive, max 300-350 parole totali):
 1. IL GANCIO (Hook): Evita formule noiose o stantie ("Con la presente..."). Inizia subito dimostrando conoscenza dell'azienda (${companyName}), del suo posizionamento sul mercato o delle sue recenti sfide, collegando la tua passione per il loro settore.
 2. IL VALORE CONCRETO (KPI & Impatto): Scegli 1 o 2 traguardi specifici o esperienze del profilo del candidato che corrispondono esattamente ai requisiti dell'annuncio. Usa numeri, percentuali o risultati misurabili.
@@ -98,6 +105,8 @@ STRUTTURA OBBLIGATORIA (in 4 parti concise ma persuasive, max 300-350 parole tot
 
 RESTITUISCI ESCLUSIVAMENTE UN OGGETTO JSON CON LA SEGUENTE STRUTTURA ESATTA (senza tag markdown \`\`\`json, solo JSON puro):
 {
+  "fitScore": 0,
+  "fitNote": "breve nota di 1 frase sulla compatibilità, in ${langName}",
   "recipient": "Gentile Responsabile della Selezione di ${companyName},",
   "hookParagraph": "Testo del primo paragrafo...",
   "valueParagraph": "Testo del secondo paragrafo con risultati e KPI...",
@@ -106,7 +115,7 @@ RESTITUISCI ESCLUSIVAMENTE UN OGGETTO JSON CON LA SEGUENTE STRUTTURA ESATTA (sen
   "signOff": "Cordiali saluti,\\n${cvData?.firstName ?? ""} ${cvData?.lastName ?? ""}"
 }`;
 
-    const rawJson = await generateText(prompt, { temperature: 0.7, maxTokens: 1200 });
+    const rawJson = await generateText(prompt, { temperature: 0.7, maxTokens: 1300 });
     const cleanJsonStr = rawJson
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
@@ -119,6 +128,8 @@ RESTITUISCI ESCLUSIVAMENTE UN OGGETTO JSON CON LA SEGUENTE STRUTTURA ESATTA (sen
     } catch {
       // Fallback if parsing fails
       parsedResult = {
+        fitScore: null,
+        fitNote: "",
         recipient: `Gentile Responsabile della Selezione di ${companyName},`,
         hookParagraph: cleanJsonStr,
         valueParagraph: "",

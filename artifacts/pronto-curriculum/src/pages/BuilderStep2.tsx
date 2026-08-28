@@ -4,10 +4,12 @@ import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
+import { aiCvAssistantChat } from '../utils/aiCvAssistant';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { translateDateLabel } from '../utils/dateI18n';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
+import CoverLetterModal from '../components/CoverLetterModal';
 import { Icon, IC } from '../components/StrokeIcon';
 import { CountrySelect, FlagImg, JOB_COUNTRIES } from '../components/CountrySelect';
 import { useAuth } from '../hooks/use-auth';
@@ -411,6 +413,7 @@ function AccordionSection({
 
 function AIAssistantPanel({
   experiences, expTips, analyzing, onAnalyzeAll, onApplyTip, applyingTipKey,
+  cvData, onCVChange, lang,
 }: {
   experiences: { id: string; role: string; company: string }[];
   expTips: Record<string, string[]>;
@@ -418,6 +421,9 @@ function AIAssistantPanel({
   onAnalyzeAll: () => void;
   onApplyTip: (expId: string, tipIndex: number) => void;
   applyingTipKey: string | null;
+  cvData: CVData;
+  onCVChange: (data: CVData) => void;
+  lang: SupportedLanguage;
 }) {
   const [open, setOpen] = useState(true);
   const [minimized, setMinimized] = useState(false);
@@ -426,6 +432,38 @@ function AIAssistantPanel({
     y: 96,
   }));
   const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
+
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [chatMessages, chatSending]);
+
+  const sendChat = async () => {
+    const message = chatInput.trim();
+    if (!message || chatSending) return;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: message }]);
+    setChatSending(true);
+    try {
+      const { reply, additionalExperiences } = await aiCvAssistantChat(cvData, message, lang);
+      if (additionalExperiences?.length) {
+        onCVChange({
+          ...cvData,
+          additionalExperiences: [...(cvData.additionalExperiences ?? []), ...additionalExperiences],
+        });
+      }
+      setChatMessages(prev => [...prev, { role: 'assistant', text: reply || 'Fatto.' }]);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Errore durante l'elaborazione del messaggio.";
+      setChatMessages(prev => [...prev, { role: 'assistant', text: errMsg }]);
+    } finally {
+      setChatSending(false);
+    }
+  };
 
   const named = experiences.filter(e => e.role || e.company);
   const withTips = named.filter(e => expTips[e.id]?.length);
@@ -515,6 +553,40 @@ function AIAssistantPanel({
               )}
             </>
           )}
+
+          <div className="ai-chat">
+            <div className="ai-chat-hint">
+              Chiedi liberamente — es. "ho fatto volontariato alla Croce Rossa, aggiungilo al CV"
+            </div>
+            {chatMessages.length > 0 && (
+              <div className="ai-chat-log">
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`ai-chat-msg ${m.role}`}>{m.text}</div>
+                ))}
+                {chatSending && <div className="ai-chat-msg assistant ai-chat-typing">…</div>}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+            <div className="ai-chat-input-row">
+              <input
+                type="text"
+                placeholder="Scrivi un messaggio…"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendChat(); } }}
+                disabled={chatSending}
+              />
+              <button
+                className="btn btn-ink btn-sm"
+                style={{ padding: '8px 12px' }}
+                onClick={() => void sendChat()}
+                disabled={chatSending || !chatInput.trim()}
+                title="Invia"
+              >
+                <Icon d={IC.spark} size={13} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -532,6 +604,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [optimizing, setOptimizing] = useState(false);
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showCoverLetterModal, setShowCoverLetterModal] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [showImportPanel, setShowImportPanel] = useState(false);
@@ -1108,7 +1181,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       <Icon d={IC.doc} size={14} /> Scarica in Word <small>.docx</small>
                     </button>
                     <hr className="rb-dl-sep" />
-                    <button className="rb-dl-item" onClick={() => { setDlOpen(false); onNavigate('cover-letter'); }}>
+                    <button className="rb-dl-item" onClick={() => { setDlOpen(false); setShowCoverLetterModal(true); }}>
                       <Icon d={IC.spark} size={14} /> Lettera di presentazione <small>AI</small>
                     </button>
                   </div>
@@ -1815,6 +1888,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             onAnalyzeAll={() => void handleAnalyzeAll()}
             onApplyTip={(expId, tipIndex) => void handleApplyTip(expId, tipIndex)}
             applyingTipKey={applyingTipKey}
+            cvData={cvData}
+            onCVChange={onCVChange}
+            lang={selectedLanguage}
           />
         </div>
         )}
@@ -1994,6 +2070,15 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           </div>
         )}
       </div>
+
+      {showCoverLetterModal && (
+        <CoverLetterModal
+          cvData={cvData}
+          template={selectedTemplate}
+          lang={selectedLanguage}
+          onClose={() => setShowCoverLetterModal(false)}
+        />
+      )}
     </>
   );
 }

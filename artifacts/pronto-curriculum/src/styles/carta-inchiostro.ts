@@ -245,6 +245,39 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .ai-tip:first-of-type { border-top: none; }
 .dv3 .ai-tip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
 .dv3 .ai-panel-empty { font-size: 12px; color: var(--ink-40); text-align: center; padding: 18px 0; }
+.dv3 .ai-chat { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair-soft); display: flex; flex-direction: column; gap: 8px; }
+.dv3 .ai-chat-hint { font-size: 11px; color: var(--ink-40); line-height: 1.4; }
+.dv3 .ai-chat-log { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.dv3 .ai-chat-msg { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 10px; max-width: 92%; }
+.dv3 .ai-chat-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+.dv3 .ai-chat-msg.assistant { align-self: flex-start; background: var(--tint); color: var(--ink); border-bottom-left-radius: 3px; }
+.dv3 .ai-chat-msg.ai-chat-typing { color: var(--ink-40); font-weight: 700; letter-spacing: 1px; }
+.dv3 .ai-chat-input-row { display: flex; gap: 6px; }
+.dv3 .ai-chat-input-row input { flex: 1; padding: 8px 10px; border: 1px solid rgba(20,23,31,.12); border-radius: 9px; font-family: inherit; font-size: 12.5px; color: var(--ink); outline: none; background: #fff; }
+.dv3 .ai-chat-input-row input:focus { border-color: var(--accent); }
+
+.dv3 .clm-overlay { position: fixed; inset: 0; background: rgba(20,23,31,.55); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.dv3 .clm-modal { background: #fff; border-radius: 16px; width: min(560px, 100%); max-height: min(88vh, 780px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 80px -20px rgba(20,23,31,.5); }
+.dv3 .clm-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--hair-soft); flex-shrink: 0; }
+.dv3 .clm-title { font-family: var(--f-display); font-weight: 700; font-size: 15px; color: var(--ink); }
+.dv3 .clm-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: var(--tint); color: var(--ink-60); cursor: pointer; font-size: 13px; }
+.dv3 .clm-close:hover { background: var(--accent); color: #fff; }
+.dv3 .clm-body { padding: 18px 20px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.dv3 .clm-hint { font-size: 12px; color: var(--ink-60); line-height: 1.5; margin: 0; }
+.dv3 .clm-field { display: flex; flex-direction: column; gap: 5px; }
+.dv3 .clm-field label { font-size: 11px; font-weight: 700; color: var(--ink-60); text-transform: uppercase; letter-spacing: .04em; }
+.dv3 .clm-field input, .dv3 .clm-field textarea { padding: 9px 11px; border: 1px solid rgba(20,23,31,.12); border-radius: 9px; font-family: inherit; font-size: 13px; color: var(--ink); outline: none; background: #FDFDFB; resize: vertical; }
+.dv3 .clm-field input:focus, .dv3 .clm-field textarea:focus { border-color: var(--accent); }
+.dv3 .clm-row { display: flex; gap: 10px; align-items: center; }
+.dv3 .clm-tone-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.dv3 .clm-tone-btn { padding: 7px 12px; border-radius: 99px; border: 1px solid rgba(20,23,31,.12); background: #fff; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--ink-60); cursor: pointer; }
+.dv3 .clm-tone-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dv3 .clm-fit { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid; border-radius: 12px; background: var(--tint); }
+.dv3 .clm-fit-score { font-family: var(--f-display); font-weight: 800; font-size: 22px; flex-shrink: 0; }
+.dv3 .clm-fit-max { font-size: 12px; font-weight: 600; opacity: .6; }
+.dv3 .clm-fit-note { font-size: 12.5px; color: var(--ink-60); line-height: 1.4; }
+.dv3 .clm-letter { display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.6; color: var(--ink); background: #FDFDFB; border: 1px solid var(--hair-soft); border-radius: 10px; padding: 16px; }
+.dv3 .clm-letter p { margin: 0; }
 
 @media (max-width: 1080px) { .dv3 .cols { grid-template-columns: 1fr; } .dv3 .stats { grid-template-columns: repeat(2, 1fr); } }
 
