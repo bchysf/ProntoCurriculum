@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { db, subscriptionsTable } from "@workspace/db";
 import { stripe, STRIPE_PRICES } from "../lib/stripe";
+import { isAdminEmail } from "../middlewares/authMiddleware";
 
 const router: IRouter = Router();
 
@@ -106,6 +107,19 @@ router.get("/billing/status", async (req: Request, res: Response) => {
     .select()
     .from(subscriptionsTable)
     .where(eq(subscriptionsTable.userId, userId));
+
+  // The site admin gets Pro perks unconditionally, regardless of what (if
+  // anything) is in subscriptionsTable for their account.
+  if (isAdminEmail(req.user!.email)) {
+    res.json({
+      subscription: {
+        ...(sub ?? { unlimitedAddon: false, cvCountThisPeriod: 0 }),
+        plan: "admin",
+        status: "active",
+      },
+    });
+    return;
+  }
 
   res.json({
     subscription: sub ?? {

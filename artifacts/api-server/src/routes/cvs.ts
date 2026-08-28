@@ -3,6 +3,7 @@ import { db, subscriptionsTable } from "@workspace/db";
 import { userCvsTable, experiencesTable } from "@workspace/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
+import { isAdminEmail } from "../middlewares/authMiddleware";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
@@ -17,7 +18,10 @@ function getUserId(req: Request, res: Response): string | null {
   return userId;
 }
 
-async function isProUser(userId: string | undefined): Promise<boolean> {
+// The site admin gets Pro perks unconditionally — they shouldn't need a
+// subscriptionsTable row (Stripe or manually granted) just to use their own app.
+async function isProUser(userId: string | undefined, email?: string | null): Promise<boolean> {
+  if (isAdminEmail(email)) return true;
   if (!userId) return false;
   const [sub] = await db
     .select({ plan: subscriptionsTable.plan })
@@ -138,7 +142,7 @@ router.post("/cvs", async (req: Request, res: Response) => {
       .where(eq(userCvsTable.userId, userId))
       .orderBy(desc(userCvsTable.updatedAt));
 
-    const isPro = await isProUser(userId);
+    const isPro = await isProUser(userId, req.user?.email);
     if (!isPro && existing.length >= FREE_CV_LIMIT) {
       res.status(403).json({
         error: "Il piano gratuito include 1 CV salvato. Passa a Pro per salvarne di più.",
@@ -242,7 +246,7 @@ router.post("/cvs/export/docx", async (req: Request, res: Response) => {
     }
 
     // Determine watermark based on user's active subscription plan if logged in, or fallback to parameter / true
-    const isPro = await isProUser(req.user?.id);
+    const isPro = await isProUser(req.user?.id, req.user?.email);
     const watermark = isPro ? false : (includeWatermark !== undefined ? includeWatermark : true);
 
     const buffer = await generateDocxBuffer({
@@ -281,7 +285,7 @@ router.get("/cvs/:id/export/docx", async (req: Request, res: Response) => {
       return;
     }
 
-    const isPro = await isProUser(req.user?.id);
+    const isPro = await isProUser(req.user?.id, req.user?.email);
     const buffer = await generateDocxBuffer({
       cvData: cv.cvData as DocxExportInput["cvData"],
       template: cv.template || "modern",
