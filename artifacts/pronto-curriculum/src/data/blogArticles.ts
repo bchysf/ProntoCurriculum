@@ -44,9 +44,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Guida completa al curriculum perfetto 2026: struttura in una pagina, risultati misurabili, tailoring ATS e errori da evitare. Con esempi pratici.',
     category: 'GUIDE PRATICHE',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '10 Luglio 2026',
     dateISO: '2026-07-10',
@@ -116,6 +116,31 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           <li><b>Foto non professionale:</b> in Italia la foto è ancora comune, ma deve essere neutra e in alta risoluzione — mai selfie o foto ritagliate.</li>
           <li><b>File nominato male:</b> "CV_definitivo_v3_FINALE.pdf" comunica caos. Usa "Nome-Cognome-CV.pdf".</li>
         </ul>`
+      },
+      {
+        id: 'cv-cambio-carriera-rientro',
+        title: 'CV per chi cambia carriera o rientra dopo una pausa',
+        content: `<p>Le regole standard vanno adattate quando il percorso non è lineare. Sono due i casi più frequenti e più mal gestiti nei CV che arrivano ai recruiter.</p>
+        <ul>
+          <li><b>Cambio di settore o funzione:</b> non nascondere il percorso precedente, riformulalo. Nel sommario esplicita subito la direzione ("Project manager IT in transizione verso ruoli di Product Management, con base tecnica e tre progetti Agile guidati end-to-end"). Nei bullet delle esperienze passate, isola le responsabilità trasferibili — gestione stakeholder, budget, coordinamento team — e lasciale in evidenza, ridimensionando i dettagli tecnici non più rilevanti.</li>
+          <li><b>Rientro dopo una pausa (maternità, malattia, cura di un familiare, sabbatico):</b> una riga onesta nella cronologia toglie ogni ambiguità e previene le domande sospettose in sede di screening. Meglio "2024-2025 — Congedo per cura familiare" che un buco muto: il vuoto non spiegato genera più diffidenza della causa stessa. Se durante la pausa hai seguito corsi, certificazioni o volontariato con responsabilità reali, inseriscili: dimostrano che il periodo non è stato di totale inattività professionale.</li>
+          <li><b>Percorsi non lineari (più settori in pochi anni):</b> il sommario deve fare il lavoro di sintesi che il recruiter non farà da solo. Identifica il filo conduttore reale — spesso una competenza trasversale come la gestione di progetti complessi o il rapporto con il cliente — e usalo come chiave di lettura dell'intero CV.</li>
+        </ul>`,
+        callout: {
+          title: 'Quando serve una lettera di presentazione',
+          text: 'Un percorso non lineare è uno dei casi in cui la cover letter smette di essere opzionale: è lo spazio in cui puoi spiegare in poche righe il perché della transizione, cosa che il CV da solo non può fare. Approfondisci nella guida alla <a data-page="blog-article" data-slug="lettera-presentazione" href="#">lettera di presentazione perfetta</a>.',
+          type: 'tip'
+        }
+      },
+      {
+        id: 'sommario-vs-obiettivo',
+        title: 'Sommario professionale o obiettivo di carriera: cosa scrivere davvero',
+        content: `<p>Molti candidati confondono due blocchi che hanno funzioni opposte, e finiscono per scriverne uno solo, sbagliato per il proprio caso.</p>
+        <ul>
+          <li><b>Il sommario professionale</b> (o profilo) è la scelta corretta per chi ha già esperienza: riassume chi sei, cosa hai già dimostrato di saper fare e con quali numeri. Si scrive alla terza persona implicita, senza "Io", e si concentra sul passato recente come prova di affidabilità futura.</li>
+          <li><b>L'obiettivo di carriera</b> (career objective) ha senso solo per neolaureati, chi cambia settore radicalmente o chi rientra dopo una lunga pausa: comunica dove vuoi andare, non cosa hai già fatto, perché il "cosa hai già fatto" non è ancora abbastanza rilevante per il ruolo target.</li>
+          <li><b>L'errore più comune</b> è scrivere un sommario generico che potrebbe stare in qualunque CV ("Professionista dinamico e orientato ai risultati, con forte spirito di squadra"): frasi di questo tipo non contengono alcuna informazione verificabile e vengono ignorate sia dal recruiter umano sia, di fatto, dal parser ATS che non vi trova keyword utili.</li>
+        </ul>`
       }
     ],
     faq: [
@@ -123,6 +148,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
       { q: 'Meglio il formato PDF o Word per inviare il CV?', a: 'PDF nella quasi totalità dei casi: preserva l’impaginazione su ogni dispositivo ed è letto correttamente dagli ATS moderni. Invia il .docx solo se richiesto esplicitamente dall’annuncio.' },
       { q: 'La foto sul curriculum è obbligatoria in Italia?', a: 'No, non è obbligatoria. In Italia resta consuetudine per molti settori a contatto con il pubblico, ma per candidature verso aziende internazionali o anglosassoni va omessa per policy anti-discriminazione.' },
       { q: 'Devo scrivere l’autorizzazione al trattamento dei dati personali?', a: 'Sì, per le candidature in Italia è buona norma includere in calce la dicitura di consenso ai sensi del GDPR (Reg. UE 2016/679): molte aziende non possono processare CV che ne sono privi.' },
+      { q: 'Come gestisco nel CV un lavoro durato pochi mesi?', a: 'Includilo comunque, con date precise: ometterlo crea un buco più sospetto della breve permanenza in sé. Se la ragione è oggettiva (fine contratto, ristrutturazione aziendale) e te lo chiedono al colloquio, spiegalo in una frase senza scusarti eccessivamente.' },
+      { q: 'Conviene inserire hobby e interessi personali nel CV?', a: 'Solo se pertinenti al ruolo o rivelano competenze trasferibili reali (organizzazione di eventi, ruoli di responsabilità in associazioni, sport di squadra a livello agonistico). Una lista generica di hobby occupa spazio prezioso senza aggiungere informazioni utili alla selezione.' },
+      { q: 'Devo indicare la RAL attuale o le aspettative economiche nel CV?', a: 'No, il CV non è la sede giusta: queste informazioni si discutono al colloquio o, se esplicitamente richieste, nella lettera di presentazione o nel form di candidatura. Inserirle nel CV toglie margine di negoziazione.' },
     ],
     relatedSlugs: ['punteggio-ats', 'cv-europass', 'lettera-presentazione']
   },
@@ -133,9 +161,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Cos’è il punteggio ATS, come funzionano i software di pre-selezione (Workday, Taleo, Greenhouse) e come ottimizzare il CV per superare i filtri automatici.',
     category: 'TECNOLOGIE & ATS',
     author: {
-      name: 'Ing. Marco Bellini',
-      role: 'Lead AI Engineer & Recruiter Tech · ProntoCurriculum',
-      initials: 'MB',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '8 Luglio 2026',
     dateISO: '2026-07-08',
@@ -181,12 +209,37 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           <li><b>Nome file pulito:</b> "Nome-Cognome-CV.pdf" aiuta anche il recruiter umano a ritrovarti.</li>
         </ul>
         <p>Per la struttura complessiva del documento, parti dalla <a data-page="blog-article" data-slug="guida-cv" href="#">guida al CV perfetto</a>.</p>`
+      },
+      {
+        id: 'dopo-il-parsing',
+        title: 'Cosa succede dopo il parsing: il ranking umano che segue il filtro',
+        content: `<p>Superare il parser è solo il primo passaglio: nella maggior parte dei processi di selezione strutturati, l'ATS non decide da solo chi scartare, ma ordina i profili in una dashboard che il recruiter scorre in base a un punteggio di matching.</p>
+        <ul>
+          <li><b>Il ranking per keyword pesate:</b> molti ATS assegnano un peso maggiore alle competenze indicate come "requisiti obbligatori" nell'annuncio rispetto a quelle "preferibili". Un CV che copre tutti gli obbligatori con un match parziale sui preferibili spesso batte un CV più ricco ma carente sugli obbligatori.</li>
+          <li><b>I filtri booleani impostati dal recruiter:</b> oltre al punteggio automatico, molti selezionatori affinano la ricerca con query booleane proprie ("Java AND Spring NOT junior"), spesso lanciate direttamente su LinkedIn Recruiter o sul database interno dell'ATS. Un CV che nomina esplicitamente le tecnologie e il livello di seniority nel titolo o nel sommario intercetta meglio queste ricerche.</li>
+          <li><b>La revisione umana resta decisiva:</b> anche il punteggio ATS più alto non sostituisce mai completamente la lettura umana per le posizioni davvero rilevanti. Il software serve a comprimere centinaia di candidature in una shortlist gestibile, non a scegliere l'assunto finale.</li>
+        </ul>`
+      },
+      {
+        id: 'ats-per-piattaforma',
+        title: 'Differenze pratiche tra le piattaforme ATS più diffuse',
+        content: `<p>Non tutti gli ATS si comportano allo stesso modo, e conoscerne le peculiarità aiuta a capire perché lo stesso CV può ottenere risposte diverse a seconda dell'azienda:</p>
+        <ul>
+          <li><b>Workday:</b> molto diffuso nelle multinazionali, ha un parser storicamente rigido con i CV a più colonne: penalizza fortemente template creativi con sidebar laterali.</li>
+          <li><b>Greenhouse e Lever:</b> usati soprattutto da scale-up tech, tendono ad avere un parsing più tollerante e mettono più enfasi sul matching testuale libero che sui campi strutturati rigidi.</li>
+          <li><b>LinkedIn Recruiter:</b> non è un ATS in senso stretto ma la piattaforma di ricerca più usata dai recruiter italiani; qui contano moltissimo il titolo del profilo, la sezione "Informazioni" e le competenze evidenziate, oltre al CV allegato.</li>
+          <li><b>Soluzioni italiane (Zucchetti, TeamSystem HR):</b> spesso integrate con i portali dei Centri per l'Impiego e delle agenzie, danno peso rilevante ai campi strutturati (titolo di studio, CCNL, livello di inquadramento) più che al free text.</li>
+        </ul>
+        <p>In tutti i casi, la regola di base non cambia: struttura semplice, date complete, keyword esatte dell'annuncio. Approfondisci come applicarla concretamente nella <a data-page="blog-article" data-slug="guida-cv" href="#">guida al CV perfetto</a>.</p>`
       }
     ],
     faq: [
       { q: 'Come faccio a sapere se il mio CV supera i filtri ATS?', a: 'Verifica tre cose: il testo deve essere selezionabile nel PDF, la struttura deve reggere il copia-incolla in un file di testo semplice senza mescolare le sezioni, e le keyword dell’annuncio devono comparire nel documento. Un analizzatore ATS come quello di ProntoCurriculum automatizza il controllo con un punteggio da 0 a 100.' },
       { q: 'Gli ATS leggono i PDF?', a: 'Sì, tutti gli ATS moderni leggono i PDF con testo selezionabile. Il problema non è il formato ma la struttura: PDF generati come immagine (scansioni) o con layout a tabelle complesse non vengono interpretati correttamente.' },
       { q: 'Le aziende piccole usano gli ATS?', a: 'Sempre di più: molte PMI italiane esternalizzano la pre-selezione ad agenzie per il lavoro (Adecco, Randstad, Gi Group) che usano ATS internamente. Ottimizzare il CV per il parsing conviene a prescindere dalla dimensione dell’azienda target.' },
+      { q: 'Un punteggio ATS alto garantisce il colloquio?', a: 'No: garantisce che il CV arrivi correttamente letto e posizionato in alto nella lista del recruiter. Da lì in poi contano coerenza del percorso, pertinenza dell’esperienza e, per i ruoli con più step, i risultati dei test tecnici o motivazionali.' },
+      { q: 'Conviene inserire le stesse keyword più volte nel CV per essere sicuri che l’ATS le veda?', a: 'No: la ripetizione innaturale (keyword stuffing) è riconosciuta dai sistemi più recenti e può abbassare il punteggio anziché alzarlo. Una keyword ben posizionata nel sommario, nelle competenze e in un bullet pertinente è sufficiente.' },
+      { q: 'Cosa fare se un annuncio richiede l’invio del CV solo in formato Word?', a: 'Rispetta l’indicazione: alcuni ATS aziendali più datati elaborano meglio il .docx del PDF. In assenza di indicazioni esplicite, il PDF resta la scelta più sicura per la maggioranza delle piattaforme moderne.' },
     ],
     relatedSlugs: ['guida-cv', 'cv-europass', 'colloqui-domande-difficili']
   },
@@ -197,9 +250,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'CV Europass: quando è obbligatorio (concorsi pubblici, bandi UE) e quando penalizza la candidatura nel privato. Pro, contro e alternative moderne.',
     category: 'MODELLI & EUROPASS',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '4 Luglio 2026',
     dateISO: '2026-07-04',
@@ -242,12 +295,35 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
         title: 'Europass e ATS: un rapporto complicato',
         content: `<p>Un aspetto poco noto: il layout a griglia dell'Europass tradizionale mette in difficoltà anche i parser automatici. Le etichette ripetute e le tabelle interne possono frammentare l'estrazione dei dati, penalizzando il <a data-page="blog-article" data-slug="punteggio-ats" href="#">punteggio ATS</a> anche di profili eccellenti.</p>
         <p>Se l'azienda privata a cui ti candidi usa un portale di recruiting (Workday, Taleo, Greenhouse), un CV moderno a colonna singola con keyword mirate ottiene sistematicamente ranking migliori dello stesso contenuto in formato Europass.</p>`
+      },
+      {
+        id: 'compilare-europass-senza-sprechi',
+        title: 'Come compilare l’Europass riducendo al minimo gli sprechi di spazio',
+        content: `<p>Quando il bando impone il formato europeo, si può comunque lavorare sulla qualità del contenuto per limitare la dispersione tipica del template:</p>
+        <ul>
+          <li><b>Esperienze professionali:</b> anche nei campi rigidi come "Principali mansioni e responsabilità", scrivi frasi dense con verbo d'azione e risultato, evitando la descrizione passiva delle attività quotidiane. Il campo è libero: la rigidità è solo nell'etichetta, non nel contenuto.</li>
+          <li><b>Competenze comunicative e organizzative:</b> molti candidati lasciano questi campi vuoti o li riempiono con frasi generiche. Compilali con competenze reali e verificabili — coordinamento di team, gestione di progetti multi-stakeholder — perché le commissioni pubbliche li leggono e talvolta li punteggiano.</li>
+          <li><b>Allegati e certificazioni:</b> per i concorsi pubblici, allega sempre la documentazione richiesta nell'ordine indicato dal bando. Un dossier disordinato, anche con un Europass impeccabile, rallenta l'istruttoria della commissione.</li>
+        </ul>`
+      },
+      {
+        id: 'europass-lingue-competenze-digitali',
+        title: 'La sezione lingue e competenze digitali: l’errore più comune',
+        content: `<p>Le tabelle QCER e la griglia delle competenze digitali sono i punti in cui la maggior parte dei candidati perde punti per disattenzione, non per mancanza di competenze reali:</p>
+        <ul>
+          <li><b>Autovalutazione onesta e coerente:</b> indicare C1 in una lingua senza possedere certificazioni o esperienze a supporto espone a domande imbarazzanti in sede di colloquio o prova orale del concorso. Meglio un livello prudente ma difendibile.</li>
+          <li><b>Certificazioni sempre allegate:</b> se dichiari un livello linguistico supportato da certificazione (IELTS, Goethe-Zertifikat, DELF), allegala sempre: nei bandi pubblici il punteggio titoli spesso la richiede esplicitamente.</li>
+          <li><b>Competenze digitali:</b> la griglia europea DigComp distingue elaborazione delle informazioni, comunicazione, creazione di contenuti, sicurezza e problem solving. Compilala con onestà per ciascuna area, invece di lasciarla vuota o marcarla in blocco come "avanzato": le commissioni la incrociano con il resto del CV.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Il CV Europass è obbligatorio per i concorsi pubblici?', a: 'Nella maggior parte dei bandi sì: il formato europeo è richiesto esplicitamente per consentire il controllo formale dei titoli. Verifica sempre il testo del bando sul portale inPA o sul sito dell’ente.' },
       { q: 'Posso usare l’Europass per candidarmi a un’azienda privata?', a: 'Puoi, ma è generalmente sconsigliato: il formato dilata il contenuto su troppe pagine e appiattisce il profilo. Nel privato un CV moderno di una pagina con risultati misurabili ottiene tassi di risposta superiori.' },
       { q: 'Come converto il mio Europass in un CV moderno?', a: 'Con ProntoCurriculum importi o ricrei il contenuto una sola volta e cambi template con un clic: lo stesso profilo si reimpagina automaticamente in formato Europass Ottimizzato, Modern o Executive.' },
+      { q: 'Il bando può richiedere anche l’autocertificazione oltre all’Europass?', a: 'Sì, è frequente: molti bandi pubblici chiedono l’Europass come riepilogo e, in aggiunta, una autocertificazione ai sensi del DPR 445/2000 per i titoli valutabili. Verifica sempre entrambi i requisiti prima di inviare la domanda.' },
+      { q: 'Cosa fare se il bando non specifica il formato del CV?', a: 'In assenza di indicazioni esplicite, verifica se si tratta di ente pubblico o privato: per gli enti pubblici l’Europass resta la scelta più prudente, per le aziende private un CV moderno è generalmente preferibile.' },
+      { q: 'Devo aggiornare l’Europass ogni volta che cambio lavoro?', a: 'Sì, tienilo aggiornato come faresti con qualsiasi CV: per i bandi pubblici con scadenze ravvicinate non avrai il tempo di ricostruirlo da zero, e una versione obsoleta può farti perdere titoli valutabili nel punteggio.' },
     ],
     relatedSlugs: ['guida-cv', 'punteggio-ats', 'esempi-cv']
   },
@@ -258,9 +334,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come scrivere la lettera di presentazione perfetta: struttura in 4 paragrafi, esempi di apertura a impatto, lunghezza ideale e errori da evitare.',
     category: 'GUIDE PRATICHE',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '1 Luglio 2026',
     dateISO: '2026-07-01',
@@ -306,12 +382,36 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           <li><b>Buchi nel percorso o rientri dal lavoro all'estero:</b> due righe trasparenti valgono più di qualsiasi omissione.</li>
         </ul>
         <p>Prima di scrivere la lettera, assicurati che il CV sia già a punto: parti dalla <a data-page="blog-article" data-slug="guida-cv" href="#">guida al CV perfetto</a>.</p>`
+      },
+      {
+        id: 'candidatura-spontanea-senza-annuncio',
+        title: 'Candidatura spontanea: come scrivere la lettera senza un annuncio di riferimento',
+        content: `<p>Senza una job description da cui partire, la lettera spontanea richiede un lavoro di ricerca preliminare più profondo, ma può aprire porte che gli annunci pubblicati non offrono — molte posizioni vengono coperte prima ancora di essere pubblicate.</p>
+        <ul>
+          <li><b>Identifica il bisogno prima di scrivere:</b> studia i canali ufficiali dell'azienda (sito, comunicati stampa, profilo LinkedIn aziendale) per capire in quale direzione sta crescendo o quali difficoltà sta affrontando. La lettera deve proporre te come soluzione a un problema plausibile, non generico interesse per "un'azienda dinamica e stimolante".</li>
+          <li><b>Sii specifico sul ruolo che immagini:</b> "Vorrei mettermi a disposizione per qualsiasi opportunità" non dà al lettore nulla su cui agire. Meglio indicare una funzione precisa ("un ruolo nel team commerciale B2B") lasciando comunque aperta la disponibilità ad altre posizioni compatibili.</li>
+          <li><b>Chiudi con una richiesta a basso attrito:</b> non chiedere direttamente un colloquio formale, ma un breve confronto conoscitivo di 15 minuti. È una richiesta più facile da accettare per chi non ha una posizione aperta in quel momento.</li>
+        </ul>`
+      },
+      {
+        id: 'errori-che-affossano-la-lettera',
+        title: 'Errori che affossano la lettera anche quando il contenuto è buono',
+        content: `<p>Anche una lettera ben argomentata può fallire per problemi di forma che minano la credibilità del candidato:</p>
+        <ul>
+          <li><b>Copiare il nome dell'azienda sbagliato:</b> capita più spesso di quanto si pensi quando si riutilizza un template per più candidature. È l'errore che manda al cestino la lettera più immediatamente, perché segnala scarsa cura.</li>
+          <li><b>Tono eccessivamente formale o eccessivamente informale:</b> il registro va calibrato sul settore — un tono diretto e informale può funzionare per una startup, ma è controproducente per una banca o uno studio legale. Nel dubbio, un registro professionale ma naturale è la scelta più sicura.</li>
+          <li><b>Ripetere gli stessi aggettivi generici del CV:</b> "motivato", "dinamico", "orientato al risultato" senza un fatto a supporto sono percepiti come riempitivo. Ogni affermazione nella lettera deve poter essere ricondotta a un esempio concreto, anche solo accennato.</li>
+          <li><b>Lunghezza fuori controllo:</b> superare una pagina segnala che il candidato non sa selezionare le informazioni rilevanti — una competenza che il ruolo, quasi sempre, richiede comunque.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Quanto deve essere lunga una lettera di presentazione?', a: 'Tra le 250 e le 350 parole, in 3-4 paragrafi brevi. Il recruiter deve poterla leggere in meno di un minuto: oltre questa soglia il tasso di lettura completa crolla.' },
       { q: 'A chi va indirizzata la lettera se non conosco il nome del recruiter?', a: 'Cerca su LinkedIn il responsabile HR o il team lead della posizione. Se non lo trovi, usa "Gentile team di selezione di [Azienda]" — mai il generico "A chi di competenza".' },
       { q: 'La lettera di presentazione va allegata o scritta nel corpo della mail?', a: 'Se l’annuncio non specifica, scrivila nel corpo della mail e allega solo il CV: riduce la frizione e garantisce che venga letta. Nei portali di recruiting usa il campo dedicato.' },
+      { q: 'Posso riutilizzare la stessa lettera per più candidature simili?', a: 'Puoi riusare la struttura, mai il contenuto identico: il paragrafo sul valore concreto e quello sull’allineamento culturale vanno riscritti per ogni azienda, altrimenti la personalizzazione — il punto di forza della lettera — viene meno.' },
+      { q: 'La lettera di presentazione serve anche per le candidature tramite portale ATS?', a: 'Se il portale offre un campo dedicato, compilalo sempre: molti recruiter lo leggono prima ancora del CV. Se il campo è opzionale e l’annuncio non la richiede esplicitamente, valuta in base alla rilevanza descritta sopra (cambio settore, candidatura spontanea, ruoli comunicativi).' },
+      { q: 'Come chiudo la lettera senza sembrare né passivo né aggressivo?', a: 'Una call-to-action efficace propone un passo concreto lasciando l’iniziativa al recruiter: "Sarei felice di approfondire in un breve colloquio come la mia esperienza possa contribuire al team" è più efficace di un generico "resto in attesa" o di un pressante "vi contatterò a breve".' },
     ],
     relatedSlugs: ['guida-cv', 'colloqui-domande-difficili', 'esempi-cv']
   },
@@ -322,9 +422,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come rispondere alle domande difficili del colloquio di lavoro: metodo STAR, la domanda sui difetti, aspettative salariali. Con esempi di risposte.',
     category: 'COLLOQUIO',
     author: {
-      name: 'Ing. Marco Bellini',
-      role: 'Lead AI Engineer & Recruiter Tech · ProntoCurriculum',
-      initials: 'MB',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '28 Giugno 2026',
     dateISO: '2026-06-28',
@@ -370,12 +470,41 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           <li><b>Dai un range, non un numero secco:</b> "Considerando il ruolo e le responsabilità descritte, mi orienterei su una RAL tra X e Y" — con X già soddisfacente per te.</li>
           <li><b>Sposta il valore prima del prezzo:</b> se la domanda arriva troppo presto, riporta la conversazione sulle responsabilità del ruolo prima di dare cifre.</li>
         </ul>`
+      },
+      {
+        id: 'colloqui-a-distanza',
+        title: 'Colloqui video: gli accorgimenti che i candidati sottovalutano',
+        content: `<p>Il colloquio a distanza — su Teams, Zoom o Google Meet — ha dinamiche proprie che vanno preparate quanto le risposte stesse: un candidato preparato sul contenuto ma trascurato sulla forma tecnica perde comunque punti.</p>
+        <ul>
+          <li><b>Ambiente e inquadratura:</b> sfondo neutro o sfocato, fonte di luce frontale (mai alle spalle), webcam all'altezza degli occhi. Un'inquadratura dal basso o troppo ravvicinata distrae più di quanto sembri.</li>
+          <li><b>Test tecnico prima, non durante:</b> verifica connessione, microfono e piattaforma almeno 15 minuti prima. I problemi tecnici in apertura consumano tempo prezioso e comunicano disorganizzazione.</li>
+          <li><b>Linguaggio del corpo compresso:</b> davanti alla camera i micro-segnali di attenzione (sguardo, cenni del capo) contano più che in presenza, perché è l'unico canale non verbale rimasto. Guarda l'obiettivo della camera, non lo schermo, quando parli tu.</li>
+          <li><b>Colloqui asincroni registrati:</b> alcune aziende usano piattaforme in cui rispondi a domande preregistrate senza interlocutore dal vivo. In questi casi prepara le risposte STAR ancora più a fondo: non c'è modo di correggere il tiro in base al feedback non verbale del selezionatore.</li>
+        </ul>`,
+        callout: {
+          title: 'Prima del colloquio, verifica il CV che l’azienda ha ricevuto',
+          text: 'Il selezionatore ha quasi sempre il tuo CV aperto durante la videochiamata: assicurati che la versione inviata sia coerente con quanto racconterai, senza incongruenze di date o ruoli. Rivedi la <a data-page="blog-article" data-slug="guida-cv" href="#">guida al CV perfetto</a> prima di ogni colloquio importante.',
+          type: 'tip'
+        }
+      },
+      {
+        id: 'punti-di-forza-e-domande-al-recruiter',
+        title: '"Quali sono i suoi punti di forza?" e le domande da fare tu',
+        content: `<p>Speculare alla domanda sui difetti, quella sui punti di forza sembra più facile ma nasconde una trappola simmetrica: elencare qualità generiche senza prove le rende inutili quanto un difetto finto.</p>
+        <ul>
+          <li><b>Scegli 2-3 punti di forza pertinenti al ruolo,</b> non i primi che vengono in mente: se ti candidi per un ruolo di project management, "capacità di coordinamento sotto scadenza" vale più di "creatività", anche se entrambi veri.</li>
+          <li><b>Ogni punto di forza va agganciato a un episodio STAR breve:</b> l'affermazione senza esempio è percepita come autopromozione vuota, l'affermazione con un episodio concreto diventa un fatto verificabile.</li>
+          <li><b>Le domande da fare a fine colloquio</b> sono parte della valutazione tanto quanto le risposte: dimostrano preparazione e interesse reale. Oltre alle domande su ruolo e team, una domanda sui prossimi passi del processo di selezione ("Quali sono i tempi previsti per la decisione?") è sempre appropriata e ben vista.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Come rispondere a "Mi parli di lei" al colloquio?', a: 'Usa la formula Presente → Passato → Futuro in 90 secondi: chi sei professionalmente oggi, le 2-3 esperienze che ti hanno portato qui, e perché questo ruolo è il passo naturale successivo. Niente biografia personale.' },
       { q: 'Cosa chiedere al recruiter a fine colloquio?', a: 'Sempre almeno due domande: una sul ruolo ("Come misurate il successo di questa posizione nei primi 6 mesi?") e una sul team o sull’azienda. Non fare domande su ferie e benefit al primo colloquio.' },
       { q: 'Come gestire la domanda sul perché ho lasciato il lavoro precedente?', a: 'Onestà senza negatività: mai parlare male dell’ex datore di lavoro. Inquadra l’uscita come ricerca di crescita ("cercavo un contesto con più responsabilità su X") e riporta subito il focus su ciò che ti attrae del nuovo ruolo.' },
+      { q: 'Cosa fare se non ricordo numeri precisi per una risposta STAR?', a: 'Meglio una stima onesta ("circa il 20-25%", "un team di 6-8 persone") che un numero inventato o l’assenza totale di quantificazione: la stima ragionata comunica comunque impatto misurabile senza esporti a domande di verifica a cui non sapresti rispondere con precisione.' },
+      { q: 'Come rispondere se non ho mai affrontato la situazione specifica che mi viene chiesta?', a: 'Non forzare un episodio che non esiste: è preferibile ammettere di non avere un esempio diretto e portarne uno affine, spiegando come applicheresti lo stesso approccio. La trasparenza è meglio percepita di un episodio STAR palesemente forzato.' },
+      { q: 'Quanti colloqui sono normali prima di ricevere un’offerta?', a: 'Per ruoli impiegatizi standard, 2-3 colloqui (screening telefonico, colloquio tecnico o con il team, colloquio finale con il responsabile). Per posizioni executive o altamente specializzate il processo può estendersi a 4-5 incontri, inclusi eventuali assessment o casi pratici.' },
     ],
     relatedSlugs: ['guida-cv', 'lettera-presentazione', 'punteggio-ats']
   },
@@ -386,9 +515,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Esempi di CV vincenti per IT, marketing, vendite e neolaureati: modelli consigliati per settore e bullet point ad alto impatto da cui partire.',
     category: 'GUIDE PRATICHE',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM',
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC',
     },
     date: '25 Giugno 2026',
     dateISO: '2026-06-25',
@@ -435,12 +564,36 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Tutti i modelli citati — Tecnico, Compatto, Executive, Modern e gli altri — sono disponibili nell’editor di ProntoCurriculum: stesso contenuto, impaginazione ricalibrata con un clic, export in PDF nitido.',
           type: 'tip'
         }
+      },
+      {
+        id: 'settore-hr-people',
+        title: 'HR e People: dimostrare impatto su persone e processi',
+        content: `<p>Chi seleziona un profilo HR legge il CV con un'attenzione particolare: è il primo esempio pratico di come il candidato comunica e struttura informazioni su persone e processi.</p>
+        <ul>
+          <li><b>Focus primario:</b> metriche di processo (tempo medio di assunzione, tasso di retention, employee satisfaction), volumi gestiti (numero di posizioni aperte, dimensione del team supportato) e progetti di trasformazione (introduzione di un nuovo ATS, revisione delle politiche di welfare).</li>
+          <li><b>Modelli consigliati:</b> Modern o Classico — equilibrio tra ordine formale e leggibilità immediata.</li>
+          <li><b>Bullet point d'esempio:</b> <i>"Ridisegnato il processo di selezione per profili tecnici, riducendo il time-to-hire medio da 45 a 28 giorni e portando il tasso di accettazione delle offerte dal 70% all'88%."</i></li>
+        </ul>`
+      },
+      {
+        id: 'settore-cambio-carriera',
+        title: 'CV per chi cambia settore: valorizzare le competenze trasferibili',
+        content: `<p>Chi si candida in un settore diverso da quello di provenienza affronta uno scoglio in più: convincere il recruiter che l'esperienza pregressa, pur non essendo nello stesso ambito, è comunque rilevante.</p>
+        <ul>
+          <li><b>Riorganizza le esperienze per competenza, non solo per cronologia:</b> un blocco iniziale "Competenze trasferibili" che raggruppa gestione progetti, negoziazione o analisi dati aiuta il recruiter a fare il collegamento che altrimenti dovrebbe dedurre da solo.</li>
+          <li><b>Usa il linguaggio del settore di destinazione,</b> non quello di provenienza: se ti sposti dalla ristorazione al retail management, parla di "gestione operativa del punto vendita" invece di terminologia specifica della ristorazione, anche quando descrivi la stessa competenza.</li>
+          <li><b>Un corso, una certificazione o un progetto personale nel nuovo settore</b> — anche non professionale — segnala impegno reale nella transizione ed è spesso ciò che fa la differenza rispetto a un candidato che si limita a "riciclare" il vecchio CV.</li>
+        </ul>
+        <p>Per la parte narrativa della transizione, la <a data-page="blog-article" data-slug="lettera-presentazione" href="#">lettera di presentazione</a> è lo strumento in cui puoi spiegare esplicitamente il perché del cambiamento.</p>`
       }
     ],
     faq: [
       { q: 'Che CV deve fare un neolaureato senza esperienza?', a: 'Formazione in alto con voto ed eventuali lodi, tesi descritta come progetto con metodo e risultati, poi stage, progetti universitari, certificazioni e lingue. Una pagina, modello pulito, zero riempitivi.' },
       { q: 'Quali competenze mettere nel CV per il settore IT?', a: 'Lo stack effettivamente padroneggiato, categorizzato (linguaggi, framework, cloud, database) e allineato alle keyword dell’annuncio. Evita autovalutazioni grafiche a barre o stelle: gli ATS non le leggono.' },
       { q: 'Il CV creativo funziona per i ruoli di design?', a: 'Il portfolio è il posto per la creatività; il CV deve restare leggibile da ATS e recruiter. La scelta vincente è un CV pulito con link ben visibile al portfolio (Behance, Dribbble, sito personale).' },
+      { q: 'Come si presenta un CV per un ruolo di vendita senza esperienza diretta nel settore?', a: 'Sposta l’attenzione sui risultati misurabili di vendita ottenuti altrove — anche in contesti diversi come raccolta fondi, vendita porta a porta o gestione clienti in altri ruoli — e quantifica sempre: numero di trattative chiuse, tasso di conversione, valore medio.' },
+      { q: 'Conviene avere più versioni del CV per settori diversi?', a: 'Sì, se ti candidi in ambiti realmente diversi: mantenere due o tre versioni con sommario e ordine dei bullet calibrati sul settore aumenta sensibilmente il tasso di risposta rispetto a un unico CV generico.' },
+      { q: 'Quanto contano i progetti personali (side project) nel CV di un profilo tecnico?', a: 'Molto, soprattutto per profili junior o in transizione: un repository pubblico, un’app pubblicata o un progetto open source dimostrano iniziativa e competenze verificabili. Inseriscili con un link diretto e una descrizione sintetica dell’impatto o della complessità tecnica.' },
     ],
     relatedSlugs: ['guida-cv', 'cv-europass', 'punteggio-ats']
   },
@@ -451,9 +604,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come trovare lavoro in Lombardia: settori trainanti a Milano e province, canali di candidatura più efficaci e consigli per il CV nel mercato lombardo.',
     category: 'MERCATO & TREND',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '16 Luglio 2026',
     dateISO: '2026-07-16',
@@ -499,12 +652,37 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           <li>Profili specialistici (digital, finance, ingegneria) superano facilmente i 35.000-45.000€ già a metà carriera.</li>
           <li>Per capire quanto resta in busta paga da una RAL, usa il <a data-page="calcolo-stipendio" href="#">calcolatore di stipendio netto</a> con l'addizionale regionale lombarda.</li>
         </ul>`
+      },
+      {
+        id: 'province-minori-lombardia',
+        title: 'Oltre Milano: Mantova, Pavia, Lecco, Cremona e le altre province',
+        content: `<p>Concentrarsi solo sul capoluogo significa ignorare bacini occupazionali solidi, spesso meno competitivi in termini di numero di candidature per posizione:</p>
+        <ul>
+          <li><b>Mantova e Cremona:</b> agroindustria, packaging alimentare e meccanica di precisione, con distretti storicamente forti nell'export verso il Nord Europa.</li>
+          <li><b>Pavia:</b> farmaceutico e biotecnologie, grazie alla presenza di poli universitari e centri di ricerca, oltre a una filiera logistica in espansione lungo l'asse Milano-Genova.</li>
+          <li><b>Lecco e Sondrio:</b> metalmeccanica di precisione, componentistica per l'automotive e turismo montano, con una domanda costante di tecnici specializzati.</li>
+          <li><b>Como e Varese:</b> tessile-serico di alta gamma, chimico e una crescente presenza di aziende svizzere e ticinesi, rilevante per chi valuta anche il <a data-page="blog-article" data-slug="lavorare-svizzera" href="#">lavoro frontaliero in Svizzera</a>.</li>
+        </ul>
+        <p>In queste province il rapporto candidature/posizioni è generalmente più favorevole che a Milano: un CV ben mirato sulle competenze tecniche richieste dal distretto locale può ottenere risposte più rapide.</p>`
+      },
+      {
+        id: 'profili-senior-milano',
+        title: 'Il mercato per profili senior e manageriali a Milano',
+        content: `<p>Per ruoli di responsabilità (direzione, C-level, senior management) le dinamiche di ricerca cambiano rispetto ai profili junior e middle:</p>
+        <ul>
+          <li><b>Gli head hunter e le società di executive search</b> — non i portali di annunci — sono il canale dominante: costruire visibilità su LinkedIn con contenuti di settore e una rete di contatti qualificata aumenta la probabilità di essere contattati direttamente.</li>
+          <li><b>Il CV supera spesso la pagina singola</b> per profili con 15+ anni di esperienza, ma deve restare organizzato per traguardi strategici — P&L gestiti, team costruiti, trasformazioni guidate — non per elenco cronologico di mansioni.</li>
+          <li><b>Il networking di settore</b> (associazioni di categoria, alumni di business school, eventi ristretti) pesa più della candidatura diretta: a questo livello il mercato nascosto è la norma, non l'eccezione.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Quali sono i settori che assumono di più in Lombardia?', a: 'Tecnologia e digitale, servizi finanziari e consulenza a Milano; metalmeccanica e manifattura avanzata a Bergamo, Brescia e Varese; logistica lungo le direttrici autostradali. La domanda di profili tecnici qualificati supera stabilmente l’offerta.' },
       { q: 'Quanto ci vuole per trovare lavoro a Milano?', a: 'Per profili qualificati con CV ottimizzato e candidature mirate, i tempi medi vanno dalle 4 alle 10 settimane. La velocità di candidatura conta: le posizioni milanesi ricevono la maggior parte delle candidature nelle prime 72 ore.' },
       { q: 'Conviene candidarsi tramite agenzia o direttamente in azienda?', a: 'Entrambi in parallelo: le agenzie (Adecco, Randstad, Gi Group, Manpower) sono più rapide per profili tecnici e operativi, la candidatura diretta funziona meglio per ruoli impiegatizi e specialistici. Il CV va comunque ottimizzato ATS in entrambi i casi.' },
+      { q: 'Conviene trasferirsi a Milano senza un’offerta già in mano?', a: 'È una scelta rischiosa vista l’incidenza del costo degli affitti sul netto disponibile: meglio condurre la ricerca da remoto, concentrare i colloqui in un’unica trasferta quando possibile, e trasferirsi solo a offerta firmata o in fase avanzatissima di selezione.' },
+      { q: 'Le aziende lombarde offrono smart working?', a: 'È molto diffuso, soprattutto in tech, servizi finanziari e consulenza, spesso in formula ibrida (2-3 giorni in ufficio). Nella manifattura di Bergamo e Brescia resta invece marginale, per la natura stessa delle mansioni in linea o in officina.' },
+      { q: 'Il costo della vita a Milano vale davvero lo stipendio più alto?', a: 'Dipende dal ruolo e dal quartiere: per profili qualificati con RAL corrispondentemente alta il differenziale spesso compensa il maggior costo degli affitti; per ruoli junior l’incidenza dell’affitto sul netto mensile può essere significativa. Confronta sempre la RAL netta con il calcolatore di stipendio prima di decidere.' },
     ],
     relatedSlugs: ['cercare-lavoro-piemonte', 'lavorare-veneto', 'guida-cv']
   },
@@ -515,9 +693,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come trovare lavoro in Piemonte: i settori in crescita a Torino (aerospazio, AI, automotive elettrico), le opportunità nelle province e i canali di candidatura.',
     category: 'MERCATO & TREND',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '14 Luglio 2026',
     dateISO: '2026-07-14',
@@ -552,12 +730,36 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Per la manifattura piemontese adotta un modello Tecnico o Classico: elenco chiaro di macchinari, software CAD/CAM, certificazioni ISO e linguaggi padroneggiati. La concretezza batte l’estetica: niente grafiche, tutte le competenze in testo leggibile dagli ATS delle agenzie.',
           type: 'tip'
         }
+      },
+      {
+        id: 'alessandria-resto-piemonte',
+        title: 'Alessandria, Asti e il Piemonte oltre l’area torinese',
+        content: `<p>Le province meno centrali offrono opportunità distinte, spesso con minore pressione competitiva rispetto al capoluogo:</p>
+        <ul>
+          <li><b>Alessandria:</b> logistica (crocevia tra Liguria, Lombardia e Piemonte), chimica e plastica di precisione, con diverse multinazionali che hanno stabilimenti produttivi nel territorio.</li>
+          <li><b>Asti:</b> agroalimentare e vitivinicolo di fascia alta, in continuità con il distretto di Cuneo, oltre a una filiera dolciaria consolidata.</li>
+          <li><b>Biella:</b> distretto tessile-laniero storico, oggi orientato verso produzioni di alta gamma e tecnologie di finissaggio avanzate, con domanda di profili tecnici specializzati.</li>
+          <li><b>Verbano-Cusio-Ossola:</b> rubinetteria e valvolame di precisione, oltre al turismo lacuale che genera domanda stagionale in HoReCa, in modo simile a quanto avviene sul <a data-page="blog-article" data-slug="lavorare-veneto" href="#">lago di Garda in Veneto</a>.</li>
+        </ul>`
+      },
+      {
+        id: 'pubblica-amministrazione-piemonte',
+        title: 'Lavorare per la Pubblica Amministrazione in Piemonte',
+        content: `<p>La Regione, gli enti locali e le aziende sanitarie piemontesi pubblicano regolarmente concorsi pubblici che rappresentano un canale spesso sottovalutato:</p>
+        <ul>
+          <li><b>Dove cercare i bandi:</b> oltre al portale nazionale inPA, la sezione concorsi del sito della Regione Piemonte e i siti dei singoli enti locali pubblicano bandi specifici per il territorio.</li>
+          <li><b>Formato richiesto:</b> nella quasi totalità dei casi il CV Europass è obbligatorio; approfondisci come compilarlo senza sprecare spazio nella <a data-page="blog-article" data-slug="cv-europass" href="#">guida dedicata all'Europass</a>.</li>
+          <li><b>Tempistiche più lunghe:</b> i concorsi pubblici hanno processi selettivi strutturati su mesi, tra prove scritte, orali e formazione delle graduatorie: chi valuta questo canale deve mettere in conto tempi di attesa superiori rispetto al privato.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Torino offre ancora opportunità nell’automotive?', a: 'Sì, ma trasformate: la domanda si è spostata su elettrificazione, software di bordo, batterie e guida assistita. I profili meccanici tradizionali trovano più spazio riqualificandosi verso meccatronica e processi di produzione avanzati.' },
       { q: 'Quali sono gli stipendi medi in Piemonte?', a: 'Leggermente inferiori alla Lombardia a parità di ruolo, ma con costo della vita più basso: un impiegato metalmeccanico di livello C2-C3 si colloca tipicamente tra i 25.000€ e i 29.000€ di RAL. Nota che l’addizionale IRPEF regionale piemontese è tra le più alte d’Italia.' },
       { q: 'Come funzionano gli ITS e conviene iscriversi?', a: 'Gli Istituti Tecnici Superiori offrono percorsi biennali post-diploma co-progettati con le imprese. In Piemonte i tassi di occupazione a 12 mesi dal diploma superano il 90%: per chi cerca ingresso rapido nell’industria sono tra le scelte più efficaci.' },
+      { q: 'Le startup torinesi assumono profili junior?', a: 'Sì, soprattutto quelle nate nell’orbita del Politecnico e degli incubatori come I3P: per un neolaureato in ambito tecnico o AI possono essere un ingresso più rapido rispetto alle grandi aziende strutturate, anche se spesso con retribuzioni iniziali più contenute.' },
+      { q: 'Conviene trasferirsi a Torino da fuori regione per cercare lavoro?', a: 'Se il proprio settore coincide con i poli di forza del territorio (aerospazio, automotive elettrico, AI), sì: la concentrazione di aziende specializzate rende la ricerca più mirata. Per settori generalisti è preferibile condurre la ricerca da remoto prima di trasferirsi.' },
+      { q: 'Il Piemonte ha una buona offerta di lavoro per neolaureati non tecnici?', a: 'È più contenuta rispetto ai profili STEM: i settori economia, servizi e comunicazione trovano opportunità principalmente a Torino città, spesso in aziende di dimensioni medie. Ampliare la ricerca anche verso Milano, a un’ora di treno, è una strategia comune tra i neolaureati piemontesi.' },
     ],
     relatedSlugs: ['trovare-lavoro-lombardia', 'lavorare-veneto', 'esempi-cv']
   },
@@ -568,9 +770,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come trovare lavoro in Veneto: distretti industriali (metalmeccanica, occhialeria, moda), turismo, e come farsi assumere dalle PMI del Nord-Est.',
     category: 'MERCATO & TREND',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '12 Luglio 2026',
     dateISO: '2026-07-12',
@@ -606,12 +808,35 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Le PMI venete affidano sempre più spesso la pre-selezione ad agenzie esterne che usano software ATS. Scrivi le competenze in chiaro — gestione clienti, controllo qualità, logistica, macchinari specifici — per superare i loro filtri digitali.',
           type: 'ats'
         }
+      },
+      {
+        id: 'rovigo-bassa-padovana',
+        title: 'Rovigo, la bassa padovana e le aree meno battute',
+        content: `<p>L'area meridionale del Veneto, spesso trascurata nelle ricerche di lavoro, ha un tessuto produttivo proprio da non sottovalutare:</p>
+        <ul>
+          <li><b>Rovigo e il Polesine:</b> agroindustria, packaging e una crescente presenza di logistica legata alla vicinanza con l'asta del Po e i collegamenti verso l'Emilia-Romagna.</li>
+          <li><b>Bassa padovana:</b> meccanica di subfornitura per la filiera automotive e metalmeccanica del Nord-Est, con numerose aziende terziste di dimensioni medio-piccole.</li>
+          <li><b>Vantaggio competitivo per il candidato:</b> in queste aree il numero di candidature per posizione è generalmente più basso che nei poli maggiori, e le aziende faticano di più a coprire ruoli tecnici specializzati — un mismatch che gioca a favore di periti e tecnici qualificati disposti a un pendolarismo più esteso.</li>
+        </ul>`
+      },
+      {
+        id: 'contratti-apprendistato-pmi-venete',
+        title: 'Contratti e apprendistato: come entrano davvero i giovani nelle PMI venete',
+        content: `<p>Per chi è alle prime esperienze, capire la forma contrattuale con cui le PMI venete assumono aiuta a impostare aspettative realistiche e a negoziare meglio:</p>
+        <ul>
+          <li><b>Apprendistato professionalizzante:</b> è la porta d'ingresso più comune per profili tecnici under 30 nelle aziende manifatturiere venete, con un percorso formativo strutturato e un regime contributivo agevolato per l'azienda — informazioni di dettaglio nella guida ai <a data-page="blog-article" data-slug="bonus-assunzioni-2026" href="#">bonus assunzioni 2026</a>.</li>
+          <li><b>Tempo determinato con finalità di stabilizzazione:</b> molte PMI familiari preferiscono un periodo di prova esteso tramite contratto a termine prima dell'assunzione definitiva, soprattutto per ruoli operativi.</li>
+          <li><b>Somministrazione tramite agenzia:</b> diffusa nei periodi di picco produttivo, specialmente nella metalmeccanica di Vicenza e Padova; può trasformarsi in assunzione diretta se il periodo di somministrazione va bene per entrambe le parti.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Quali figure cercano le aziende venete?', a: 'Il mismatch più forte riguarda profili tecnici: manutentori, saldatori qualificati, operatori CNC, ingegneri di processo e periti meccatronici. Nel turismo la domanda stagionale copre reception, sala, cucina e animazione, con precedenza a chi parla tedesco e inglese.' },
       { q: 'Il lavoro stagionale nel turismo veneto conviene?', a: 'Può essere un ottimo ingresso: le strutture della costa adriatica e del Garda ricontrattano ogni anno il personale migliore, e molte trasformano gli stagionali validi in contratti continuativi su più strutture. Nel CV evidenzia lingue e flessibilità oraria.' },
       { q: 'Che stipendi offre il Veneto?', a: 'In linea con la media del Nord: un operaio specializzato metalmeccanico si colloca tra i 24.000€ e i 28.000€ di RAL, un impiegato commerciale estero con tedesco fluente può superare i 32.000€. L’addizionale regionale veneta è tra le più basse del Nord Italia.' },
+      { q: 'Come mi presento a un colloquio con una PMI familiare veneta?', a: 'Con concretezza e senza eccesso di formalismo: chi seleziona è spesso il titolare stesso o un familiare stretto, e valuta affidabilità, disponibilità e capacità pratica più della forma. Prepara comunque risposte STAR precise: la sostanza resta decisiva.' },
+      { q: 'Vale la pena candidarsi a Belluno se non lavoro nell’occhialeria?', a: 'Sì: oltre al distretto dell’occhiale, l’area ha un tessuto di turismo montano e piccola manifattura collegata all’indotto Luxottica (logistica, componentistica, servizi) che assorbe anche profili non direttamente specializzati nell’ottica.' },
+      { q: 'Le aziende venete assumono candidati provenienti da altre regioni?', a: 'Sì, soprattutto per ruoli tecnici scarsi sul mercato locale: molte PMI offrono supporto alla ricerca casa o un periodo di alloggio temporaneo per profili qualificati disposti a trasferirsi, specie nella metalmeccanica di Vicenza e Padova.' },
     ],
     relatedSlugs: ['trovare-lavoro-lombardia', 'cercare-lavoro-piemonte', 'esempi-cv']
   },
@@ -622,9 +847,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Come cercare lavoro all’estero: adattare il CV agli standard di ogni Paese (UK, Germania), usare EURES e LinkedIn, e superare le selezioni internazionali.',
     category: 'GUIDE PRATICHE',
     author: {
-      name: 'Ing. Marco Bellini',
-      role: 'Lead AI Engineer & Recruiter Tech · ProntoCurriculum',
-      initials: 'MB'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '10 Luglio 2026',
     dateISO: '2026-07-10',
@@ -660,12 +885,37 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Con il generatore di lettere di presentazione AI di ProntoCurriculum crei cover letter persuasive in inglese, francese o tedesco, calibrate sull’azienda e sul ruolo — il fattore che più spesso distingue il candidato estero da quelli locali.',
           type: 'tip'
         }
+      },
+      {
+        id: 'colloquio-internazionale-differenze-culturali',
+        title: 'Il colloquio internazionale: differenze culturali da conoscere',
+        content: `<p>Superare lo screening del CV è solo metà del percorso: le aspettative comportamentali durante il colloquio cambiano da Paese a Paese, e un candidato italiano preparato solo sui contenuti rischia di essere percepito come fuori registro.</p>
+        <ul>
+          <li><b>Mondo anglosassone (UK, USA, Irlanda):</b> il colloquio comportamentale con il metodo STAR è lo standard assoluto — vedi la nostra guida alle <a data-page="blog-article" data-slug="colloqui-domande-difficili" href="#">domande difficili del colloquio</a>. Ci si aspetta un tono sicuro di sé, quasi da "venditore di se stessi": la modestia eccessiva viene letta come mancanza di fiducia.</li>
+          <li><b>Germania e Austria:</b> il processo è più formale e strutturato, con domande dirette sulle competenze tecniche verificabili. La puntualità è un requisito implicito non negoziabile: anche pochi minuti di ritardo, anche per un colloquio video, sono percepiti molto negativamente.</li>
+          <li><b>Paesi nordici:</b> il colloquio tende a essere paritario e informale nella forma, ma sostanziale nei contenuti; il fit con la cultura aziendale (spesso orientata al consenso e al lavoro di squadra orizzontale) pesa quanto le competenze tecniche.</li>
+          <li><b>Francia:</b> grande attenzione al percorso formativo e al prestigio dell'istituto di provenienza, oltre a un registro linguistico formale anche in inglese; la lettre de motivation viene spesso ripresa esplicitamente durante il colloquio.</li>
+        </ul>`
+      },
+      {
+        id: 'fiscalita-trasferimento-estero',
+        title: 'Fiscalità e trasferimento: cosa verificare prima di accettare un’offerta',
+        content: `<p>Un'offerta economicamente allettante può rivelarsi meno vantaggiosa del previsto se non si verificano in anticipo alcuni aspetti pratici:</p>
+        <ul>
+          <li><b>Residenza fiscale:</b> il trasferimento all'estero comporta il cambio di residenza fiscale solo dopo un certo numero di giorni di permanenza nell'anno; finché non avviene, si può restare soggetti a doppia tassazione se non gestito correttamente. Consulta sempre un commercialista esperto in fiscalità internazionale prima di accettare.</li>
+          <li><b>Costo della vita reale, non solo lo stipendio lordo:</b> confronta sempre il netto disponibile dopo tasse, affitto e assicurazione sanitaria, non lo stipendio lordo annunciato — la differenza tra Paesi può essere sostanziale a parità di RAL apparente.</li>
+          <li><b>Supporto al trasferimento (relocation package):</b> molte aziende internazionali offrono un contributo per il trasloco, un alloggio temporaneo o un supporto per il visto: chiedi esplicitamente se non è menzionato nell'offerta, è una richiesta standard e non indebolisce la trattativa.</li>
+          <li><b>Continuità previdenziale:</b> verifica come il periodo di lavoro all'estero verrà considerato ai fini della pensione italiana, soprattutto se prevedi di rientrare: gli accordi di sicurezza sociale variano da Paese a Paese.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Serve tradurre il CV in inglese anche per Paesi non anglofoni?', a: 'Per multinazionali e ruoli qualificati l’inglese è quasi sempre accettato e spesso preferito. Per PMI locali e ruoli a contatto col pubblico, il CV nella lingua del Paese aumenta sensibilmente le risposte: valuta una doppia versione.' },
       { q: 'Cos’è EURES e come funziona?', a: 'È la rete europea dei servizi per l’impiego, coordinata dalla Commissione Europea: aggrega offerte verificate in tutta l’UE, offre consulenti gratuiti per la mobilità e programmi come Targeted Mobility Scheme con contributi per colloqui all’estero e trasferimento.' },
       { q: 'Come dimostro il livello di lingua nel CV internazionale?', a: 'Con il quadro QCER (A1-C2) per le lingue europee, e con certificazioni riconosciute quando le hai (IELTS, TOEFL, Goethe, DELF). Le autovalutazioni generiche ("buon inglese") non vengono considerate dai recruiter internazionali.' },
+      { q: 'Conviene passare da un’agenzia di recruiting internazionale o candidarsi direttamente?', a: 'Per profili molto ricercati (ingegneria, IT, sanità) le agenzie specializzate nella mobilità internazionale possono velocizzare il processo e gestire aspetti pratici come visti e relocation. Per la maggior parte dei ruoli, la candidatura diretta su LinkedIn o sul sito aziendale resta il canale principale.' },
+      { q: 'I titoli di studio italiani vengono riconosciuti automaticamente all’estero?', a: 'Dipende dal Paese e dalla professione: per le professioni regolamentate (medicina, ingegneria con albo, insegnamento) è spesso necessaria una procedura di riconoscimento formale, mentre per la maggior parte dei ruoli privati basta la descrizione chiara del percorso nel CV.' },
+      { q: 'Cosa cambia nel colloquio se è condotto da un recruiter che non è madrelingua della posizione?', a: 'Capita spesso nelle multinazionali con team di recruiting centralizzati: il livello di inglese richiesto in questi casi è generalmente più permissivo di un colloquio con un madrelingua, ma la chiarezza espositiva resta comunque decisiva per superare lo step successivo.' },
     ],
     relatedSlugs: ['lavorare-svizzera', 'guida-cv', 'lettera-presentazione']
   },
@@ -676,9 +926,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Lavorare in Svizzera da italiani: stipendi medi, permessi di lavoro (G e B), tassazione dei frontalieri e come candidarsi con successo.',
     category: 'GUIDE PRATICHE',
     author: {
-      name: 'Ing. Marco Bellini',
-      role: 'Lead AI Engineer & Recruiter Tech · ProntoCurriculum',
-      initials: 'MB'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '6 Luglio 2026',
     dateISO: '2026-07-06',
@@ -714,12 +964,37 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Se risiedi nelle province di Como, Varese, Sondrio, Verbano-Cusio-Ossola o Novara, consulta un commercialista per calcolare l’impatto del nuovo accordo fiscale tra Roma e Berna: la differenza tra vecchio e nuovo regime può valere diverse centinaia di euro al mese.',
           type: 'warning'
         }
+      },
+      {
+        id: 'come-cercare-lavoro-in-svizzera',
+        title: 'Come cercare lavoro in Svizzera: portali e head hunter',
+        content: `<p>Il mercato svizzero ha canali di ricerca in parte diversi da quelli italiani, e conoscerli velocizza sensibilmente la ricerca:</p>
+        <ul>
+          <li><b>Portali generalisti:</b> jobs.ch e JobUp sono i riferimenti nazionali, con forte presenza anche di annunci in Ticino. LinkedIn resta comunque il canale più usato dai recruiter delle aziende internazionali con sede in Svizzera.</li>
+          <li><b>Agenzie interinali e di collocamento:</b> Adecco, Manpower e le agenzie ticinesi locali gestiscono un volume enorme di posizioni, specialmente per profili tecnici e amministrativi; sono spesso il canale più rapido per i frontalieri alla prima esperienza.</li>
+          <li><b>Uffici regionali di collocamento (URC):</b> per chi risiede in Svizzera, gli URC cantonali offrono supporto attivo alla ricerca ed è spesso obbligatorio iscriversi in caso di disoccupazione per mantenere il diritto alle indennità.</li>
+          <li><b>Dossier di candidatura completo:</b> a differenza della prassi italiana, gli annunci svizzeri spesso richiedono l'invio di un "dossier" con CV, lettera di motivazione, copie dei diplomi e degli ultimi certificati di lavoro già al primo contatto, non solo in una fase avanzata.</li>
+        </ul>`
+      },
+      {
+        id: 'vita-da-frontaliere',
+        title: 'Vita da frontaliere: pendolarismo e organizzazione pratica',
+        content: `<p>Oltre agli aspetti economici e fiscali, la scelta di diventare frontaliere ha implicazioni pratiche quotidiane che vale la pena valutare in anticipo:</p>
+        <ul>
+          <li><b>Tempi di attraversamento del confine:</b> nelle ore di punta i valichi verso il Ticino (Chiasso, Ponte Chiasso, Brogeda) possono generare code prolungate; molti frontalieri organizzano orari di lavoro sfalsati o usano il treno regionale transfrontaliero dove disponibile.</li>
+          <li><b>Conto bancario e valuta:</b> lo stipendio viene versato in franchi svizzeri; la maggior parte dei frontalieri apre un conto in banca svizzera per ridurre i costi di cambio e trasferimento verso l'Italia.</li>
+          <li><b>Assistenza sanitaria e infortuni sul lavoro:</b> l'assicurazione contro gli infortuni professionali è generalmente coperta dal datore di lavoro svizzero secondo la LAINF; per le cure non legate al lavoro va invece definita la copertura tramite cassa malati o SSN italiano, come indicato nella cornice fiscale sopra.</li>
+        </ul>
+        <p>Per valutare l'impatto economico complessivo prima di accettare un'offerta, verifica sempre anche le condizioni del <a data-page="blog-article" data-slug="lavorare-estero" href="#">lavoro all'estero in generale</a> se stai confrontando la Svizzera con altre destinazioni europee.</p>`
       }
     ],
     faq: [
       { q: 'Quanto guadagna un frontaliere italiano in Svizzera?', a: 'Dipende da settore e Cantone: in Ticino gli stipendi sono mediamente più bassi che a Zurigo o Ginevra, ma un operaio specializzato parte comunque da circa 4.000-4.500 CHF lordi mensili, e un impiegato qualificato da 4.500-5.500 CHF. Al netto va considerato il regime fiscale applicabile (vecchi vs nuovi frontalieri).' },
       { q: 'Serve conoscere il tedesco o il francese per lavorare in Svizzera?', a: 'In Ticino basta l’italiano per molti ruoli. Nella Svizzera tedesca e romanda la lingua locale è quasi sempre richiesta per i ruoli a contatto con clienti e colleghi, mentre nelle multinazionali e nell’IT l’inglese può bastare.' },
       { q: 'Come funziona la cassa malati per chi lavora in Svizzera?', a: 'L’assicurazione sanitaria di base è obbligatoria e privata: costa indicativamente 250-450 CHF al mese a seconda di Cantone e franchigia. I frontalieri possono in alternativa optare per l’iscrizione al Servizio Sanitario Nazionale italiano: va valutato con un consulente.' },
+      { q: 'Quanto tempo richiede ottenere il permesso G da frontaliere?', a: 'Solitamente il datore di lavoro svizzero avvia la procedura non appena firmato il contratto; i tempi variano da poche settimane a circa un mese a seconda del Cantone. Il permesso è legato al contratto di lavoro: cambiare datore richiede un aggiornamento.' },
+      { q: 'Conviene aprire la partita IVA per lavorare come frontaliere autonomo?', a: 'È un caso distinto dal lavoro dipendente frontaliero, con regole fiscali e previdenziali diverse tra i due Paesi: richiede una valutazione specifica con un commercialista esperto in fiscalità transfrontaliera prima di procedere.' },
+      { q: 'I titoli di studio italiani sono riconosciuti dai datori di lavoro svizzeri?', a: 'Nella maggior parte dei settori privati sì, senza procedure formali di equipollenza. Per le professioni regolamentate (sanità, ingegneria con iscrizione ad albo, insegnamento) può essere necessario un riconoscimento ufficiale tramite le autorità cantonali competenti.' },
     ],
     relatedSlugs: ['lavorare-estero', 'guida-cv', 'esempi-cv']
   },
@@ -730,9 +1005,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Bonus busta paga 2026: come funzionano il taglio del cuneo fiscale, le aliquote IRPEF a 3 scaglioni e i fringe benefit esentasse per i dipendenti.',
     category: 'MERCATO & TREND',
     author: {
-      name: 'Dott.ssa Elena Moretti',
-      role: 'Head of Career Advisory · ProntoCurriculum',
-      initials: 'EM'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '4 Luglio 2026',
     dateISO: '2026-07-04',
@@ -769,12 +1044,36 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Vuoi verificare l’impatto reale di queste misure? Usa il calcolatore di stipendio netto di ProntoCurriculum: inserisci RAL, regione e carichi familiari e ottieni la stima mensile con esonero contributivo e detrazioni applicate.',
           type: 'tip'
         }
+      },
+      {
+        id: 'verificare-corretta-applicazione',
+        title: 'Come verificare che il datore applichi correttamente le misure',
+        content: `<p>Le agevolazioni descritte sono automatiche, ma la busta paga resta un documento tecnico che vale la pena saper leggere per accorgersi di eventuali errori:</p>
+        <ul>
+          <li><b>Controlla la voce "esonero contributivo"</b> nel cedolino: deve comparire come riduzione separata dei contributi a tuo carico, non genericamente confusa con altre voci. Se manca e il tuo reddito rientra nelle soglie, segnalalo all'ufficio del personale.</li>
+          <li><b>Verifica i fringe benefit dichiarati:</b> se l'azienda eroga buoni pasto, welfare o rimborsi utenze, chiedi un riepilogo annuale per assicurarti che il totale non superi la soglia esente — superarla senza saperlo può generare una sorpresa fiscale in dichiarazione dei redditi.</li>
+          <li><b>Confronta il netto mensile con una simulazione indipendente:</b> uno scostamento significativo e non spiegato tra la busta paga e una simulazione basata su RAL, regione e carichi familiari dichiarati è un segnale da approfondire con l'ufficio HR o un consulente del lavoro.</li>
+        </ul>`
+      },
+      {
+        id: 'cosa-e-cambiato-rispetto-al-passato',
+        title: 'Cosa è cambiato rispetto al sistema precedente',
+        content: `<p>Per chi ha cambiato lavoro o ha semplicemente notato differenze nel proprio netto rispetto agli anni scorsi, alcuni riferimenti utili per orientarsi:</p>
+        <ul>
+          <li><b>Il passaggio dal bonus in busta al taglio contributivo strutturale</b> ha reso il beneficio più stabile anno su anno rispetto alle misure precedenti, spesso rinnovate di anno in anno con importi variabili.</li>
+          <li><b>Il consolidamento delle aliquote IRPEF</b> a un numero ridotto di scaglioni ha semplificato il calcolo dell'imposta, ma l'effetto pratico sul netto va sempre verificato caso per caso perché dipende anche da detrazioni per lavoro dipendente e carichi familiari.</li>
+          <li><b>I fringe benefit</b> hanno visto ampliarsi progressivamente le voci di spesa ammesse (dalle sole utenze domestiche fino ad affitto e mutuo prima casa): verifica sempre la normativa vigente nell'anno di riferimento, perché soglie e voci ammesse sono soggette a modifiche in ogni legge di bilancio.</li>
+        </ul>
+        <p>Per capire come queste misure si intrecciano con la ricerca di un nuovo lavoro, leggi anche la guida ai <a data-page="blog-article" data-slug="bonus-assunzioni-2026" href="#">bonus assunzioni 2026</a>, che agiscono sul lato del datore di lavoro.</p>`
       }
     ],
     faq: [
       { q: 'Il taglio del cuneo fiscale va richiesto o è automatico?', a: 'È automatico: il datore di lavoro applica l’esonero direttamente in busta paga in base alla retribuzione imponibile mensile. Non serve alcuna domanda del lavoratore.' },
       { q: 'Cosa succede se supero la soglia dei fringe benefit?', a: 'Se il valore complessivo supera la soglia annua (1.000€ o 2.000€ con figli), l’intero importo — non solo l’eccedenza — diventa imponibile ai fini fiscali e contributivi. Il monitoraggio della soglia è responsabilità del datore di lavoro.' },
       { q: 'Le nuove aliquote IRPEF quanto fanno risparmiare?', a: 'Il consolidamento a 3 scaglioni (23% fino a 28.000€, 35% fino a 50.000€, 43% oltre) riduce l’imposta soprattutto per i redditi tra 15.000€ e 28.000€ rispetto al vecchio sistema. L’effetto esatto dipende da detrazioni e addizionali locali.' },
+      { q: 'Il taglio del cuneo fiscale vale anche per i contratti part-time?', a: 'Sì, l’esonero si applica in proporzione alla retribuzione imponibile effettiva, quindi anche ai contratti part-time, purché la retribuzione mensile rientri nelle soglie previste.' },
+      { q: 'Le addizionali regionali e comunali IRPEF influenzano il beneficio del taglio del cuneo?', a: 'Sono misure distinte: il taglio del cuneo agisce sui contributi previdenziali, le addizionali locali sull’imposta IRPEF. Il netto finale in busta paga riflette entrambi gli effetti insieme, motivo per cui a parità di RAL il netto può variare da regione a regione.' },
+      { q: 'Cosa succede al taglio del cuneo fiscale se cambio lavoro a metà anno?', a: 'Il nuovo datore di lavoro applica l’esonero in base alla retribuzione imponibile del nuovo rapporto, senza necessità di comunicazioni particolari da parte tua: la misura è collegata al singolo rapporto di lavoro in corso, non cumulata tra più datori nello stesso anno.' },
     ],
     relatedSlugs: ['bonus-assunzioni-2026', 'guida-cv', 'punteggio-ats']
   },
@@ -785,9 +1084,9 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
     metaDescription: 'Bonus assunzioni 2026: sgravi contributivi per under 35, donne e Sud Italia. Requisiti, importi e come il candidato può sfruttarli in fase di selezione.',
     category: 'MERCATO & TREND',
     author: {
-      name: 'Ing. Marco Bellini',
-      role: 'Lead AI Engineer & Recruiter Tech · ProntoCurriculum',
-      initials: 'MB'
+      name: 'Redazione ProntoCurriculum',
+      role: 'Career Advisory Team · ProntoCurriculum',
+      initials: 'PC'
     },
     date: '2 Luglio 2026',
     dateISO: '2026-07-02',
@@ -822,12 +1121,36 @@ export const BLOG_ARTICLES: BlogArticleData[] = [
           text: 'Gli incentivi accelerano le assunzioni ma non sostituiscono la selezione: il CV deve comunque superare screening e ATS. Usa l’editor AI di ProntoCurriculum per allineare il curriculum alle competenze richieste dalle aziende che stanno ampliando l’organico.',
           type: 'tip'
         }
+      },
+      {
+        id: 'altri-incentivi-settoriali',
+        title: 'Altri incentivi: apprendistato duale e ZES unica per il Mezzogiorno',
+        content: `<p>Oltre agli sgravi under 35 e donne, esistono misure settoriali o territoriali che è utile conoscere se ti candidi in determinati contesti:</p>
+        <ul>
+          <li><b>Apprendistato duale:</b> combina formazione e lavoro con un regime contributivo agevolato proprio, distinto dagli esoneri standard, pensato per l'ingresso di giovani direttamente dal percorso scolastico o universitario nel mondo del lavoro.</li>
+          <li><b>ZES unica per il Mezzogiorno:</b> le aziende che investono e assumono nelle regioni della Zona Economica Speciale del Sud possono cumulare crediti d'imposta e agevolazioni contributive, un ulteriore incentivo per chi cerca lavoro in Campania, Puglia, Calabria, Sicilia, Sardegna, Basilicata, Molise e Abruzzo.</li>
+          <li><b>Incentivi per l'assunzione di lavoratori con disabilità:</b> previsti dalla Legge 68/1999, con esoneri contributivi specifici che si affiancano, senza sovrapporsi, agli sgravi generalisti descritti in questo articolo.</li>
+        </ul>
+        <p>Questi incentivi si sommano spesso alle dinamiche regionali descritte nelle nostre guide territoriali, ad esempio per chi cerca lavoro <a data-page="blog-article" data-slug="trovare-lavoro-lombardia" href="#">in Lombardia</a> o nelle altre regioni del Nord.</p>`
+      },
+      {
+        id: 'come-il-recruiter-valuta-il-match',
+        title: 'Come il recruiter valuta il match tra candidato e incentivo',
+        content: `<p>Capire la prospettiva di chi seleziona aiuta a posizionare correttamente questa informazione senza sembrare che il proprio unico valore sia il risparmio fiscale che si porta in dote:</p>
+        <ul>
+          <li><b>L'incentivo non sostituisce mai la competenza:</b> nessun'azienda seria assume un profilo inadeguato solo per lo sgravio contributivo. L'agevolazione entra in gioco tipicamente nella fase finale, quando due candidati sono valutati equivalenti sul piano tecnico e l'incentivo diventa un fattore di spareggio.</li>
+          <li><b>Il recruiter lo verifica comunque:</b> età anagrafica, storico contributivo e requisiti territoriali vengono controllati dall'ufficio HR o dal consulente del lavoro prima di applicare l'esonero, indipendentemente da cosa dichiara il candidato in colloquio.</li>
+          <li><b>Il momento giusto per menzionarlo:</b> mai nella prima candidatura o nel CV stesso — è un dettaglio da usare, se utile, in una fase avanzata della trattativa, quando l'interesse dell'azienda è già consolidato.</li>
+        </ul>`
       }
     ],
     faq: [
       { q: 'Il bonus assunzioni spetta all’azienda o al lavoratore?', a: 'All’azienda: è un esonero sui contributi a carico del datore di lavoro. Il lavoratore ne beneficia indirettamente, perché il costo ridotto dell’assunzione rende il suo profilo più competitivo e può facilitare la trattativa economica.' },
       { q: 'Posso dire al recruiter che rientro nei requisiti del bonus?', a: 'Sì, con misura e nel momento giusto: in fase avanzata di selezione o tramite l’agenzia per il lavoro. È un’informazione fattuale che l’ufficio HR apprezza, purché il profilo regga di suo la selezione.' },
       { q: 'Lo sgravio vale anche per i contratti di apprendistato?', a: 'L’apprendistato ha già un regime contributivo agevolato proprio, distinto da questi esoneri. Gli sgravi descritti qui riguardano le assunzioni a tempo indeterminato standard: per i dettagli fa fede la circolare INPS applicabile al singolo caso.' },
+      { q: 'Gli sgravi si applicano anche alla trasformazione di un contratto a termine in indeterminato?', a: 'In molti casi sì, se ricorrono i requisiti soggettivi del lavoratore (età, genere, area territoriale) al momento della trasformazione: la verifica va comunque fatta caso per caso sulla circolare INPS vigente, perché le condizioni di dettaglio possono cambiare.' },
+      { q: 'Un lavoratore può beneficiare di più incentivi contemporaneamente?', a: 'Generalmente no in forma cumulativa piena: le normative prevedono spesso regole di non sovrapposizione tra sgravi diversi riferiti allo stesso rapporto di lavoro. È l’ufficio paghe dell’azienda a determinare quale incentivo applicare quando il lavoratore rientra in più categorie.' },
+      { q: 'Gli incentivi assunzioni riguardano anche i contratti part-time?', a: 'Sì, l’esonero si applica in proporzione alla retribuzione imponibile del contratto, incluso il part-time, purché siano rispettati gli altri requisiti previsti (tipologia contrattuale a tempo indeterminato, requisiti anagrafici o di genere del lavoratore).' },
     ],
     relatedSlugs: ['bonus-busta-paga-2026', 'guida-cv', 'esempi-cv']
   }

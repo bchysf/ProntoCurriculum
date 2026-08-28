@@ -3,6 +3,7 @@ import type { Page } from '../types';
 import { BLOG_ARTICLES } from '../data/blogArticles';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
 import { useT } from '../i18n/LanguageContext';
+import HeroArt, { CATEGORY_MOTIF } from '../components/HeroArt';
 
 interface BlogHubProps {
   onNavigate: (page: Page, slug?: string) => void;
@@ -213,6 +214,9 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
                     className={`bh-card rv${i % 3 === 1 ? ' d1' : i % 3 === 2 ? ' d2' : ''}`}
                     onClick={() => onNavigate('blog-article', article.slug)}
                   >
+                    <div className="bh-card__thumb">
+                      <HeroArt motif={CATEGORY_MOTIF[article.category] || 'guide'} seed={article.slug} width={480} height={270} />
+                    </div>
                     <div className="bh-card__top">
                       <span className="bh-card__cat">{article.category}</span>
                       <span className="bh-card__time">{article.readTime}</span>

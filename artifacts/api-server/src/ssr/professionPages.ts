@@ -1,6 +1,7 @@
 import { renderSsrPage, escapeHtml } from "./shell";
 import { PROFESSION_PROFILES, getProfessionProfile, type ProfessionProfile } from "./professionData";
 import { getCityProfile } from "./lombardiaData";
+import { buildHeroSvg } from "./heroArt";
 
 const HUB_PATH = "/lavoro/lombardia";
 
@@ -15,6 +16,8 @@ export function getProfessionHtml(citySlugOrNull: string | null, slug: string): 
   const city = p.citySlug ? getCityProfile(p.citySlug) : undefined;
 
   const skillsHtml = p.keySkills.map((s) => `<li>${escapeHtml(s)}</li>`).join("\n");
+  const cvAdviceHtml = p.cvAdvice.map((s) => `<p>${escapeHtml(s)}</p>`).join("\n");
+  const mistakesHtml = p.mistakes.map((s) => `<li>${escapeHtml(s)}</li>`).join("\n");
   const faqHtml = p.faq
     .map((f, i) => `<details${i === 0 ? " open" : ""}><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`)
     .join("\n");
@@ -29,6 +32,7 @@ export function getProfessionHtml(citySlugOrNull: string | null, slug: string): 
       <h1>Come scrivere un CV da ${escapeHtml(p.profession)} a ${escapeHtml(p.locationLabel)}</h1>
       <p class="sub">${escapeHtml(p.intro)}</p>
     </section>
+    <div class="hero-art">${buildHeroSvg({ motif: "profession", seed: p.slug, width: 1120, height: 320 })}</div>
 
     <div class="answer"><b>In sintesi:</b> ${escapeHtml(p.demandFact)}. Stipendio indicativo: ${escapeHtml(p.salaryRange)}.</div>
 
@@ -38,13 +42,13 @@ export function getProfessionHtml(citySlugOrNull: string | null, slug: string): 
 
     <section class="sec">
       <h2>Cosa deve contenere il CV di un ${escapeHtml(p.profession.toLowerCase())}</h2>
-      <div class="prose"><p>${escapeHtml(p.cvAdvice)}</p></div>
+      <div class="prose">${cvAdviceHtml}</div>
       <ul class="prose" style="padding-left:22px">${skillsHtml}</ul>
     </section>
 
     <section class="sec">
-      <h2>L'errore più comune da evitare</h2>
-      <div class="prose"><p>${escapeHtml(p.mistakes)}</p></div>
+      <h2>Gli errori più comuni da evitare</h2>
+      <ul class="prose" style="padding-left:22px">${mistakesHtml}</ul>
     </section>
 
     <section class="sec">

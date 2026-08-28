@@ -3,6 +3,7 @@ import type { Page } from '../types';
 import { BLOG_ARTICLES, BlogArticleData } from '../data/blogArticles';
 import EditorialChrome, { useReveal, useSeoMeta } from '../components/EditorialChrome';
 import { useT } from '../i18n/LanguageContext';
+import HeroArt, { CATEGORY_MOTIF } from '../components/HeroArt';
 
 interface BlogArticleProps {
   slug?: string;
@@ -14,6 +15,8 @@ const ARTICLE_CSS = `
 .pce .ba-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 50; background: transparent; pointer-events: none; }
 .pce .ba-progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--violet)); transition: width .1s linear; }
 
+.pce .ba-hero { width: 100%; aspect-ratio: 21 / 8; border-radius: 20px; overflow: hidden; border: 1px solid var(--hair-soft); margin-top: 28px; }
+.pce .ba-hero svg { display: block; }
 .pce .ba-head { padding: 64px 0 40px; max-width: 800px; }
 .pce .ba-crumb { display: flex; align-items: center; gap: 10px; color: var(--ink-40); margin-bottom: 26px; flex-wrap: wrap; }
 .pce .ba-crumb a { color: var(--ink-40); text-decoration: none; cursor: pointer; transition: color .2s; }
@@ -183,7 +186,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
         description: article.metaDescription,
         datePublished: article.dateISO,
         inLanguage: 'it-IT',
-        author: { '@type': 'Person', name: article.author.name, jobTitle: article.author.role },
+        author: { '@type': 'Organization', name: 'ProntoCurriculum', url: 'https://prontocurriculum.it' },
         publisher: { '@type': 'Organization', name: 'ProntoCurriculum', url: 'https://prontocurriculum.it' },
       },
       {
@@ -233,6 +236,10 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
               <span className="meta">{article.date} · {article.readTime}</span>
             </div>
           </header>
+
+          <div className="ba-hero rv on">
+            <HeroArt motif={CATEGORY_MOTIF[article.category] || 'guide'} seed={article.slug} width={1050} height={400} />
+          </div>
 
           {/* BODY + TOC */}
           <div className="ba-layout">
@@ -351,6 +358,9 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
                     className={`bh-card rv${i === 1 ? ' d1' : i === 2 ? ' d2' : ''}`}
                     onClick={() => onNavigate('blog-article', rel.slug)}
                   >
+                    <div className="bh-card__thumb">
+                      <HeroArt motif={CATEGORY_MOTIF[rel.category] || 'guide'} seed={rel.slug} width={480} height={270} />
+                    </div>
                     <div className="bh-card__top">
                       <span className="bh-card__cat">{rel.category}</span>
                       <span className="bh-card__time">{rel.readTime}</span>

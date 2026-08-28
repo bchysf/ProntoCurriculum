@@ -102,6 +102,8 @@ export const EDITORIAL_CSS = `
 .pce .bh-ava { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(120deg, #6FA5FF, #BE9CFF); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 700; font-size: 13px; flex-shrink: 0; }
 .pce .bh-ava--sm { width: 30px; height: 30px; font-size: 10.5px; }
 .pce .bh-card { display: flex; flex-direction: column; background: rgba(255,255,255,0.8); backdrop-filter: blur(6px); border: 1px solid var(--hair-soft); border-radius: 16px; padding: 26px; cursor: pointer; transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .2s; }
+.pce .bh-card__thumb { margin: -26px -26px 16px; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 16px 16px 0 0; }
+.pce .bh-card__thumb svg { display: block; }
 .pce .bh-card:hover { transform: translateY(-4px); border-color: rgba(111, 140, 255, 0.4); box-shadow: 0 18px 40px -20px rgba(60, 70, 180, 0.2); }
 .pce .bh-card__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
 .pce .bh-card__cat { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }

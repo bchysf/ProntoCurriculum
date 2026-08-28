@@ -1,6 +1,7 @@
 import { renderSsrPage, escapeHtml } from "./shell";
 import { REGION_STATS, REGION_SOURCES, CITY_PROFILES, PLANNED_CITIES, getCityProfile } from "./lombardiaData";
 import { getProfessionLinksForCity, getRegionalProfessionLinks } from "./professionPages";
+import { buildHeroSvg } from "./heroArt";
 
 const HUB_PATH = "/lavoro/lombardia";
 
@@ -27,6 +28,7 @@ export function getHubHtml(): string {
       <h1>Lavoro in Lombardia: dati aggiornati su stipendi, occupazione e settori per provincia</h1>
       <p class="sub">Una mappa dati, provincia per provincia, per chi cerca lavoro o sta scrivendo il proprio CV per il mercato lombardo — occupazione, RAL media e settori trainanti, con fonti verificate.</p>
     </section>
+    <div class="hero-art">${buildHeroSvg({ motif: "market", seed: "lombardia-hub", width: 1120, height: 320 })}</div>
 
     <div class="answer">
       <b>In sintesi:</b> la Lombardia ha un tasso di occupazione del ${REGION_STATS.employmentRate} (${REGION_STATS.employmentRateNote}) e un tasso di disoccupazione del ${REGION_STATS.unemploymentRate} (${REGION_STATS.unemploymentRateNote}) — tra i migliori dati regionali d'Italia. La retribuzione annua lorda media è di ${REGION_STATS.avgRal}, con Milano sopra la media grazie a finanza, moda e tech.
@@ -146,6 +148,7 @@ export function getCityHtml(slug: string): string | null {
       <h1>Lavoro a ${escapeHtml(city.name)}: stipendi, settori e come scrivere il CV giusto</h1>
       <p class="sub">${escapeHtml(city.intro)}</p>
     </section>
+    <div class="hero-art">${buildHeroSvg({ motif: "city", seed: city.slug, width: 1120, height: 320 })}</div>
 
     <div class="answer"><b>In sintesi:</b> a ${escapeHtml(city.name)} la RAL media è ${escapeHtml(city.avgRal)}, con il tasso di disoccupazione ${escapeHtml(city.unemploymentNote)}. I settori più forti sono ${city.sectors.map((s) => s.name.toLowerCase()).join(", ")}.</div>
 
@@ -159,7 +162,7 @@ export function getCityHtml(slug: string): string | null {
 
     <section class="sec">
       <h2>Come impostare il CV per candidarti a ${escapeHtml(city.name)}</h2>
-      <div class="prose"><p>${escapeHtml(city.advice)}</p></div>
+      <div class="prose">${city.advice.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n")}</div>
     </section>
     ${professionLinksHtml}
 

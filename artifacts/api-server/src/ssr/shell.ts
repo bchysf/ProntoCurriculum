@@ -47,6 +47,8 @@ const SHELL_CSS = `
 .pce .hero { padding:36px 0 40px; max-width:820px; }
 .pce .hero h1 { font-family:var(--f-display); font-weight:700; font-size:clamp(30px,4.2vw,50px); line-height:1.04; letter-spacing:-.035em; margin-bottom:18px; }
 .pce .hero .sub { font-size:16.5px; color:var(--ink-60); line-height:1.65; font-weight:500; }
+.pce .hero-art { width:100%; max-width:1120px; aspect-ratio:21/6; border-radius:20px; overflow:hidden; border:1px solid var(--hair-soft); margin:8px 0 12px; }
+.pce .hero-art svg { display:block; }
 .pce .answer { border:1px solid rgba(111,140,255,.35); background:rgba(111,140,255,.06); border-radius:16px; padding:24px 26px; margin:28px 0 8px; font-size:15px; line-height:1.65; color:var(--ink); max-width:760px; }
 .pce .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:40px 0; }
 .pce .stat { border:1px solid var(--hair-soft); background:rgba(255,255,255,.8); border-radius:14px; padding:22px; }
