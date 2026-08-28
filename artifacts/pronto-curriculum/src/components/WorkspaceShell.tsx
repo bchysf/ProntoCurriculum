@@ -85,7 +85,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
     { key: 'apps', icon: IC.list, label: t('ws.applications'), page: 'candidature', activeOn: ['candidature'], locked: !isAuthenticated },
     { key: 'letter', icon: IC.mail, label: t('ws.coverLetter'), page: 'cover-letter', activeOn: ['cover-letter'], locked: !isAuthenticated },
     { key: 'archive', icon: IC.briefcase, label: t('ws.archive'), page: 'archivio', activeOn: ['archivio'], locked: !isAuthenticated },
-    { key: 'profile-page', icon: IC.globe, label: 'Pagina pubblica', page: 'profile-page', activeOn: ['profile-page'], locked: !isAuthenticated },
+    { key: 'profile-page', icon: IC.globe, label: t('dash.publicPage'), page: 'profile-page', activeOn: ['profile-page'], locked: !isAuthenticated },
     { key: 'concorsi', icon: IC.building, label: t('ws.concorsi'), page: 'concorsi', activeOn: ['concorsi'], locked: false },
     { key: 'referral', icon: IC.gift, label: t('ws.referral'), page: 'referral', activeOn: ['referral'], locked: !isAuthenticated },
     ...(user?.email?.toLowerCase() === ADMIN_EMAIL

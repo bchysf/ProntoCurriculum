@@ -238,6 +238,18 @@ const RB_CSS = `
 .rb-tpl-pill { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 9px; background: rgba(20,23,31,.92); color: #fff; border: none; font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 99px; padding: 10px 18px; cursor: pointer; z-index: 10; box-shadow: 0 10px 26px rgba(20,23,31,.3); }
 .rb-tpl-pill:hover { background: var(--ink, #14171F); }
 .rb-tpl-pill em { font-style: normal; color: #BE9CFF; }
+.rb-magnify-chip { position: absolute; top: 14px; left: 16px; z-index: 10; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #fff; border: 1px solid rgba(20,23,31,.1); border-radius: 10px; cursor: pointer; color: #565B66; box-shadow: 0 4px 14px rgba(20,23,31,.08); }
+.rb-magnify-chip:hover { border-color: var(--gold, #2F2AE5); color: var(--gold, #2F2AE5); }
+.cv-sheet { cursor: zoom-in; }
+.rb-magnify-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(20,23,31,.72); display: flex; flex-direction: column; align-items: center; }
+.rb-magnify-bar { flex-shrink: 0; display: flex; align-items: center; gap: 10px; margin: 18px 0 6px; background: #fff; border-radius: 99px; padding: 7px 8px 7px 14px; box-shadow: 0 10px 26px rgba(20,23,31,.3); }
+.rb-magnify-bar button { border: none; background: #F1F2F6; color: #14171F; font-family: inherit; font-size: 13px; font-weight: 700; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.rb-magnify-bar button:hover { background: #E4E5EC; }
+.rb-magnify-bar span { font-size: 12.5px; font-weight: 700; color: #565B66; min-width: 40px; text-align: center; }
+.rb-magnify-bar button[title]:nth-last-child(2) { width: auto; border-radius: 99px; padding: 0 12px; font-size: 11.5px; }
+.rb-magnify-close { background: none !important; color: #565B66; font-size: 20px !important; }
+.rb-magnify-scroll { flex: 1; width: 100%; overflow: auto; display: flex; justify-content: center; padding: 10px 24px 60px; cursor: default; }
+.rb-magnify-scroll .cv-sheet { cursor: default; }
 
 /* full-width panes (template / ats) */
 .rb-pane { flex: 1; overflow-y: auto; background: #FAFAFC; padding: 30px 38px 80px; }
@@ -425,6 +437,7 @@ function AIAssistantPanel({
   onCVChange: (data: CVData) => void;
   lang: SupportedLanguage;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(true);
   const [minimized, setMinimized] = useState(false);
   const [pos, setPos] = useState(() => ({
@@ -456,9 +469,9 @@ function AIAssistantPanel({
           additionalExperiences: [...(cvData.additionalExperiences ?? []), ...additionalExperiences],
         });
       }
-      setChatMessages(prev => [...prev, { role: 'assistant', text: reply || 'Fatto.' }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', text: reply || t('ai.done') }]);
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Errore durante l'elaborazione del messaggio.";
+      const errMsg = err instanceof Error ? err.message : t('ai.chatError');
       setChatMessages(prev => [...prev, { role: 'assistant', text: errMsg }]);
     } finally {
       setChatSending(false);
@@ -488,7 +501,7 @@ function AIAssistantPanel({
   if (!open) {
     return (
       <button className="ai-float-reopen" style={{ right: 28, bottom: 28 }} onClick={() => setOpen(true)}>
-        <Icon d={IC.bulb} size={15} /> Assistente AI
+        <Icon d={IC.bulb} size={15} /> {t('ai.assistantTitle')}
       </button>
     );
   }
@@ -502,22 +515,22 @@ function AIAssistantPanel({
         onPointerUp={onHeadPointerUp}
       >
         <span className="ico"><Icon d={IC.bulb} size={13} /></span>
-        <span className="title">Assistente AI</span>
+        <span className="title">{t('ai.assistantTitle')}</span>
         <div className="ai-float-actions">
-          <button title={minimized ? 'Espandi' : 'Riduci'} onClick={() => setMinimized(v => !v)}>{minimized ? '▢' : '—'}</button>
-          <button title="Chiudi" onClick={() => setOpen(false)}><Icon d={IC.x} size={13} /></button>
+          <button title={minimized ? t('ai.expand') : t('ai.collapse')} onClick={() => setMinimized(v => !v)}>{minimized ? '▢' : '—'}</button>
+          <button title={t('ai.close')} onClick={() => setOpen(false)}><Icon d={IC.x} size={13} /></button>
         </div>
       </div>
 
       {!minimized && (
         <div className="ai-float-body">
-          <p className="ai-float-sub">Suggerimenti per rendere le tue esperienze più incisive e superare i filtri ATS.</p>
+          <p className="ai-float-sub">{t('ai.sub')}</p>
 
           {named.length === 0 ? (
-            <div className="ai-panel-empty">Aggiungi un'esperienza lavorativa per ricevere suggerimenti.</div>
+            <div className="ai-panel-empty">{t('ai.addExpHint')}</div>
           ) : withTips.length === 0 ? (
             <button className="btn btn-ink btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onAnalyzeAll} disabled={analyzing}>
-              {analyzing ? 'Analisi in corso…' : <><Icon d={IC.spark} size={13} /> Analizza esperienze</>}
+              {analyzing ? t('ai.analyzing') : <><Icon d={IC.spark} size={13} /> {t('ai.analyzeExps')}</>}
             </button>
           ) : (
             <>
@@ -539,7 +552,7 @@ function AIAssistantPanel({
                           onClick={() => onApplyTip(exp.id, i)}
                           disabled={applying || applyingTipKey !== null}
                         >
-                          {applying ? 'Applico…' : <><Icon d={IC.check} size={11} /> Applica</>}
+                          {applying ? t('ai.applying') : <><Icon d={IC.check} size={11} /> {t('ai.apply')}</>}
                         </button>
                       </div>
                     );
@@ -548,7 +561,7 @@ function AIAssistantPanel({
               ))}
               {pendingCount > 0 && (
                 <button className="btn btn-line btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={onAnalyzeAll} disabled={analyzing}>
-                  {analyzing ? 'Analisi in corso…' : `Analizza altre ${pendingCount} esperienze`}
+                  {analyzing ? t('ai.analyzing') : t('ai.analyzeMore').replace('{count}', String(pendingCount))}
                 </button>
               )}
             </>
@@ -556,7 +569,7 @@ function AIAssistantPanel({
 
           <div className="ai-chat">
             <div className="ai-chat-hint">
-              Chiedi liberamente — es. "ho fatto volontariato alla Croce Rossa, aggiungilo al CV"
+              {t('ai.chatHint')}
             </div>
             {chatMessages.length > 0 && (
               <div className="ai-chat-log">
@@ -570,7 +583,7 @@ function AIAssistantPanel({
             <div className="ai-chat-input-row">
               <input
                 type="text"
-                placeholder="Scrivi un messaggio…"
+                placeholder={t('ai.chatPlaceholder')}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendChat(); } }}
@@ -581,7 +594,7 @@ function AIAssistantPanel({
                 style={{ padding: '8px 12px' }}
                 onClick={() => void sendChat()}
                 disabled={chatSending || !chatInput.trim()}
-                title="Invia"
+                title={t('ai.send')}
               >
                 <Icon d={IC.spark} size={13} />
               </button>
@@ -763,6 +776,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [cvScale, setCvScale] = useState(0.9);
+  const [magnifyOpen, setMagnifyOpen] = useState(false);
+  const [magnifyScale, setMagnifyScale] = useState(1.2);
 
   const toggleSection = (key: string) => {
     setOpenSections(prev => {
@@ -808,6 +823,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     update();
     return () => obs.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!magnifyOpen) return;
+    setMagnifyScale(1.2);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMagnifyOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [magnifyOpen]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -1143,46 +1166,46 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               placeholder={`${cvData.firstName || 'Il mio'} ${cvData.lastName || 'CV'}`.trim()}
               onChange={e => setSaveName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && isAuthenticated) void handleSaveCV(); }}
-              title="Nome del documento"
+              title={t('editor.docNameTitle')}
             />
             {isAuthenticated ? (
               <button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap', flexShrink: 0 }} onClick={() => void handleSaveCV()} disabled={isSaving}>
-                {isSaving ? 'Salvataggio…' : t('builder.saveCV')}
+                {isSaving ? t('editor.saving') : t('builder.saveCV')}
               </button>
             ) : (
-              <span className="rb-saved"><i /> Bozza locale</span>
+              <span className="rb-saved"><i /> {t('editor.localDraft')}</span>
             )}
           </div>
 
           <div className="rb-tabs">
-            <button className={`rb-tab${rbTab === 'edit' ? ' on' : ''}`} onClick={() => setRbTab('edit')}>Modifica</button>
-            <button className={`rb-tab rb-tab-preview-only${rbTab === 'preview' ? ' on' : ''}`} onClick={() => setRbTab('preview')}>Anteprima</button>
-            <button className={`rb-tab${rbTab === 'custom' ? ' on' : ''}`} onClick={() => setRbTab('custom')}>Template</button>
-            <button className={`rb-tab${rbTab === 'ats' ? ' on' : ''}`} onClick={() => setRbTab('ats')}>Analisi ATS</button>
-            <button className="rb-tab" onClick={() => onNavigate('tailor')}>Su misura <span className="aidot">AI</span></button>
+            <button className={`rb-tab${rbTab === 'edit' ? ' on' : ''}`} onClick={() => setRbTab('edit')}>{t('editor.tabEdit')}</button>
+            <button className={`rb-tab rb-tab-preview-only${rbTab === 'preview' ? ' on' : ''}`} onClick={() => setRbTab('preview')}>{t('editor.tabPreview')}</button>
+            <button className={`rb-tab${rbTab === 'custom' ? ' on' : ''}`} onClick={() => setRbTab('custom')}>{t('editor.tabTemplate')}</button>
+            <button className={`rb-tab${rbTab === 'ats' ? ' on' : ''}`} onClick={() => setRbTab('ats')}>{t('editor.tabATS')}</button>
+            <button className="rb-tab" onClick={() => onNavigate('tailor')}>{t('editor.tabTailored')} <span className="aidot">AI</span></button>
           </div>
 
           <div className="rb-actions">
             <button className="btn btn-ghost btn-sm" style={{ gap: 6 }} onClick={handlePreview} disabled={previewing}>
-              {previewing ? '…' : <Icon d={IC.eye} size={14} />} Anteprima
+              {previewing ? '…' : <Icon d={IC.eye} size={14} />} {t('editor.tabPreview')}
             </button>
             <div className="rb-dl-wrap">
               <button className="btn btn-gold btn-sm" style={{ gap: 7 }} onClick={() => setDlOpen(v => !v)}>
-                <Icon d={IC.download} size={14} /> Scarica <span style={{ fontSize: 9, marginLeft: 1 }}>▼</span>
+                <Icon d={IC.download} size={14} /> {t('editor.download')} <span style={{ fontSize: 9, marginLeft: 1 }}>▼</span>
               </button>
               {dlOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setDlOpen(false)} />
                   <div className="rb-dl-menu">
                     <button className="rb-dl-item" disabled={downloading || downloadingDOCX} onClick={() => { setDlOpen(false); void handleDownload(); }}>
-                      <Icon d={IC.download} size={14} /> Scarica in PDF <small>.pdf</small>
+                      <Icon d={IC.download} size={14} /> {t('editor.downloadPDF')} <small>.pdf</small>
                     </button>
                     <button className="rb-dl-item" disabled={downloading || downloadingDOCX} onClick={() => { setDlOpen(false); void handleDownloadDOCX(); }}>
-                      <Icon d={IC.doc} size={14} /> Scarica in Word <small>.docx</small>
+                      <Icon d={IC.doc} size={14} /> {t('editor.downloadWordItem')} <small>.docx</small>
                     </button>
                     <hr className="rb-dl-sep" />
                     <button className="rb-dl-item" onClick={() => { setDlOpen(false); setShowCoverLetterModal(true); }}>
-                      <Icon d={IC.spark} size={14} /> Lettera di presentazione <small>AI</small>
+                      <Icon d={IC.spark} size={14} /> {t('editor.coverLetter')} <small>AI</small>
                     </button>
                   </div>
                 </>
@@ -1201,7 +1224,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <div className="rb-comp">
               <div className="rb-comp-row">
                 <span className={`rb-comp-badge${completeness.pct < 60 ? ' low' : ''}`}>{completeness.pct}%</span>
-                <span>Completezza del CV</span>
+                <span>{t('editor.completeness')}</span>
               </div>
               <div className="rb-comp-bar"><i className={completeness.pct < 60 ? 'low' : ''} style={{ width: `${completeness.pct}%` }} /></div>
             </div>
@@ -1211,35 +1234,35 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               {(cvData.summary?.trim().length ?? 0) < 60 && (
                 <button className="rb-sugg-item" onClick={handleOptimizeSummary} disabled={optimizing || translating}>
                   <span className="rb-sugg-badge ai"><Icon d={IC.spark} size={13} /></span>
-                  Prova il profilo scritto dall'AI
+                  {t('editor.tryAIProfile')}
                   <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
                 </button>
               )}
               {cvData.skills.length < 6 && (
                 <button className="rb-sugg-item" onClick={() => setOpenSections(prev => new Set([...prev, 'skills']))}>
                   <span className="rb-sugg-badge">+{6 - cvData.skills.length}</span>
-                  Aggiungi competenze
+                  {t('editor.addSkills')}
                   <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
                 </button>
               )}
               {!cvData.experiences.some(e => (e.desc?.trim().length ?? 0) > 30) && (
                 <button className="rb-sugg-item" onClick={() => setOpenSections(prev => new Set([...prev, 'experiences']))}>
                   <span className="rb-sugg-badge">+1</span>
-                  Completa le descrizioni delle esperienze
+                  {t('editor.completeExpDesc')}
                   <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
                 </button>
               )}
               {hasPhotoTemplate && !cvData.photo && (
                 <button className="rb-sugg-item" onClick={() => photoInputRef.current?.click()}>
                   <span className="rb-sugg-badge">+1</span>
-                  Aggiungi una foto profilo
+                  {t('editor.addPhotoSugg')}
                   <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
                 </button>
               )}
               {!jobDescription.trim() && (
                 <button className="rb-sugg-item" onClick={() => setRbTab('ats')}>
                   <span className="rb-sugg-badge ai"><Icon d={IC.spark} size={13} /></span>
-                  Confronta il CV con un annuncio di lavoro
+                  {t('editor.compareJobAd')}
                   <span className="go"><Icon d={IC.arrowRight} size={14} /></span>
                 </button>
               )}
@@ -1255,7 +1278,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icon d={IC.globe} size={13} style={{ color: '#2F2AE5' }} /> Lingua del CV
+                  <Icon d={IC.globe} size={13} style={{ color: '#2F2AE5' }} /> {t('editor.cvLanguage')}
                 </div>
                 {selectedLanguage !== 'IT' && (
                   <button
@@ -1264,7 +1287,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     onClick={() => void handleTranslateCV()}
                     disabled={translating || optimizing}
                   >
-                    {translating ? 'Traduzione...' : `Traduci tutto in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label ?? selectedLanguage}`}
+                    {translating ? t('editor.translating') : `${t('editor.translateAllTo')} ${LANGUAGES.find(l => l.code === selectedLanguage)?.label ?? selectedLanguage}`}
                   </button>
                 )}
               </div>
@@ -1297,7 +1320,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               )}
               {selectedLanguage === 'IT' && (
                 <div style={{ marginTop: 8, fontSize: 11, color: 'var(--gray500)' }}>
-                  Seleziona un'altra lingua per tradurre il CV o i singoli campi con AI.
+                  {t('editor.selectOtherLangHint')}
                 </div>
               )}
             </div>
@@ -1331,7 +1354,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div className="photo-upload-placeholder">
                       <span style={{ color: '#2F2AE5' }}><Icon d={IC.user} size={24} /></span>
                       <span style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                        {hasPhotoTemplate ? 'Carica foto profilo' : 'Aggiungi foto profilo'}
+                        {hasPhotoTemplate ? t('editor.uploadPhoto') : t('editor.addPhotoBtn')}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--gray500)' }}>JPG, PNG · max 5MB</span>
                     </div>
@@ -1853,33 +1876,53 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 4 }} onClick={() => {
                 onCVChange({ ...cvData, certifications: [...(cvData.certifications ?? []), { id: Date.now().toString(), name: '', issuer: '', date: '' }] });
               }}>
-                + Aggiungi certificazione
+                {t('editor.addCertification')}
               </button>
             </AccordionSection>
             </div>
           </div>
 
           <button className="rb-ai-pill" onClick={handleOptimizeAll} disabled={optimizing || translating}>
-            <Icon d={IC.spark} size={15} /> {optimizing ? 'Ottimizzazione…' : 'Ottimizza tutto con AI'}
+            <Icon d={IC.spark} size={15} /> {optimizing ? t('editor.optimizing') : t('editor.optimizeAllAI')}
           </button>
           </div>
 
           {/* ── ANTEPRIMA ── */}
           <div className="rb-prev">
-            <button className="rb-ats-chip" onClick={() => setRbTab('ats')} title="Apri l'analisi ATS completa">
+            <button className="rb-magnify-chip" onClick={() => setMagnifyOpen(true)} title={t('editor.magnify')} aria-label={t('editor.magnify')}>
+              <Icon d={IC.search} size={15} />
+            </button>
+            <button className="rb-ats-chip" onClick={() => setRbTab('ats')} title={t('editor.openFullATS')}>
               <span className="lbl">ATS</span>
               <span className="track"><i style={{ width: `${ats.total}%`, background: atsColor }} /></span>
               <span className="num" style={{ color: atsColor }}>{ats.total}</span>
             </button>
             <div className="rb-prev-scroll" ref={previewRef}>
-              <div className="cv-sheet" style={{ zoom: cvScale }}>
+              <div className="cv-sheet" style={{ zoom: cvScale }} onClick={() => setMagnifyOpen(true)} title={t('editor.magnify')}>
                 <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
               </div>
             </div>
             <button className="rb-tpl-pill" onClick={() => setRbTab('custom')}>
-              Template · <em>{TPL_LIST.find(tp => tp.id === selectedTemplate)?.name ?? selectedTemplate}</em> — Cambia
+              {t('editor.tabTemplate')} · <em>{TPL_LIST.find(tp => tp.id === selectedTemplate)?.name ?? selectedTemplate}</em> — {t('editor.templateChange')}
             </button>
           </div>
+
+          {magnifyOpen && (
+            <div className="rb-magnify-overlay" onClick={() => setMagnifyOpen(false)}>
+              <div className="rb-magnify-bar" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setMagnifyScale(s => Math.max(0.5, +(s - 0.1).toFixed(2)))} title={t('editor.zoomOut')} aria-label={t('editor.zoomOut')}>−</button>
+                <span>{Math.round(magnifyScale * 100)}%</span>
+                <button onClick={() => setMagnifyScale(s => Math.min(2.5, +(s + 0.1).toFixed(2)))} title={t('editor.zoomIn')} aria-label={t('editor.zoomIn')}>+</button>
+                <button onClick={() => setMagnifyScale(1.2)} title={t('editor.resetZoom')}>{t('editor.resetZoom')}</button>
+                <button className="rb-magnify-close" onClick={() => setMagnifyOpen(false)} aria-label="Close">×</button>
+              </div>
+              <div className="rb-magnify-scroll" onClick={e => e.stopPropagation()}>
+                <div className="cv-sheet" style={{ zoom: magnifyScale }}>
+                  <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
+                </div>
+              </div>
+            </div>
+          )}
 
           <AIAssistantPanel
             experiences={cvData.experiences}
@@ -1901,10 +1944,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <div className="rb-pane-inner">
               <div className="rb-pane-head">
                 <div>
-                  <h2>Scegli il template</h2>
-                  <p>Anteprime generate con i tuoi contenuti reali. Tutti i modelli superano i controlli ATS: cambi quando vuoi, senza perdere nulla.</p>
+                  <h2>{t('editor.chooseTemplate')}</h2>
+                  <p>{t('editor.chooseTemplateDesc')}</p>
                 </div>
-                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>Torna all'editor</button>
+                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>{t('editor.backToEditor')}</button>
               </div>
               <div className="rb-tpl-grid">
                 {TPL_LIST.map(tp => (
@@ -1914,7 +1957,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     onClick={() => onTemplateChange(tp.id)}
                   >
                     <div className="rb-tpl-shot" style={{ '--s': 0.345 } as React.CSSProperties}>
-                      {selectedTemplate === tp.id && <span className="rb-tpl-onbadge">IN USO</span>}
+                      {selectedTemplate === tp.id && <span className="rb-tpl-onbadge">{t('editor.inUse')}</span>}
                       <div className="zoomwrap">
                         <CVPreview cvData={cvData} template={tp.id} lang={selectedLanguage} />
                       </div>
@@ -1936,10 +1979,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <div className="rb-pane-inner" style={{ maxWidth: 860 }}>
               <div className="rb-pane-head">
                 <div>
-                  <h2>Analisi ATS</h2>
-                  <p>Quanto il tuo CV supera i filtri automatici dei recruiter. Il punteggio si aggiorna in tempo reale a ogni modifica.</p>
+                  <h2>{t('editor.tabATS')}</h2>
+                  <p>{t('editor.atsAnalysisDesc')}</p>
                 </div>
-                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>Torna all'editor</button>
+                <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>{t('editor.backToEditor')}</button>
               </div>
 
               <div className="rb-panel">
@@ -1990,14 +2033,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   </div>
                 ) : (
                   <div style={{ marginTop: 10, fontSize: 12.5, color: '#9297A1' }}>
-                    Senza annuncio il punteggio keyword resta 0/50.
+                    {t('editor.noJDHint')}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
                   <button className="btn btn-gold btn-sm" style={{ gap: 6 }} onClick={handleOptimizeAll} disabled={optimizing || translating}>
-                    <Icon d={IC.spark} size={13} /> {optimizing ? 'Ottimizzazione…' : 'Ottimizza il CV con AI'}
+                    <Icon d={IC.spark} size={13} /> {optimizing ? t('editor.optimizing') : t('editor.optimizeCvAI')}
                   </button>
-                  <button className="btn btn-line btn-sm" onClick={() => setRbTab('edit')}>Modifica i contenuti</button>
+                  <button className="btn btn-line btn-sm" onClick={() => setRbTab('edit')}>{t('editor.editContents')}</button>
                 </div>
               </div>
 

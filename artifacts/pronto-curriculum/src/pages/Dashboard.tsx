@@ -352,13 +352,19 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
   const firstName = user?.firstName || user?.email?.split('@')[0] || 'utente';
   const bestScore = Math.min(98, 40 + completion * 0.5 + Math.min(savedCVs.length, 3) * 6);
 
+  const tp = (key: string, vars: Record<string, string | number>) =>
+    Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
+
   const GOALS: Array<{ label: string; sub: string; icon: string; page: Page }> = [
-    { label: 'Creare un nuovo CV', sub: 'Parti da zero, da un PDF o da LinkedIn', icon: IC.doc, page: 'builder-step1' },
-    { label: 'Trovare offerte di lavoro', sub: 'Annunci reali con analisi di compatibilità AI', icon: IC.eye, page: 'jobs' },
-    { label: 'Adattare il CV a un annuncio', sub: "L'AI riscrive il CV per una specifica offerta", icon: IC.spark, page: 'tailor' },
-    { label: 'Scrivere la lettera di presentazione', sub: 'Struttura in 4 parti, generata dal tuo CV', icon: IC.doc, page: 'cover-letter' },
-    { label: 'Prepararmi a un colloquio', sub: 'Coach AI sulle tue candidature', icon: IC.bulb, page: 'candidature' },
+    { label: t('dash.goal1Label'), sub: t('dash.goal1Sub'), icon: IC.doc, page: 'builder-step1' },
+    { label: t('dash.goal2Label'), sub: t('dash.goal2Sub'), icon: IC.eye, page: 'jobs' },
+    { label: t('dash.goal3Label'), sub: t('dash.goal3Sub'), icon: IC.spark, page: 'tailor' },
+    { label: t('dash.goal4Label'), sub: t('dash.goal4Sub'), icon: IC.doc, page: 'cover-letter' },
+    { label: t('dash.goal5Label'), sub: t('dash.goal5Sub'), icon: IC.bulb, page: 'candidature' },
   ];
+
+  const cvText = savedCVs.length === 1 ? t('dash.bannerOneCv') : tp('dash.bannerManyCv', { count: savedCVs.length });
+  const bannerBody = savedCVs.length > 0 ? tp('dash.bannerHasCvTemplate', { cvText, pct: completion }) : t('dash.bannerNoCv');
 
   // ── Main dashboard ───────────────────────────────────────────
   return (
@@ -367,12 +373,12 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
       {/* HERO */}
       <div className="dh-hero">
-        <h1>Ciao, {firstName}!</h1>
-        <p>Qual è il tuo obiettivo oggi?</p>
+        <h1>{t('dash.hello')}, {firstName}!</h1>
+        <p>{t('dash.goalQuestion')}</p>
         <div className="dh-goal">
           <button className="dh-goal-btn" onClick={() => setGoalOpen(v => !v)}>
             <Icon d={IC.doc} size={16} style={{ color: 'var(--accent)' }} />
-            Creazione CV
+            {t('dash.goalCvCreation')}
             <span style={{ fontSize: 10, color: 'var(--ink-40)' }}>▼</span>
           </button>
           {goalOpen && (
@@ -420,7 +426,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         <button className="dh-feat" onClick={() => document.getElementById('dh-profile')?.scrollIntoView({ behavior: 'smooth' })}>
           <div className="dh-feat-top">
             <span className="dh-feat-ico"><Icon d={IC.user} size={16} /></span>
-            <b>Profilo</b>
+            <b>{t('dash.profileCard')}</b>
             <span className="n" style={{ color: completion >= 80 ? '#12805C' : 'var(--ink)' }}>{completion}%</span>
           </div>
           <div className="dh-feat-bar"><i style={{ width: `${completion}%`, background: completion >= 80 ? '#12805C' : 'var(--accent)' }} /></div>
@@ -428,52 +434,48 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         <button className="dh-feat" onClick={() => onNavigate('profile-page')}>
           <div className="dh-feat-top">
             <span className="dh-feat-ico"><Icon d={IC.globe} size={16} /></span>
-            <b>Pagina pubblica</b>
+            <b>{t('dash.publicPage')}</b>
             <span className="n" style={{ fontSize: 11, color: 'var(--accent)' }}>PRO</span>
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-40)' }}>Un link professionale con tutte le tue esperienze</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-40)' }}>{t('dash.publicPageDesc')}</div>
         </button>
       </div>
 
       {/* BANNER */}
       <div className="dh-banner">
         <div>
-          <span className="dh-banner-tag">Creazione CV</span>
-          <h2>{savedCVs.length > 0 ? 'Sei sulla strada giusta.' : 'Il tuo primo CV è a 8 minuti da qui.'}</h2>
-          <p>
-            {savedCVs.length > 0
-              ? `Hai ${savedCVs.length === 1 ? 'un CV salvato' : `${savedCVs.length} CV salvati`} e il profilo al ${completion}%. Adatta il CV a un annuncio specifico per moltiplicare le risposte dei recruiter.`
-              : 'Rispondi a qualche domanda, l\'AI scrive con te e il punteggio ATS sale in tempo reale. Nessuna carta di credito richiesta.'}
-          </p>
+          <span className="dh-banner-tag">{t('dash.goalCvCreation')}</span>
+          <h2>{savedCVs.length > 0 ? t('dash.bannerOnTrack') : t('dash.bannerFirstCv')}</h2>
+          <p>{bannerBody}</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {savedCVs.length > 0 ? (
               <>
-                <button className="btn btn-ink btn-sm" onClick={() => onNavigate('tailor')}><Icon d={IC.spark} size={13} /> CV su misura</button>
-                <button className="btn btn-line btn-sm" onClick={() => savedCVs[0] && handleEditCV(savedCVs[0]!)}>Continua l'ultimo CV</button>
+                <button className="btn btn-ink btn-sm" onClick={() => onNavigate('tailor')}><Icon d={IC.spark} size={13} /> {t('ws.tailor')}</button>
+                <button className="btn btn-line btn-sm" onClick={() => savedCVs[0] && handleEditCV(savedCVs[0]!)}>{t('dash.continueLastCv')}</button>
               </>
             ) : (
-              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}><Icon d={IC.doc} size={13} /> Crea il tuo CV</button>
+              <button className="btn btn-ink btn-sm" onClick={() => onNavigate('builder-step1')}><Icon d={IC.doc} size={13} /> {t('home.nav.createCvBtn')}</button>
             )}
           </div>
         </div>
         <div className="dh-banner-side">
           <div className="dh-minicv">
-            <div className="nm">{[user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Il tuo nome'}</div>
+            <div className="nm">{[user?.firstName, user?.lastName].filter(Boolean).join(' ') || t('dash.yourName')}</div>
             <div className="ln" style={{ width: '48%' }} />
             <div className="sec" />
             <div className="ln" /><div className="ln" style={{ width: '86%' }} /><div className="ln" style={{ width: '70%' }} />
             <div className="sec" />
             <div className="ln" style={{ width: '80%' }} /><div className="ln" style={{ width: '58%' }} />
           </div>
-          <div className="dh-score"><b>{Math.round(bestScore)}%</b><small>PUNTEGGIO</small></div>
+          <div className="dh-score"><b>{Math.round(bestScore)}%</b><small>{t('dash.score')}</small></div>
         </div>
       </div>
 
       {/* DOCUMENTS */}
       <div className="dh-sec" id="dh-docs">
         <div className="dh-sec-head">
-          <h3>I miei documenti</h3>
-          <a onClick={() => onNavigate('builder-step1')}>+ Nuovo CV</a>
+          <h3>{t('dash.myDocuments')}</h3>
+          <a onClick={() => onNavigate('builder-step1')}>{t('dash.newCv')}</a>
         </div>
         <div className="dh-docs">
           {savedCVs.map(cv => (
@@ -492,7 +494,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
                   <button className="btn btn-ink btn-sm" onClick={() => void handleRenameCV(cv.id)}><Icon d={IC.check} size={12} /></button>
                 </div>
               ) : (
-                <div className="dh-doc-name" title="Clicca per rinominare" onClick={() => { setRenamingId(cv.id); setRenameValue(cv.name); }}>
+                <div className="dh-doc-name" title={t('dash.renameTitle')} onClick={() => { setRenamingId(cv.id); setRenameValue(cv.name); }}>
                   {cv.name}
                 </div>
               )}
@@ -502,10 +504,10 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
               </div>
               <div className="dh-doc-acts">
                 <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => handleEditCV(cv)}>{t('dash.openCV')}</button>
-                <button className="btn btn-line btn-sm" onClick={() => handleOptimizeCV(cv)} title="Ottimizza con AI" aria-label="Ottimizza con AI">
+                <button className="btn btn-line btn-sm" onClick={() => handleOptimizeCV(cv)} title={t('dash.optimizeAI')} aria-label={t('dash.optimizeAI')}>
                   <Icon d={IC.spark} size={13} />
                 </button>
-                <button className="btn btn-line btn-sm" disabled={downloadingDocxId === cv.id} onClick={() => void handleQuickDownloadDOCX(cv)} title="Scarica in Word (.docx)">
+                <button className="btn btn-line btn-sm" disabled={downloadingDocxId === cv.id} onClick={() => void handleQuickDownloadDOCX(cv)} title={t('dash.downloadWord')}>
                   {downloadingDocxId === cv.id ? '…' : <Icon d={IC.doc} size={13} />}
                 </button>
                 <button className="btn btn-line btn-sm btn-danger" disabled={deletingId === cv.id} onClick={() => void handleDeleteCV(cv.id)} aria-label={t('dash.delete')}>
@@ -524,13 +526,13 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
       <div className="dh-sec">
         <div className="dh-sec-head">
           <h3>{t('dash.applications')}</h3>
-          {tailoredCVs.length > 0 && <a onClick={() => onNavigate('candidature')}>Vedi tutte</a>}
+          {tailoredCVs.length > 0 && <a onClick={() => onNavigate('candidature')}>{t('dash.viewAllApps')}</a>}
         </div>
         {tailoredCVs.length === 0 ? (
           <div className="dh-row" style={{ justifyContent: 'space-between' }}>
             <div className="grow">
               <b>{t('dash.noApps')}</b>
-              <div className="sub">Incolla un annuncio e l'AI adatta il CV a quella posizione.</div>
+              <div className="sub">{t('dash.noAppsHint')}</div>
             </div>
             <button className="btn btn-line btn-sm" onClick={() => onNavigate('tailor')}>{t('dash.tailorNew')}</button>
           </div>
@@ -542,7 +544,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
                   <b>{cv.jobTitle || t('dash.tailorNew')}</b>
                   <div className="sub">{t('dash.generatedOn')} {fmt(cv.createdAt)}</div>
                 </div>
-                <span className="dh-pill">CV su misura</span>
+                <span className="dh-pill">{t('dash.tailoredBadge')}</span>
                 <button className="btn btn-line btn-sm" onClick={() => handleEditTailored(cv)}>{t('dash.openCV')}</button>
               </div>
             ))}
@@ -553,15 +555,15 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
       {/* PROFILE */}
       <div className="dh-sec" id="dh-profile">
         <div className="dh-sec-head">
-          <h3>Il tuo profilo</h3>
+          <h3>{t('dash.yourProfile')}</h3>
           {savedCVs.length > 0 && (
-            <a onClick={handleSyncFromCV}>Sincronizza dall'ultimo CV</a>
+            <a onClick={handleSyncFromCV}>{t('dash.syncFromLastCv')}</a>
           )}
         </div>
         <div className="dh-profile">
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13.5, color: 'var(--ink-60)' }}>
-              Un profilo completo genera CV su misura più precisi.
+              {t('dash.profileCompleteHint')}
             </span>
             <span style={{ fontFamily: 'var(--f-display)', fontWeight: 700, fontSize: 16, color: completion >= 80 ? '#12805C' : 'var(--ink)' }}>{completion}%</span>
           </div>
@@ -569,11 +571,11 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
           <div className="dh-checks">
             {([
-              [!!user?.firstName, 'Dati personali'],
-              [!!profile?.headline, 'Titolo professionale'],
-              [!!profile?.phone, 'Telefono'],
-              [!!profile?.summary, 'Sommario professionale'],
-              [!!profile?.skills?.length, 'Competenze'],
+              [!!user?.firstName, t('dash.checkPersonalData')],
+              [!!profile?.headline, t('profile.headline')],
+              [!!profile?.phone, t('profile.phone')],
+              [!!profile?.summary, t('profile.summary')],
+              [!!profile?.skills?.length, t('dash.checkSkills')],
               [!!profile?.linkedin, 'LinkedIn'],
             ] as Array<[boolean, string]>).map(([ok, label]) => (
               <div className="dh-check" key={label}>
@@ -638,41 +640,41 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <b style={{ fontSize: 13 }}>Formazione</b>
+                  <b style={{ fontSize: 13 }}>{t('home.cv.edu')}</b>
                   <button className="btn btn-line btn-sm" onClick={() => setEducationRows(rows => [...rows, { id: crypto.randomUUID(), institution: '', degree: '', grade: '', from: '', to: '' }])}>
-                    + Aggiungi
+                    {t('dash.addBtn')}
                   </button>
                 </div>
                 {educationRows.map((edu, i) => (
                   <div key={edu.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                    <input type="text" placeholder="Istituto" value={edu.institution} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                    <input type="text" placeholder={t('dash.institutionPh')} value={edu.institution} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
                       onChange={e => setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, institution: e.target.value } : r))} />
-                    <input type="text" placeholder="Titolo di studio" value={edu.degree} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                    <input type="text" placeholder={t('dash.degreePh')} value={edu.degree} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
                       onChange={e => setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, degree: e.target.value } : r))} />
-                    <input type="text" placeholder="Anni" value={edu.from ? `${edu.from} - ${edu.to}` : ''} style={{ flex: '1 1 100px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                    <input type="text" placeholder={t('dash.yearsPh')} value={edu.from ? `${edu.from} - ${edu.to}` : ''} style={{ flex: '1 1 100px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
                       onChange={e => {
                         const [from, to] = e.target.value.split('-').map(s => s.trim());
                         setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, from: from ?? '', to: to ?? '' } : r));
                       }} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEducationRows(rows => rows.filter((_, idx) => idx !== i))} aria-label="Rimuovi">×</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEducationRows(rows => rows.filter((_, idx) => idx !== i))} aria-label={t('dash.removeAria')}>×</button>
                   </div>
                 ))}
               </div>
 
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <b style={{ fontSize: 13 }}>Lingue</b>
+                  <b style={{ fontSize: 13 }}>{t('dash.languagesLabel')}</b>
                   <button className="btn btn-line btn-sm" onClick={() => setLanguageRows(rows => [...rows, { id: crypto.randomUUID(), name: '', level: '' }])}>
-                    + Aggiungi
+                    {t('dash.addBtn')}
                   </button>
                 </div>
                 {languageRows.map((lang, i) => (
                   <div key={lang.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                    <input type="text" placeholder="Lingua (es. Inglese)" value={lang.name} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                    <input type="text" placeholder={t('dash.langNamePh')} value={lang.name} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
                       onChange={e => setLanguageRows(rows => rows.map((r, idx) => idx === i ? { ...r, name: e.target.value } : r))} />
-                    <input type="text" placeholder="Livello (es. C1 - Avanzato)" value={lang.level} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                    <input type="text" placeholder={t('dash.langLevelPh')} value={lang.level} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
                       onChange={e => setLanguageRows(rows => rows.map((r, idx) => idx === i ? { ...r, level: e.target.value } : r))} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => setLanguageRows(rows => rows.filter((_, idx) => idx !== i))} aria-label="Rimuovi">×</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setLanguageRows(rows => rows.filter((_, idx) => idx !== i))} aria-label={t('dash.removeAria')}>×</button>
                   </div>
                 ))}
               </div>
@@ -704,7 +706,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
           </>
         )}
         <button className="dh-ai-pill" onClick={() => setAiOpen(v => !v)}>
-          <Icon d={IC.spark} size={15} /> Chiedi all'AI — crea, adatta o traduci
+          <Icon d={IC.spark} size={15} /> {t('dash.askAI')}
         </button>
       </div>
     </div>
