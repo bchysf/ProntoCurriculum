@@ -17,7 +17,7 @@ const LANG_NAMES: Record<string, string> = {
 
 function buildTailorSystemPrompt(lang: string): string {
   const langName = LANG_NAMES[lang] ?? "italiano";
-  return `Sei il miglior executive resume writer al mondo. Il tuo compito è creare un CV su misura per una specifica offerta di lavoro.
+  return `Sei il miglior executive resume writer al mondo. Il tuo compito è creare un CV su misura per una specifica offerta di lavoro, che funzioni sia per l'ATS che lo scansiona sia per il recruiter che lo legge.
 
 LINGUA DI OUTPUT OBBLIGATORIA: ${langName}.
 Tutto il testo che generi deve essere ESCLUSIVAMENTE in ${langName}.
@@ -26,16 +26,19 @@ Soft skill, titoli di categoria e competenze trasversali devono essere in ${lang
 
 REGOLE ASSOLUTE:
 1. Mai usare la prima persona ("Ho", "Sono", "Ho gestito"). SEMPRE participio passato o sostantivo d'azione.
-2. Max 2-3 bullet per esperienza, ognuno inizia con "• "
-3. Ogni bullet: verbo forte (participio passato) + risultato misurabile
-4. Se ci sono numeri nelle esperienze originali, usali. Se non ci sono, usa la portata qualitativa.
-5. Il summary: max 3 frasi, assertivo, con il titolo del ruolo target come apertura
-6. Skill: estrai le tecnologie/competenze più richieste dall'offerta, organizzate in categorie
+2. Bullet per esperienza allocati per rilevanza/posizione: la prima esperienza selezionata (più rilevante per l'offerta) può avere fino a 4-6 bullet, la seconda fino a 3-5, le successive fino a 1-3 — sempre entro il limite del contenuto reale disponibile, mai riempitivi.
+3. Ogni bullet segue la formula AZIONE (verbo forte, participio passato) + COSA + COME/con quale metodo o strumento + RISULTATO, lungo 10-25 parole, inizia con "• ".
+4. Se ci sono numeri nelle esperienze originali, usali. Se non ci sono, non inventarli: usa la specificità dell'azione invece di una metrica finta.
+5. Il summary: 40-70 parole (2-4 frasi), con il titolo del ruolo target come apertura, poi 2-3 prove concrete rilevanti per l'offerta prese dalle esperienze reali.
+6. Skill: target 10-15 skill totali, organizzate in 2-3 categorie. Dai priorità alle competenze richieste dall'offerta CHE il candidato possiede davvero (mai inventarne). Ogni skill compare una sola volta — niente ripetizioni per "rinforzare" l'ATS (keyword-stuffing).
+
+ALLINEAMENTO SEMANTICO CON L'OFFERTA (non keyword-matching superficiale):
+Non limitarti a incollare le parole chiave dell'offerta nel CV. Se un'esperienza reale del candidato corrisponde concettualmente a un requisito dell'offerta, riscrivila usando la terminologia esatta dell'offerta — ma solo quando riflette fedelmente ciò che il candidato ha fatto. Esempio: se l'offerta cerca "gestione pipeline CRM" e il candidato ha usato Salesforce per gestire clienti, scrivi "Gestita pipeline clienti tramite CRM Salesforce" invece di una descrizione generica — questo è molto più efficace del semplice elenco delle parole "CRM, pipeline" nelle skill.
 
 SELEZIONE DELLE ESPERIENZE:
-- Seleziona MAX 4 esperienze tra quelle disponibili
+- Seleziona MAX 4 esperienze tra quelle disponibili, ordinate dalla più alla meno rilevante per l'offerta
 - Dai priorità a quelle più rilevanti per l'offerta di lavoro
-- Riscrivi le descrizioni integrando le keyword chiave dell'offerta
+- Riscrivi le descrizioni integrando la terminologia chiave dell'offerta, solo dove riflette fedelmente l'esperienza reale
 - Se un'esperienza non è rilevante, escludila`;
 }
 
@@ -259,7 +262,7 @@ router.post("/tailor-cv", async (req: Request, res: Response) => {
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
   "title": "titolo professionale ottimale per questa offerta",
-  "summary": "profilo professionale su misura per l'offerta in ${tailor_langName}, max 550 caratteri, 3 frasi",
+  "summary": "profilo professionale su misura per l'offerta in ${tailor_langName}, 40-70 parole",
   "experiences": [
     {
       "id": "1",
@@ -268,7 +271,7 @@ Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
       "city": "città o stringa vuota",
       "from": "data inizio o stringa vuota",
       "to": "data fine o stringa vuota",
-      "desc": "2-3 bullet point con '• ', riscritti per l'offerta in ${tailor_langName}, max 450 caratteri"
+      "desc": "bullet point con '• ' (1-6 a seconda della posizione/rilevanza, vedi regole sopra), ognuno 10-25 parole, riscritti per l'offerta in ${tailor_langName}, max 500 caratteri totali"
     }
   ],
   "skillCategories": [
@@ -276,7 +279,7 @@ Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
   ]
 }
 
-VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze. Non inventare aziende o ruoli non presenti nell'archivio. Organizza le skill in 2-3 categorie rilevanti.
+VINCOLI: nel campo "id" di ogni esperienza usa ESATTAMENTE l'ID che appare dopo [ID:] nel testo dell'archivio. Seleziona MAX 4 esperienze, ordinate dalla più alla meno rilevante per l'offerta. Non inventare aziende o ruoli non presenti nell'archivio. Organizza le skill in 2-3 categorie rilevanti, massimo 10-15 skill totali.
 
 OFFERTA DI LAVORO:
 ${jobDescription.trim().slice(0, 5000)}
@@ -332,6 +335,7 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       skills: skillCategories.flatMap(c => c.skills),
       skillCategories,
       languages: profileRow?.languages ?? [],
+      certifications: [],
     };
 
     res.json({ cvData });

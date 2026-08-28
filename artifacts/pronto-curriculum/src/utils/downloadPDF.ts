@@ -161,6 +161,20 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     y += lines.length * 5 + 5;
   }
 
+  // ── SKILLS ──────────────────────────────────────────────────────────────────
+  const effectiveSkills = cvData.skillCategories?.length
+    ? cvData.skillCategories.flatMap(c => c.skills)
+    : cvData.skills;
+  if (effectiveSkills?.length) {
+    checkPage(25);
+    sectionTitle(L.skills);
+    setBody(false, 9.5);
+    doc.setTextColor(...GRAY7);
+    const skillLines = doc.splitTextToSize(effectiveSkills.join(' • '), CW);
+    doc.text(skillLines, M, y);
+    y += skillLines.length * 5 + 5;
+  }
+
   // ── EXPERIENCES ──────────────────────────────────────────────────────────────
   if (cvData.experiences?.length) {
     sectionTitle(L.experience);
@@ -225,15 +239,19 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT') {
     y += 2;
   }
 
-  // ── SKILLS ──────────────────────────────────────────────────────────────────
-  if (cvData.skills?.length) {
+  // ── CERTIFICATIONS ──────────────────────────────────────────────────────────
+  if (cvData.certifications?.some(c => c.name)) {
     checkPage(25);
-    sectionTitle(L.skills);
+    sectionTitle(L.certifications);
     setBody(false, 9.5);
-    doc.setTextColor(...GRAY7);
-    const skillLines = doc.splitTextToSize(cvData.skills.join(' • '), CW);
-    doc.text(skillLines, M, y);
-    y += skillLines.length * 5 + 5;
+    for (const cert of cvData.certifications.filter(c => c.name)) {
+      checkPage(8);
+      doc.setTextColor(...GRAY7);
+      const parts = [cert.name, cert.issuer, cert.date].filter(Boolean);
+      doc.text(parts.join('  —  '), M, y);
+      y += 5.5;
+    }
+    y += 2;
   }
 
   // ── LANGUAGES ────────────────────────────────────────────────────────────────

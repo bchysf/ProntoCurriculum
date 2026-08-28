@@ -1,7 +1,36 @@
 import { Router, type IRouter } from 'express';
+import { randomUUID } from 'crypto';
 import { generateText } from '../lib/ai';
 
 const router: IRouter = Router();
+
+// The extraction LLM is instructed to emit ids like "exp1", "exp2", but nothing
+// validates its output — a missing or duplicate id would make later features that
+// match by id (e.g. the AI-optimize merge) silently overwrite the wrong item.
+// Force every id-bearing list to have a non-empty, unique id before it ever
+// reaches the client.
+function ensureUniqueIds(items: unknown, prefix: string): unknown {
+  if (!Array.isArray(items)) return items;
+  const seen = new Set<string>();
+  return items.map((item) => {
+    if (typeof item !== 'object' || item === null) return item;
+    const record = item as Record<string, unknown>;
+    const rawId = typeof record.id === 'string' ? record.id.trim() : '';
+    const id = rawId && !seen.has(rawId) ? rawId : `${prefix}-${randomUUID()}`;
+    seen.add(id);
+    return { ...record, id };
+  });
+}
+
+function sanitizeParsedCv<T extends Record<string, unknown>>(parsed: T): T {
+  return {
+    ...parsed,
+    experiences: ensureUniqueIds(parsed.experiences, 'exp'),
+    education: ensureUniqueIds(parsed.education, 'edu'),
+    languages: ensureUniqueIds(parsed.languages, 'lang'),
+    certifications: ensureUniqueIds(parsed.certifications, 'cert'),
+  };
+}
 
 const SYSTEM_PROMPT = `Sei un assistente specializzato nell'analisi di CV italiani ed europei.
 Estrai le informazioni dal testo del CV fornito e restituisci SOLO un oggetto JSON valido con questa struttura esatta:
@@ -43,6 +72,14 @@ Estrai le informazioni dal testo del CV fornito e restituisci SOLO un oggetto JS
       "name": "nome lingua",
       "level": "livello CEFR completo es. C2 - Madrelingua oppure C1 - Avanzato"
     }
+  ],
+  "certifications": [
+    {
+      "id": "uuid_unico",
+      "name": "nome della certificazione",
+      "issuer": "ente che l'ha rilasciata",
+      "date": "anno o mese/anno di conseguimento"
+    }
   ]
 }
 
@@ -53,6 +90,7 @@ Regole:
 - Per le esperienze usa id univoci come "exp1", "exp2" ecc.
 - Per l'istruzione usa id univoci come "edu1", "edu2" ecc.
 - Per le lingue usa id univoci come "lang1", "lang2" ecc.
+- Per le certificazioni usa id univoci come "cert1", "cert2" ecc. Includi SOLO certificazioni realmente presenti nel testo, non inventarne.
 - Il campo "title" deve essere solo il titolo professionale, NON includere il nome della persona`;
 
 router.post('/parse-cv', async (req, res) => {
@@ -69,7 +107,7 @@ router.post('/parse-cv', async (req, res) => {
       { maxTokens: 3000 },
     );
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    const parsed = JSON.parse(jsonStr);
+    const parsed = sanitizeParsedCv(JSON.parse(jsonStr));
     res.json(parsed);
   } catch (err) {
     req.log.error({ err }, 'parse-cv error');
@@ -117,6 +155,14 @@ Estrai e trasforma le informazioni dal profilo o dall'esportazione LinkedIn forn
       "name": "nome lingua es. Italiano o Inglese",
       "level": "livello CEFR completo es. C2 - Madrelingua oppure C1 - Avanzato"
     }
+  ],
+  "certifications": [
+    {
+      "id": "cert1",
+      "name": "nome della certificazione",
+      "issuer": "ente che l'ha rilasciata",
+      "date": "anno o mese/anno di conseguimento"
+    }
   ]
 }
 
@@ -147,7 +193,7 @@ router.post('/parse-cv/linkedin', async (req, res) => {
       { maxTokens: 3500 },
     );
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    const parsed = JSON.parse(jsonStr);
+    const parsed = sanitizeParsedCv(JSON.parse(jsonStr));
     res.json({ success: true, data: parsed });
   } catch (err) {
     req.log.error({ err }, 'parse-cv/linkedin error');

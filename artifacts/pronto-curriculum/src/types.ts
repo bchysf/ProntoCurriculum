@@ -32,6 +32,13 @@ export interface SkillCategory {
   skills: string[];
 }
 
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+}
+
 export interface CVData {
   firstName: string;
   lastName: string;
@@ -46,6 +53,7 @@ export interface CVData {
   skills: string[];
   skillCategories?: SkillCategory[];
   languages: Language[];
+  certifications?: Certification[];
   photo?: string;
 }
 

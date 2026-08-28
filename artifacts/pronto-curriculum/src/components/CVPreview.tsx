@@ -6,7 +6,7 @@ export const CV_LABELS: Record<CvLang, {
   profile: string; profileShort: string;
   experience: string; experienceShort: string; experienceEuro: string;
   education: string; educationEuro: string;
-  skills: string; languages: string; contacts: string;
+  skills: string; languages: string; contacts: string; certifications: string;
   namePlaceholder: string; titlePlaceholder: string;
   emailLabel: string; phoneLabel: string; cityLabel: string; professionLabel: string;
   privacyClause: string;
@@ -16,7 +16,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Profilo professionale', profileShort: 'Profilo',
     experience: 'Esperienze lavorative', experienceShort: 'Esperienze', experienceEuro: 'Esperienza lavorativa',
     education: 'Formazione', educationEuro: 'Istruzione e formazione',
-    skills: 'Competenze', languages: 'Lingue', contacts: 'Contatti',
+    skills: 'Competenze', languages: 'Lingue', contacts: 'Contatti', certifications: 'Certificazioni',
     namePlaceholder: 'Il tuo nome', titlePlaceholder: 'Titolo professionale',
     emailLabel: 'Indirizzo e-mail', phoneLabel: 'Telefono', cityLabel: 'Residenza', professionLabel: 'Professione',
     privacyClause: 'Autorizzo il trattamento dei miei dati personali ai sensi del D.Lgs. 196/2003 e del Regolamento UE 2016/679 (GDPR).',
@@ -26,7 +26,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Professional Profile', profileShort: 'Profile',
     experience: 'Work Experience', experienceShort: 'Experience', experienceEuro: 'Work Experience',
     education: 'Education', educationEuro: 'Education & Training',
-    skills: 'Skills', languages: 'Languages', contacts: 'Contacts',
+    skills: 'Skills', languages: 'Languages', contacts: 'Contacts', certifications: 'Certifications',
     namePlaceholder: 'Your name', titlePlaceholder: 'Professional title',
     emailLabel: 'E-mail address', phoneLabel: 'Phone', cityLabel: 'Location', professionLabel: 'Profession',
     privacyClause: 'I hereby authorize the processing of my personal data pursuant to EU Regulation 2016/679 (GDPR).',
@@ -36,7 +36,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Profil professionnel', profileShort: 'Profil',
     experience: 'Expériences professionnelles', experienceShort: 'Expériences', experienceEuro: 'Expérience professionnelle',
     education: 'Formation', educationEuro: 'Éducation et formation',
-    skills: 'Compétences', languages: 'Langues', contacts: 'Contacts',
+    skills: 'Compétences', languages: 'Langues', contacts: 'Contacts', certifications: 'Certifications',
     namePlaceholder: 'Votre nom', titlePlaceholder: 'Titre professionnel',
     emailLabel: 'Adresse e-mail', phoneLabel: 'Téléphone', cityLabel: 'Lieu', professionLabel: 'Profession',
     privacyClause: "J'autorise le traitement de mes données personnelles conformément au Règlement UE 2016/679 (RGPD).",
@@ -46,7 +46,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Berufliches Profil', profileShort: 'Profil',
     experience: 'Berufserfahrung', experienceShort: 'Erfahrung', experienceEuro: 'Berufserfahrung',
     education: 'Ausbildung', educationEuro: 'Bildung und Ausbildung',
-    skills: 'Kompetenzen', languages: 'Sprachen', contacts: 'Kontakt',
+    skills: 'Kompetenzen', languages: 'Sprachen', contacts: 'Kontakt', certifications: 'Zertifizierungen',
     namePlaceholder: 'Ihr Name', titlePlaceholder: 'Berufsbezeichnung',
     emailLabel: 'E-Mail-Adresse', phoneLabel: 'Telefon', cityLabel: 'Wohnort', professionLabel: 'Beruf',
     privacyClause: 'Ich erkläre mich mit der Verarbeitung meiner personenbezogenen Daten gemäß EU-Verordnung 2016/679 (DSGVO) einverstanden.',
@@ -56,7 +56,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Perfil profesional', profileShort: 'Perfil',
     experience: 'Experiencia laboral', experienceShort: 'Experiencia', experienceEuro: 'Experiencia laboral',
     education: 'Formación', educationEuro: 'Educación y formación',
-    skills: 'Competencias', languages: 'Idiomas', contacts: 'Contactos',
+    skills: 'Competencias', languages: 'Idiomas', contacts: 'Contactos', certifications: 'Certificaciones',
     namePlaceholder: 'Tu nombre', titlePlaceholder: 'Título profesional',
     emailLabel: 'Dirección e-mail', phoneLabel: 'Teléfono', cityLabel: 'Ubicación', professionLabel: 'Profesión',
     privacyClause: 'Autorizo el tratamiento de mis datos personales conforme al Reglamento UE 2016/679 (RGPD).',
@@ -66,7 +66,7 @@ export const CV_LABELS: Record<CvLang, {
     profile: 'Perfil profissional', profileShort: 'Perfil',
     experience: 'Experiência profissional', experienceShort: 'Experiência', experienceEuro: 'Experiência profissional',
     education: 'Formação', educationEuro: 'Educação e formação',
-    skills: 'Competências', languages: 'Idiomas', contacts: 'Contactos',
+    skills: 'Competências', languages: 'Idiomas', contacts: 'Contactos', certifications: 'Certificações',
     namePlaceholder: 'O seu nome', titlePlaceholder: 'Título profissional',
     emailLabel: 'Endereço e-mail', phoneLabel: 'Telefone', cityLabel: 'Localização', professionLabel: 'Profissão',
     privacyClause: 'Autorizo o tratamento dos meus dados pessoais nos termos do Regulamento UE 2016/679 (RGPD).',
@@ -150,6 +150,15 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
               ))}
             </>
           )}
+          {cvData.certifications?.some(c => c.name) && (
+            <>
+              <div className="cve-divider" />
+              <div className="cve-contact-label">{t.certifications}</div>
+              {cvData.certifications.filter(c => c.name).map(c => (
+                <div key={c.id} className="cve-skill">{c.name}{c.date ? ` (${c.date})` : ''}</div>
+              ))}
+            </>
+          )}
         </div>
         <div className="cve-main">
           {cvData.summary && (
@@ -217,6 +226,12 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             <div className="cveu-text">{cvData.summary}</div>
           </div>
         )}
+        {effectiveSkills.length > 0 && (
+          <div className="cveu-section">
+            <div className="cveu-section-title">{t.skills}</div>
+            <div className="cveu-text">{skillsText}</div>
+          </div>
+        )}
         {cvData.experiences.some(e => e.company || e.role) && (
           <div className="cveu-section">
             <div className="cveu-section-title">{t.experienceEuro}</div>
@@ -246,10 +261,10 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             ))}
           </div>
         )}
-        {effectiveSkills.length > 0 && (
+        {cvData.certifications?.some(c => c.name) && (
           <div className="cveu-section">
-            <div className="cveu-section-title">{t.skills}</div>
-            <div className="cveu-text">{skillsText}</div>
+            <div className="cveu-section-title">{t.certifications}</div>
+            <div className="cveu-text">{cvData.certifications.filter(c => c.name).map(c => [c.name, c.issuer, c.date].filter(Boolean).join(' — ')).join(' · ')}</div>
           </div>
         )}
         {cvData.languages.some(l => l.name) && (
@@ -292,6 +307,25 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             <div className="cvp-text">{cvData.summary}</div>
           </div>
         )}
+        {effectiveSkills.length > 0 && (
+          <div className="cvp-section">
+            <div className="cvp-section-title">{t.skills}</div>
+            {cvData.skillCategories?.length ? (
+              cvData.skillCategories.map(cat => (
+                <div key={cat.name} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
+                  <div className="cvp-skills">
+                    {cat.skills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="cvp-skills">
+                {effectiveSkills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
+              </div>
+            )}
+          </div>
+        )}
         {cvData.experiences.some(e => e.company || e.role) && (
           <div className="cvp-section">
             <div className="cvp-section-title">{t.experience}</div>
@@ -322,23 +356,12 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </div>
         )}
         <div className="cvp-bottom-row">
-          {effectiveSkills.length > 0 && (
+          {cvData.certifications?.some(c => c.name) && (
             <div className="cvp-section" style={{ flex: 1 }}>
-              <div className="cvp-section-title">{t.skills}</div>
-              {cvData.skillCategories?.length ? (
-                cvData.skillCategories.map(cat => (
-                  <div key={cat.name} style={{ marginBottom: 6 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
-                    <div className="cvp-skills">
-                      {cat.skills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="cvp-skills">
-                  {effectiveSkills.map(s => <span key={s} className="cvp-skill-tag">{s}</span>)}
-                </div>
-              )}
+              <div className="cvp-section-title">{t.certifications}</div>
+              {cvData.certifications.filter(c => c.name).map(c => (
+                <div key={c.id} className="cvp-text">{[c.name, c.issuer, c.date].filter(Boolean).join(' — ')}</div>
+              ))}
             </div>
           )}
           {cvData.languages.some(l => l.name) && (
@@ -380,6 +403,26 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
+        {effectiveSkills.length > 0 && (
+          <>
+            <div className="cv-section-title">{t.skills}</div>
+            {cvData.skillCategories?.length ? (
+              cvData.skillCategories.map(cat => (
+                <div key={cat.name} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
+                  <div className={tagsClass}>
+                    {cat.skills.map(s => <span key={s} className={tagClass}>{s}</span>)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className={tagsClass}>
+                {effectiveSkills.map(s => <span key={s} className={tagClass}>{s}</span>)}
+              </div>
+            )}
+          </>
+        )}
+
         {cvData.experiences.some(e => e.company || e.role) && (
           <>
             <div className="cv-section-title">{t.experience}</div>
@@ -409,23 +452,15 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
-        {effectiveSkills.length > 0 && (
+        {cvData.certifications?.some(c => c.name) && (
           <>
-            <div className="cv-section-title">{t.skills}</div>
-            {cvData.skillCategories?.length ? (
-              cvData.skillCategories.map(cat => (
-                <div key={cat.name} style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', opacity: 0.6, marginBottom: 3 }}>{cat.name}</div>
-                  <div className={tagsClass}>
-                    {cat.skills.map(s => <span key={s} className={tagClass}>{s}</span>)}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className={tagsClass}>
-                {effectiveSkills.map(s => <span key={s} className={tagClass}>{s}</span>)}
+            <div className="cv-section-title">{t.certifications}</div>
+            {cvData.certifications.filter(c => c.name).map(c => (
+              <div key={c.id} className="cv-exp-item">
+                <div className="cv-exp-title">{c.name}</div>
+                <div className="cv-exp-meta">{[c.issuer, c.date].filter(Boolean).join(' · ')}</div>
               </div>
-            )}
+            ))}
           </>
         )}
 
@@ -469,6 +504,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
+        {effectiveSkills.length > 0 && (
+          <>
+            <div className="cv-section-title">{t.skills}</div>
+            <div className="cv-exp-desc">{skillsText}</div>
+          </>
+        )}
+
         {cvData.experiences.some(e => e.company || e.role) && (
           <>
             <div className="cv-section-title">{t.experience}</div>
@@ -498,10 +540,15 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
-        {effectiveSkills.length > 0 && (
+        {cvData.certifications?.some(c => c.name) && (
           <>
-            <div className="cv-section-title">{t.skills}</div>
-            <div className="cv-exp-desc">{skillsText}</div>
+            <div className="cv-section-title">{t.certifications}</div>
+            {cvData.certifications.filter(c => c.name).map(c => (
+              <div key={c.id} className="cv-exp-item">
+                <div className="cv-exp-title">{c.name}</div>
+                <div className="cv-exp-meta">{[c.issuer, c.date].filter(Boolean).join(' · ')}</div>
+              </div>
+            ))}
           </>
         )}
 
@@ -552,6 +599,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         </>
       )}
 
+      {effectiveSkills.length > 0 && (
+        <>
+          <div className="cv-section-title">{t.skills}</div>
+          <div className="cv-exp-desc">{skillsText}</div>
+        </>
+      )}
+
       {cvData.experiences.some(e => e.company || e.role) && (
         <>
           <div className="cv-section-title">{t.experience}</div>
@@ -581,10 +635,15 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         </>
       )}
 
-      {effectiveSkills.length > 0 && (
+      {cvData.certifications?.some(c => c.name) && (
         <>
-          <div className="cv-section-title">{t.skills}</div>
-          <div className="cv-exp-desc">{skillsText}</div>
+          <div className="cv-section-title">{t.certifications}</div>
+          {cvData.certifications.filter(c => c.name).map(c => (
+            <div key={c.id} className="cv-exp-item">
+              <div className="cv-exp-title">{c.name}</div>
+              <div className="cv-exp-meta">{[c.issuer, c.date].filter(Boolean).join(' · ')}</div>
+            </div>
+          ))}
         </>
       )}
 

@@ -37,9 +37,18 @@ export interface DocxExportInput {
       to?: string;
     }>;
     skills?: string[];
+    skillCategories?: Array<{
+      name?: string;
+      skills?: string[];
+    }>;
     languages?: Array<{
       name?: string;
       level?: string;
+    }>;
+    certifications?: Array<{
+      name?: string;
+      issuer?: string;
+      date?: string;
     }>;
   };
   template?: string;
@@ -55,6 +64,7 @@ const LABELS: Record<
     education: string;
     skills: string;
     languages: string;
+    certifications: string;
     privacyClause: string;
     watermark: string;
   }
@@ -65,6 +75,7 @@ const LABELS: Record<
     education: "Formazione e Istruzione",
     skills: "Competenze",
     languages: "Lingue conosciute",
+    certifications: "Certificazioni",
     privacyClause:
       "Autorizzo il trattamento dei miei dati personali ai sensi del D.Lgs. 196/2003 e del Regolamento UE 2016/679 (GDPR).",
     watermark: "Generato con ProntoCurriculum.it",
@@ -75,6 +86,7 @@ const LABELS: Record<
     education: "Education & Training",
     skills: "Skills",
     languages: "Languages",
+    certifications: "Certifications",
     privacyClause:
       "I hereby authorize the processing of my personal data pursuant to EU Regulation 2016/679 (GDPR).",
     watermark: "Generated with ProntoCurriculum.it",
@@ -85,6 +97,7 @@ const LABELS: Record<
     education: "Éducation et formation",
     skills: "Compétences",
     languages: "Langues",
+    certifications: "Certifications",
     privacyClause:
       "J'autorise le traitement de mes données personnelles conformément au Règlement UE 2016/679 (RGPD).",
     watermark: "Généré avec ProntoCurriculum.it",
@@ -95,6 +108,7 @@ const LABELS: Record<
     education: "Bildung und Ausbildung",
     skills: "Kompetenzen",
     languages: "Sprachen",
+    certifications: "Zertifizierungen",
     privacyClause:
       "Ich erkläre mich mit der Verarbeitung meiner personenbezogenen Daten gemäß EU-Verordnung 2016/679 (DSGVO) einverstanden.",
     watermark: "Erstellt mit ProntoCurriculum.it",
@@ -105,6 +119,7 @@ const LABELS: Record<
     education: "Educación y formación",
     skills: "Competencias",
     languages: "Idiomas",
+    certifications: "Certificaciones",
     privacyClause:
       "Autorizo el tratamiento de mis datos personales conforme al Reglamento UE 2016/679 (RGPD).",
     watermark: "Generado con ProntoCurriculum.it",
@@ -115,6 +130,7 @@ const LABELS: Record<
     education: "Educação e formação",
     skills: "Competências",
     languages: "Idiomas",
+    certifications: "Certificações",
     privacyClause:
       "Autorizo o tratamento dos meus dados pessoais nos termos do Regulamento UE 2016/679 (RGPD).",
     watermark: "Gerado com ProntoCurriculum.it",
@@ -285,7 +301,31 @@ export async function generateDocxBuffer(
     }
   }
 
-  // 5. Experiences
+  // 5. Skills
+  const effectiveSkills = input.cvData.skillCategories?.length
+    ? input.cvData.skillCategories.flatMap((c) => c.skills ?? [])
+    : cvData.skills;
+  if (Array.isArray(effectiveSkills) && effectiveSkills.length > 0) {
+    addSectionHeading(t.skills);
+    const validSkills = effectiveSkills.filter((s) => typeof s === "string" && s.trim());
+    if (validSkills.length > 0) {
+      paragraphs.push(
+        new Paragraph({
+          spacing: { after: 120 },
+          children: [
+            new TextRun({
+              text: validSkills.join("  ·  "),
+              size: 20,
+              color: "1E293B",
+              font: "Arial",
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  // 6. Experiences
   if (
     Array.isArray(cvData.experiences) &&
     cvData.experiences.some((e) => e.role || e.company)
@@ -375,7 +415,7 @@ export async function generateDocxBuffer(
     }
   }
 
-  // 6. Education
+  // 7. Education
   if (
     Array.isArray(cvData.education) &&
     cvData.education.some((e) => e.degree || e.institution)
@@ -436,28 +476,43 @@ export async function generateDocxBuffer(
     }
   }
 
-  // 7. Skills
-  if (Array.isArray(cvData.skills) && cvData.skills.length > 0) {
-    addSectionHeading(t.skills);
-    const validSkills = cvData.skills.filter((s) => typeof s === "string" && s.trim());
-    if (validSkills.length > 0) {
+  // 8. Certifications
+  if (
+    Array.isArray(cvData.certifications) &&
+    cvData.certifications.some((c) => c.name)
+  ) {
+    addSectionHeading(t.certifications);
+    const validCerts = cvData.certifications.filter((c) => c.name);
+    for (const cert of validCerts) {
+      const metaStr = [cert.issuer, cert.date].filter(Boolean).join(" · ");
       paragraphs.push(
         new Paragraph({
-          spacing: { after: 120 },
+          spacing: { after: 60 },
           children: [
             new TextRun({
-              text: validSkills.join("  ·  "),
+              text: cert.name || "",
+              bold: true,
               size: 20,
-              color: "1E293B",
+              color: "0F172A",
               font: "Arial",
             }),
+            ...(metaStr
+              ? [
+                  new TextRun({
+                    text: `  —  ${metaStr}`,
+                    size: 19,
+                    color: "475569",
+                    font: "Arial",
+                  }),
+                ]
+              : []),
           ],
         })
       );
     }
   }
 
-  // 8. Languages
+  // 9. Languages
   if (
     Array.isArray(cvData.languages) &&
     cvData.languages.some((l) => l.name)
@@ -499,7 +554,7 @@ export async function generateDocxBuffer(
     );
   }
 
-  // 9. Mandatory Privacy Clause at bottom
+  // 10. Mandatory Privacy Clause at bottom
   paragraphs.push(
     new Paragraph({
       spacing: { before: 360, after: 60 },

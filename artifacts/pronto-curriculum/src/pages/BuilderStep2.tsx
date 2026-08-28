@@ -1745,6 +1745,44 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 + Aggiungi lingua
               </button>
             </AccordionSection>
+
+            {/* CERTIFICAZIONI */}
+            <AccordionSection title="Certificazioni" open={openSections.has('certifications')} onToggle={() => toggleSection('certifications')}>
+              {(cvData.certifications ?? []).map(cert => (
+                <div key={cert.id} className="exp-block">
+                  <div className="form-group">
+                    <label>Nome certificazione *</label>
+                    <input type="text" placeholder="es. Google Data Analytics Professional Certificate" value={cert.name} onChange={e => {
+                      onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, name: e.target.value } : c) });
+                    }} />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Ente</label>
+                      <input type="text" placeholder="es. Google" value={cert.issuer} onChange={e => {
+                        onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, issuer: e.target.value } : c) });
+                      }} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Anno</label>
+                      <input type="text" placeholder="2025" value={cert.date} onChange={e => {
+                        onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, date: e.target.value } : c) });
+                      }} />
+                    </div>
+                  </div>
+                  <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={() => {
+                    onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).filter(c => c.id !== cert.id) });
+                  }}>
+                    Rimuovi
+                  </button>
+                </div>
+              ))}
+              <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 4 }} onClick={() => {
+                onCVChange({ ...cvData, certifications: [...(cvData.certifications ?? []), { id: Date.now().toString(), name: '', issuer: '', date: '' }] });
+              }}>
+                + Aggiungi certificazione
+              </button>
+            </AccordionSection>
             </div>
           </div>
 
