@@ -3,8 +3,8 @@
 // X-Robots-Tag: noindex so the page is reachable by direct link only, never
 // indexed or listed anywhere on the site.
 import { Router, type IRouter, type Response } from "express";
-import { eq, inArray } from "drizzle-orm";
-import { db, publicProfilesTable, usersTable, userProfilesTable, experiencesTable, highlightsTable } from "@workspace/db";
+import { eq, inArray, desc } from "drizzle-orm";
+import { db, publicProfilesTable, usersTable, userProfilesTable, experiencesTable, highlightsTable, userCvsTable } from "@workspace/db";
 import { renderPublicProfileHtml, type PublicProfilePageData, type LangCode } from "../ssr/publicProfilePage";
 import { getTranslatedProfile, SUPPORTED_LANGS } from "../lib/translatePublicProfile";
 
@@ -68,7 +68,21 @@ router.get("/p/:slug", async (req, res) => {
 
   const highlightRows = await db.select().from(highlightsTable).where(eq(highlightsTable.userId, profile.userId));
 
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Profilo professionale";
+  let fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  if (!fullName) {
+    // Account name is empty (common with some OAuth providers) — fall back to
+    // whatever name the user typed into their most recent saved CV.
+    const [latestCv] = await db
+      .select({ cvData: userCvsTable.cvData })
+      .from(userCvsTable)
+      .where(eq(userCvsTable.userId, profile.userId))
+      .orderBy(desc(userCvsTable.updatedAt))
+      .limit(1);
+    const cvData = latestCv?.cvData as { firstName?: string; lastName?: string } | undefined;
+    fullName = [cvData?.firstName, cvData?.lastName].filter(Boolean).join(" ").trim();
+  }
+  // fullName may still be empty here — renderPublicProfileHtml substitutes a
+  // localized placeholder in that case (see ui.untitledProfile).
 
   const data: PublicProfilePageData = {
     slug: profile.slug,

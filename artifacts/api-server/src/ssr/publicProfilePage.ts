@@ -4,7 +4,6 @@
 // canonical/indexable page, which this page must never do (see the noindex
 // meta + X-Robots-Tag header set by the caller).
 import { SHELL_CSS, escapeHtml } from "./shell";
-import { buildHeroSvg } from "./heroArt";
 import type { PublicProfileSection } from "@workspace/db";
 
 export interface PublicProfileExperience {
@@ -54,6 +53,7 @@ interface UiStrings {
   highlightTypes: Record<string, string>;
   createYourPage: string;
   madeInItaly: string;
+  untitledProfile: string;
 }
 
 const UI_STRINGS: Record<LangCode, UiStrings> = {
@@ -63,6 +63,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Volontariato", honor: "Riconoscimento", project: "Progetto", other: "Altro" },
     createYourPage: "Crea la tua pagina",
     madeInItaly: "fatto in Italia",
+    untitledProfile: "Profilo professionale",
   },
   EN: {
     present: "Present",
@@ -70,6 +71,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Volunteering", honor: "Honor", project: "Project", other: "Other" },
     createYourPage: "Create your page",
     madeInItaly: "made in Italy",
+    untitledProfile: "Professional profile",
   },
   FR: {
     present: "Présent",
@@ -77,6 +79,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Bénévolat", honor: "Distinction", project: "Projet", other: "Autre" },
     createYourPage: "Créez votre page",
     madeInItaly: "fait en Italie",
+    untitledProfile: "Profil professionnel",
   },
   DE: {
     present: "Aktuell",
@@ -84,6 +87,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Ehrenamt", honor: "Auszeichnung", project: "Projekt", other: "Sonstiges" },
     createYourPage: "Erstelle deine Seite",
     madeInItaly: "gemacht in Italien",
+    untitledProfile: "Berufliches Profil",
   },
   ES: {
     present: "Actualidad",
@@ -91,6 +95,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Voluntariado", honor: "Reconocimiento", project: "Proyecto", other: "Otro" },
     createYourPage: "Crea tu página",
     madeInItaly: "hecho en Italia",
+    untitledProfile: "Perfil profesional",
   },
   PT: {
     present: "Atual",
@@ -98,6 +103,7 @@ const UI_STRINGS: Record<LangCode, UiStrings> = {
     highlightTypes: { volunteering: "Voluntariado", honor: "Reconhecimento", project: "Projeto", other: "Outro" },
     createYourPage: "Crie a sua página",
     madeInItaly: "feito na Itália",
+    untitledProfile: "Perfil profissional",
   },
 };
 
@@ -176,23 +182,22 @@ const SECTION_RENDERERS: Record<PublicProfileSection["key"], (data: PublicProfil
 };
 
 const PROFILE_CSS = `
-.pp-hero-wrap { position:relative; width:100%; max-width:1120px; aspect-ratio:21/5; border-radius:20px 20px 0 0; overflow:hidden; border:1px solid var(--hair-soft); border-bottom:none; margin-top:8px; }
-.pp-hero-wrap svg { display:block; width:100%; height:100%; }
-.pp-header-card { max-width:1120px; border:1px solid var(--hair-soft); border-top:none; border-radius:0 0 20px 20px; padding:0 36px 28px; margin-bottom:36px; position:relative; }
-.pp-photo { width:132px; height:132px; border-radius:50%; object-fit:cover; border:5px solid #fff; box-shadow:0 8px 24px rgba(20,23,31,.16); margin-top:-66px; background:#fff; }
-.pp-photo-fallback { width:132px; height:132px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--violet)); margin-top:-66px; border:5px solid #fff; box-shadow:0 8px 24px rgba(20,23,31,.16); }
-.pp-name { font-family:var(--f-display); font-weight:700; font-size:clamp(26px,3.2vw,38px); letter-spacing:-.03em; line-height:1.1; margin-top:16px; }
-.pp-headline { font-size:15px; color:var(--ink-60); margin-top:6px; font-weight:500; }
-.pp-contact { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-size:13px; color:var(--ink-60); }
+.pp-wrap { max-width:760px; margin:0 auto; }
+.pp-intro { display:flex; gap:28px; align-items:flex-start; padding:52px 0 8px; flex-wrap:wrap; }
+.pp-photo { width:176px; height:176px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 14px 36px rgba(20,23,31,.16); flex-shrink:0; }
+.pp-photo-fallback { width:176px; height:176px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--violet)); flex-shrink:0; border:4px solid #fff; box-shadow:0 14px 36px rgba(20,23,31,.16); }
+.pp-intro-text { flex:1; min-width:240px; padding-top:6px; }
+.pp-name { font-family:var(--f-display); font-weight:700; font-size:clamp(28px,3.6vw,42px); letter-spacing:-.03em; line-height:1.08; }
+.pp-headline { font-size:15.5px; color:var(--ink-60); margin-top:8px; font-weight:500; }
+.pp-contact { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; font-size:13px; color:var(--ink-60); }
 .pp-contact a { color:var(--ink-60); text-decoration:none; }
 .pp-contact a:hover { color:var(--accent); }
-.pp-bio { font-size:15.5px; color:var(--ink-60); line-height:1.75; max-width:720px; margin-top:16px; }
-.pp-layout { display:grid; grid-template-columns:200px 1fr; gap:48px; align-items:start; max-width:1120px; }
-.pp-pagenav { position:sticky; top:88px; display:flex; flex-direction:column; gap:2px; }
-.pp-pagenav a { font-size:13px; font-weight:600; color:var(--ink-40); text-decoration:none; padding:8px 12px; border-radius:9px; border-left:2px solid transparent; }
-.pp-pagenav a:hover { color:var(--ink); background:#F4F4F8; }
-.pp-pagenav a.pp-nav-active { color:var(--accent); border-left-color:var(--accent); background:rgba(47,42,229,.06); }
-.pp-main { min-width:0; }
+.pp-bio { font-size:15.5px; color:var(--ink-60); line-height:1.75; margin-top:18px; }
+.pp-tabs { position:sticky; top:68px; z-index:20; display:flex; gap:2px; overflow-x:auto; margin-top:40px; background:rgba(255,255,255,.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--hair-soft); }
+.pp-tabs a { white-space:nowrap; font-size:13px; font-weight:600; color:var(--ink-40); text-decoration:none; padding:13px 16px; border-bottom:2px solid transparent; }
+.pp-tabs a:hover { color:var(--ink); }
+.pp-tabs a.pp-nav-active { color:var(--accent); border-bottom-color:var(--accent); }
+.pp-main { padding-top:8px; }
 .pp-list { display:flex; flex-direction:column; gap:22px; }
 .pp-item { border-bottom:1px solid var(--hair-soft); padding-bottom:20px; }
 .pp-item-head { display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; }
@@ -202,31 +207,28 @@ const PROFILE_CSS = `
 .pp-item-desc { font-size:14.5px; color:var(--ink-60); line-height:1.65; margin-top:10px; }
 .pp-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .pp-tag { font-size:12.5px; color:var(--ink-60); border:1px solid var(--hair-soft); border-radius:999px; padding:5px 12px; }
-.pp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+.pp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
 .pp-highlight { border:1px solid var(--hair-soft); border-radius:14px; padding:18px 20px; display:flex; flex-direction:column; gap:8px; }
 .pp-highlight a { color:var(--accent); text-decoration:none; }
 .pp-highlight b { font-family:var(--f-display); font-weight:700; font-size:15px; }
-@media (max-width:900px) {
-  .pp-layout { grid-template-columns:1fr; gap:20px; }
-  .pp-pagenav { position:static; flex-direction:row; overflow-x:auto; gap:4px; padding-bottom:4px; border-bottom:1px solid var(--hair-soft); margin-bottom:8px; }
-  .pp-pagenav a { white-space:nowrap; border-left:none; border-bottom:2px solid transparent; border-radius:0; }
-  .pp-pagenav a.pp-nav-active { border-left-color:transparent; border-bottom-color:var(--accent); background:none; }
-  .pp-photo, .pp-photo-fallback { width:96px; height:96px; margin-top:-48px; }
-  .pp-header-card { padding:0 20px 22px; }
+@media (max-width:640px) {
+  .pp-intro { padding-top:32px; }
+  .pp-photo, .pp-photo-fallback { width:120px; height:120px; }
+  .pp-tabs { top:0; }
 }
 `;
 
 export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang: LangCode = "IT"): string {
   const ui = UI_STRINGS[currentLang];
-  const title = `${data.fullName} — ProntoCurriculum`;
-  const heroSvg = buildHeroSvg({ seed: data.slug, width: 1120, height: 224 });
+  const fullName = data.fullName || ui.untitledProfile;
+  const title = `${fullName} — ProntoCurriculum`;
   const orderedSections = [...data.sections]
     .filter((s) => s.visible)
     .sort((a, b) => a.order - b.order)
     .map((s) => ({ key: s.key, content: SECTION_RENDERERS[s.key]?.(data, ui) ?? "" }))
     .filter((s) => s.content);
   const sectionsHtml = orderedSections.map((s) => `<section class="sec" id="sec-${s.key}">${s.content}</section>`).join("");
-  const navLinks = orderedSections.map((s) => `<a href="#sec-${s.key}" data-nav="${s.key}">${escapeHtml(ui.sections[s.key])}</a>`).join("");
+  const navLinks = orderedSections.map((s, i) => `<a href="#sec-${s.key}" data-nav="${s.key}" class="${i === 0 ? "pp-nav-active" : ""}">${escapeHtml(ui.sections[s.key])}</a>`).join("");
 
   const contactParts: string[] = [];
   if (data.city) contactParts.push(escapeHtml(data.city));
@@ -260,32 +262,35 @@ export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang
   </header>
 
   <div class="shell">
-    <div class="pp-hero-wrap">${heroSvg}</div>
-    <div class="pp-header-card">
-      ${data.photo ? `<img class="pp-photo" src="${escapeHtml(data.photo)}" alt="${escapeHtml(data.fullName)}" />` : `<div class="pp-photo-fallback"></div>`}
-      <div class="pp-name">${escapeHtml(data.fullName)}</div>
-      ${data.headline ? `<div class="pp-headline">${escapeHtml(data.headline)}</div>` : ""}
-      ${contactHtml}
-      ${data.bio ? `<p class="pp-bio">${escapeHtml(data.bio)}</p>` : ""}
-    </div>
+    <div class="pp-wrap">
+      <div class="pp-intro">
+        ${data.photo ? `<img class="pp-photo" src="${escapeHtml(data.photo)}" alt="${escapeHtml(fullName)}" />` : `<div class="pp-photo-fallback"></div>`}
+        <div class="pp-intro-text">
+          <div class="pp-name">${escapeHtml(fullName)}</div>
+          ${data.headline ? `<div class="pp-headline">${escapeHtml(data.headline)}</div>` : ""}
+          ${contactHtml}
+          ${data.bio ? `<p class="pp-bio">${escapeHtml(data.bio)}</p>` : ""}
+        </div>
+      </div>
 
-    <div class="pp-layout">
-      <nav class="pp-pagenav" aria-label="Sezioni della pagina">${navLinks}</nav>
+      <nav class="pp-tabs" aria-label="Sezioni della pagina">${navLinks}</nav>
       <div class="pp-main">${sectionsHtml}</div>
     </div>
   </div>
 
   <div class="shell">
-    <footer>
-      <div class="foot-bottom">
-        <span class="mono">&copy; ${new Date().getFullYear()} ProntoCurriculum — ${escapeHtml(ui.madeInItaly)}</span>
-      </div>
-    </footer>
+    <div class="pp-wrap">
+      <footer>
+        <div class="foot-bottom">
+          <span class="mono">&copy; ${new Date().getFullYear()} ProntoCurriculum — ${escapeHtml(ui.madeInItaly)}</span>
+        </div>
+      </footer>
+    </div>
   </div>
 </div>
 <script>
 (function(){
-  var links = Array.prototype.slice.call(document.querySelectorAll('.pp-pagenav a'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.pp-tabs a'));
   var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
   if (!sections.length || !('IntersectionObserver' in window)) return;
   var observer = new IntersectionObserver(function(entries){

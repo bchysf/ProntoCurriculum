@@ -34,7 +34,7 @@ export const EDITORIAL_CSS = `
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
 }
 .pce * { margin: 0; padding: 0; box-sizing: border-box; }
