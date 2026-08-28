@@ -333,6 +333,8 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'guida-cv'); }}>{t('home.footer.guideCv')}</a>
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'punteggio-ats'); }}>{t('home.footer.atsGuide')}</a>
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>{t('home.footer.salaryCalc')}</a>
+              <a href="/lavoro/lombardia">Lavoro in Lombardia</a>
+              <a href="/strumenti">Tutti gli strumenti</a>
             </nav>
             <nav className="foot-col" aria-label="Legale">
               <h4>{t('home.footer.legal')}</h4>

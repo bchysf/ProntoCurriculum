@@ -81,6 +81,21 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://prontocurriculum.it/strumenti</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/milano</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://prontocurriculum.it/cercare-lavoro-piemonte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

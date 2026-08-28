@@ -3,6 +3,8 @@
   "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/lavoro/:path*", "destination": "/api" },
+    { "source": "/strumenti", "destination": "/api" },
+    { "source": "/((?!api/|lavoro/|strumenti$).*)", "destination": "/index.html" }
   ]
 }

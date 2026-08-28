@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import stripeWebhookRouter from "./routes/stripeWebhook";
+import ssrRouter from "./routes/ssr";
 import { logger } from "./lib/logger";
 import { authMiddleware } from "./middlewares/authMiddleware";
 
@@ -40,5 +41,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+// Server-rendered SEO/GEO pages, mounted at the root path (see routes/ssr.ts
+// and vercel.json's rewrite for /lavoro/*).
+app.use(ssrRouter);
 
 export default app;
