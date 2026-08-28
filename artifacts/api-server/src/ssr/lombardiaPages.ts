@@ -30,8 +30,8 @@ export function getHubHtml(): string {
     </div>
 
     <section class="sec">
-      <h2>Il mercato del lavoro per provincia</h2>
-      <p class="prose">Ogni provincia lombarda ha un tessuto produttivo diverso: Milano guida su finanza e moda, mentre le altre province si distinguono su manifattura, meccanica, agroalimentare e logistica. Le pagine città qui sotto raccolgono i dati verificati provincia per provincia, mano a mano che li completiamo con fonti ufficiali.</p>
+      <h2>Il mercato del lavoro, provincia per provincia</h2>
+      <p class="prose">Ogni provincia lombarda ha un'economia distinta: Milano guida su finanza e moda, Bergamo e Brescia sono il cuore della manifattura export-oriented, Varese punta su aerospazio e life sciences, Sondrio vive l'anno olimpico 2026, Cremona conserva l'unica tradizione liutaria al mondo. Tutte e 12 le province capoluogo sono coperte qui sotto, con dati e fonti verificate.</p>
       <div class="grid-cards">
         ${cityCards}
         ${plannedCards}

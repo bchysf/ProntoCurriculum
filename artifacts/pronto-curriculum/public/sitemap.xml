@@ -96,6 +96,61 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/bergamo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/brescia</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/como</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/cremona</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/lecco</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/lodi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/mantova</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/monza-e-brianza</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/pavia</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/sondrio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/varese</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://prontocurriculum.it/cercare-lavoro-piemonte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
