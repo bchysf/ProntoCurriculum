@@ -186,6 +186,8 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
   const [profileForm, setProfileForm] = useState({
     headline: '', phone: '', city: '', linkedin: '', website: '', summary: '', skills: '',
   });
+  const [educationRows, setEducationRows] = useState<Array<{ id: string; institution: string; degree: string; grade: string; from: string; to: string }>>([]);
+  const [languageRows, setLanguageRows] = useState<Array<{ id: string; name: string; level: string }>>([]);
 
   const [progress, setProgress] = useState(0);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -219,6 +221,8 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         summary: p?.summary ?? '',
         skills: p?.skills?.join(', ') ?? '',
       });
+      setEducationRows(p?.education ?? []);
+      setLanguageRows(p?.languages ?? []);
     } catch {
     } finally {
       setFetching(false);
@@ -290,8 +294,8 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         website: profileForm.website.trim() || null,
         summary: profileForm.summary.trim() || null,
         skills: profileForm.skills ? profileForm.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
-        education: profile?.education ?? [],
-        languages: profile?.languages ?? [],
+        education: educationRows.filter(e => e.institution.trim() || e.degree.trim()),
+        languages: languageRows.filter(l => l.name.trim()),
       };
       const res = await fetch('/api/profile', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -631,6 +635,48 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
                   />
                 </div>
               </div>
+
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <b style={{ fontSize: 13 }}>Formazione</b>
+                  <button className="btn btn-line btn-sm" onClick={() => setEducationRows(rows => [...rows, { id: crypto.randomUUID(), institution: '', degree: '', grade: '', from: '', to: '' }])}>
+                    + Aggiungi
+                  </button>
+                </div>
+                {educationRows.map((edu, i) => (
+                  <div key={edu.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                    <input type="text" placeholder="Istituto" value={edu.institution} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                      onChange={e => setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, institution: e.target.value } : r))} />
+                    <input type="text" placeholder="Titolo di studio" value={edu.degree} style={{ flex: '2 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                      onChange={e => setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, degree: e.target.value } : r))} />
+                    <input type="text" placeholder="Anni" value={edu.from ? `${edu.from} - ${edu.to}` : ''} style={{ flex: '1 1 100px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                      onChange={e => {
+                        const [from, to] = e.target.value.split('-').map(s => s.trim());
+                        setEducationRows(rows => rows.map((r, idx) => idx === i ? { ...r, from: from ?? '', to: to ?? '' } : r));
+                      }} />
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEducationRows(rows => rows.filter((_, idx) => idx !== i))} aria-label="Rimuovi">×</button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <b style={{ fontSize: 13 }}>Lingue</b>
+                  <button className="btn btn-line btn-sm" onClick={() => setLanguageRows(rows => [...rows, { id: crypto.randomUUID(), name: '', level: '' }])}>
+                    + Aggiungi
+                  </button>
+                </div>
+                {languageRows.map((lang, i) => (
+                  <div key={lang.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                    <input type="text" placeholder="Lingua (es. Inglese)" value={lang.name} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                      onChange={e => setLanguageRows(rows => rows.map((r, idx) => idx === i ? { ...r, name: e.target.value } : r))} />
+                    <input type="text" placeholder="Livello (es. C1 - Avanzato)" value={lang.level} style={{ flex: '1 1 160px', background: '#F1F2F6', border: '1px solid transparent', borderRadius: 10, padding: '9px 11px', fontSize: 13 }}
+                      onChange={e => setLanguageRows(rows => rows.map((r, idx) => idx === i ? { ...r, level: e.target.value } : r))} />
+                    <button className="btn btn-ghost btn-sm" onClick={() => setLanguageRows(rows => rows.filter((_, idx) => idx !== i))} aria-label="Rimuovi">×</button>
+                  </div>
+                ))}
+              </div>
+
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                 <button className="btn btn-ink btn-sm" disabled={profileSaving} onClick={() => void handleSaveProfile()}>
                   {profileSaving ? t('profile.saving') : t('profile.save')}

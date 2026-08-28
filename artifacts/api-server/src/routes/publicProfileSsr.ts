@@ -5,7 +5,8 @@
 import { Router, type IRouter, type Response } from "express";
 import { eq, inArray } from "drizzle-orm";
 import { db, publicProfilesTable, usersTable, userProfilesTable, experiencesTable, highlightsTable } from "@workspace/db";
-import { renderPublicProfileHtml, type PublicProfilePageData } from "../ssr/publicProfilePage";
+import { renderPublicProfileHtml, type PublicProfilePageData, type LangCode } from "../ssr/publicProfilePage";
+import { getTranslatedProfile, SUPPORTED_LANGS } from "../lib/translatePublicProfile";
 
 const router: IRouter = Router();
 
@@ -73,9 +74,14 @@ router.get("/p/:slug", async (req, res) => {
     education: userProfile?.education ?? [],
     languages: userProfile?.languages ?? [],
     skills: userProfile?.skills ?? [],
+    updatedAt: profile.updatedAt?.toISOString(),
   };
 
-  sendHtml(res, renderPublicProfileHtml(data));
+  const requestedLang = String(req.query.lang ?? "IT").toUpperCase();
+  const lang = (SUPPORTED_LANGS[requestedLang] ? requestedLang : "IT") as LangCode;
+  const finalData = await getTranslatedProfile(data, lang);
+
+  sendHtml(res, renderPublicProfileHtml(finalData, lang));
 });
 
 export default router;

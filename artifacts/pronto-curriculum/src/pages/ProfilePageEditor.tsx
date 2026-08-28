@@ -101,17 +101,22 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
   const [hlForm, setHlForm] = useState(EMPTY_HIGHLIGHT_FORM);
   const [savingHl, setSavingHl] = useState(false);
 
+  const [improvingHeadline, setImprovingHeadline] = useState(false);
+  const [improvingBio, setImprovingBio] = useState(false);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileRes, expRes, hlRes] = await Promise.all([
+      const [profileRes, expRes, hlRes, userProfileRes] = await Promise.all([
         fetch('/api/profile-page', { credentials: 'include' }),
         fetch('/api/experiences', { credentials: 'include' }),
         fetch('/api/highlights', { credentials: 'include' }),
+        fetch('/api/profile', { credentials: 'include' }),
       ]);
       const profileData = await profileRes.json() as { profile: PublicProfile | null };
       const expData = await expRes.json() as { experiences: StoredExp[] };
       const hlData = await hlRes.json() as { highlights: StoredHighlight[] };
+      const userProfileData = await userProfileRes.json() as { profile: { headline?: string | null; summary?: string | null } | null };
 
       setExperiences(expData.experiences ?? []);
       setHighlights(hlData.highlights ?? []);
@@ -119,8 +124,10 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       const p = profileData.profile;
       setProfile(p);
       setPhoto(p?.photo ?? null);
-      setHeadline(p?.headline ?? '');
-      setBio(p?.bio ?? '');
+      // Default headline/bio from the general CV profile on first setup, so the
+      // user doesn't have to retype what they already filled in the dashboard.
+      setHeadline(p?.headline ?? userProfileData.profile?.headline ?? '');
+      setBio(p?.bio ?? userProfileData.profile?.summary ?? '');
       setSelectedIds(p?.selectedExperienceIds ?? []);
       setSections(p?.sections?.length ? p.sections : DEFAULT_SECTIONS);
     } finally {
@@ -172,6 +179,53 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleImproveHeadline() {
+    setImprovingHeadline(true);
+    try {
+      const res = await fetch('/api/optimize-field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'headline', value: headline }),
+      });
+      if (!res.ok) throw new Error('Errore AI');
+      const data = await res.json() as { result: string };
+      setHeadline(data.result);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore AI');
+    } finally {
+      setImprovingHeadline(false);
+    }
+  }
+
+  async function handleImproveBio() {
+    setImprovingBio(true);
+    try {
+      const res = await fetch('/api/optimize-field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          field: 'bio',
+          value: bio,
+          context: { headline, experiences: orderedSelectedForAi() },
+        }),
+      });
+      if (!res.ok) throw new Error('Errore AI');
+      const data = await res.json() as { result: string };
+      setBio(data.result);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore AI');
+    } finally {
+      setImprovingBio(false);
+    }
+  }
+
+  function orderedSelectedForAi() {
+    return selectedIds
+      .map(id => experiences.find(e => e.id === id))
+      .filter((e): e is StoredExp => !!e)
+      .map(e => ({ role: e.role, company: e.company }));
   }
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -424,11 +478,21 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           </label>
         </div>
         <div className="form-group">
-          <label>Titolo professionale</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ marginBottom: 0 }}>Titolo professionale</label>
+            <button type="button" className="ai-btn" style={{ padding: '2px 8px', fontSize: 11 }} disabled={improvingHeadline} onClick={() => void handleImproveHeadline()}>
+              {improvingHeadline ? '…' : 'Migliora con AI'}
+            </button>
+          </div>
           <input type="text" placeholder="Es. Senior Product Designer" value={headline} onChange={e => setHeadline(e.target.value)} />
         </div>
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label>Bio</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ marginBottom: 0 }}>Bio</label>
+            <button type="button" className="ai-btn" style={{ padding: '2px 8px', fontSize: 11 }} disabled={improvingBio} onClick={() => void handleImproveBio()}>
+              {improvingBio ? '…' : 'Migliora con AI'}
+            </button>
+          </div>
           <textarea rows={3} placeholder="Racconta in breve chi sei e cosa fai." value={bio} onChange={e => setBio(e.target.value)} />
         </div>
       </div>

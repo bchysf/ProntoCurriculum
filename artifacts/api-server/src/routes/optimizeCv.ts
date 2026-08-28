@@ -177,7 +177,7 @@ router.post('/optimize-cv', async (req, res) => {
 
 router.post('/optimize-field', async (req, res) => {
   const { field, value, context, lang = 'IT', mode } = req.body as {
-    field?: 'summary' | 'exp' | 'exp-tips' | 'exp-role' | 'exp-skills';
+    field?: 'summary' | 'exp' | 'exp-tips' | 'exp-role' | 'exp-skills' | 'bio' | 'headline';
     value?: string;
     context?: Record<string, unknown>;
     lang?: string;
@@ -192,6 +192,25 @@ router.post('/optimize-field', async (req, res) => {
   const langName = LANG_NAMES[lang] ?? 'italiano';
 
   try {
+    if (field === 'headline') {
+      const prompt = `Sei un HR Director senior. Migliora questo titolo professionale per una pagina profilo pubblica, in ${langName}.\nRegole: breve (2-6 parole), standard di settore, specifico, senza virgolette, senza nome azienda.\nTitolo attuale: "${value ?? ''}"\nRestituisci SOLO il titolo migliorato in ${langName}. Niente JSON, niente virgolette esterne, niente spiegazioni.`;
+      const raw = await generateText(prompt);
+      const result = raw.trim().replace(/^["'“]+|["'”]+$/g, '');
+      res.json({ result });
+      return;
+    }
+
+    if (field === 'bio') {
+      const experiencesCtx = (context?.experiences as Array<{ role?: string; company?: string }> | undefined) ?? [];
+      const expText = experiencesCtx.length
+        ? `Esperienze recenti: ${experiencesCtx.map(e => `${e.role ?? ''} @ ${e.company ?? ''}`).join(', ')}.`
+        : '';
+      const prompt = `Sei un HR Director senior e copywriter di profili professionali pubblici (stile pagina "About" o LinkedIn "About", non un CV).\nScrivi una bio professionale in ${langName}, in prima o terza persona a scelta ma coerente, 3-5 frasi (60-110 parole), calorosa ma professionale, che comunichi chi è la persona, cosa sa fare e che valore porta. Zero banalità vuote ("dinamico", "proattivo") senza contesto concreto.\nTitolo professionale: ${(context?.headline as string) ?? 'non specificato'}\n${expText}\nBio attuale (da migliorare, o da riscrivere da zero se vuota): "${value ?? ''}"\nRestituisci SOLO il testo della bio in ${langName}. Niente JSON, niente virgolette esterne, niente spiegazioni.`;
+      const raw = await generateText(prompt);
+      res.json({ result: raw.trim() });
+      return;
+    }
+
     if (field === 'exp-role') {
       const company = (context?.company as string) ?? 'azienda';
       const desc = (value ?? '').trim();
