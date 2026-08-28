@@ -33,9 +33,14 @@ import type {
   FetchJobResponse,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
+  HighlightEnvelope,
+  HighlightInput,
+  HighlightListEnvelope,
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  PublicProfileEnvelope,
+  PublicProfileInput,
   TailorCvEnvelope,
   TailorCvRequest,
   TailoredCvListEnvelope
@@ -1242,5 +1247,653 @@ export const useDeleteExperience = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDeleteExperienceMutationOptions(options));
+    }
+
+export const getListHighlightsUrl = () => {
+
+
+
+
+  return `/api/highlights`
+}
+
+/**
+ * @summary List all saved highlights for the authenticated user
+ */
+export const listHighlights = async ( options?: RequestInit): Promise<HighlightListEnvelope> => {
+
+  return customFetch<HighlightListEnvelope>(getListHighlightsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListHighlightsQueryKey = () => {
+    return [
+    `/api/highlights`
+    ] as const;
+    }
+
+
+export const getListHighlightsQueryOptions = <TData = Awaited<ReturnType<typeof listHighlights>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListHighlightsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listHighlights>>> = ({ signal }) => listHighlights({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listHighlights>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListHighlightsQueryResult = NonNullable<Awaited<ReturnType<typeof listHighlights>>>
+export type ListHighlightsQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all saved highlights for the authenticated user
+ */
+
+export function useListHighlights<TData = Awaited<ReturnType<typeof listHighlights>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListHighlightsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateHighlightUrl = () => {
+
+
+
+
+  return `/api/highlights`
+}
+
+/**
+ * @summary Create a new saved highlight
+ */
+export const createHighlight = async (highlightInput: HighlightInput, options?: RequestInit): Promise<HighlightEnvelope> => {
+
+  return customFetch<HighlightEnvelope>(getCreateHighlightUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      highlightInput,)
+  }
+);}
+
+
+
+
+export const getCreateHighlightMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext> => {
+
+const mutationKey = ['createHighlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createHighlight>>, {data: BodyType<HighlightInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createHighlight(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateHighlightMutationResult = NonNullable<Awaited<ReturnType<typeof createHighlight>>>
+    export type CreateHighlightMutationBody = BodyType<HighlightInput>
+    export type CreateHighlightMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Create a new saved highlight
+ */
+export const useCreateHighlight = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createHighlight>>,
+        TError,
+        {data: BodyType<HighlightInput>},
+        TContext
+      > => {
+      return useMutation(getCreateHighlightMutationOptions(options));
+    }
+
+export const getUpdateHighlightUrl = (id: string,) => {
+
+
+
+
+  return `/api/highlights/${id}`
+}
+
+/**
+ * @summary Update a saved highlight
+ */
+export const updateHighlight = async (id: string,
+    highlightInput: HighlightInput, options?: RequestInit): Promise<HighlightEnvelope> => {
+
+  return customFetch<HighlightEnvelope>(getUpdateHighlightUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      highlightInput,)
+  }
+);}
+
+
+
+
+export const getUpdateHighlightMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHighlight>>, TError,{id: string;data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateHighlight>>, TError,{id: string;data: BodyType<HighlightInput>}, TContext> => {
+
+const mutationKey = ['updateHighlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateHighlight>>, {id: string;data: BodyType<HighlightInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateHighlight(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateHighlightMutationResult = NonNullable<Awaited<ReturnType<typeof updateHighlight>>>
+    export type UpdateHighlightMutationBody = BodyType<HighlightInput>
+    export type UpdateHighlightMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Update a saved highlight
+ */
+export const useUpdateHighlight = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHighlight>>, TError,{id: string;data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateHighlight>>,
+        TError,
+        {id: string;data: BodyType<HighlightInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateHighlightMutationOptions(options));
+    }
+
+export const getDeleteHighlightUrl = (id: string,) => {
+
+
+
+
+  return `/api/highlights/${id}`
+}
+
+/**
+ * @summary Delete a saved highlight
+ */
+export const deleteHighlight = async (id: string, options?: RequestInit): Promise<DeleteSuccess> => {
+
+  return customFetch<DeleteSuccess>(getDeleteHighlightUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteHighlightMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteHighlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteHighlight>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteHighlight(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteHighlightMutationResult = NonNullable<Awaited<ReturnType<typeof deleteHighlight>>>
+
+    export type DeleteHighlightMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Delete a saved highlight
+ */
+export const useDeleteHighlight = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteHighlight>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteHighlightMutationOptions(options));
+    }
+
+export const getGetPublicProfileUrl = () => {
+
+
+
+
+  return `/api/profile-page`
+}
+
+/**
+ * @summary Get the authenticated user's public profile page configuration
+ */
+export const getPublicProfile = async ( options?: RequestInit): Promise<PublicProfileEnvelope> => {
+
+  return customFetch<PublicProfileEnvelope>(getGetPublicProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicProfileQueryKey = () => {
+    return [
+    `/api/profile-page`
+    ] as const;
+    }
+
+
+export const getGetPublicProfileQueryOptions = <TData = Awaited<ReturnType<typeof getPublicProfile>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicProfile>>> = ({ signal }) => getPublicProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicProfile>>>
+export type GetPublicProfileQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Get the authenticated user's public profile page configuration
+ */
+
+export function useGetPublicProfile<TData = Awaited<ReturnType<typeof getPublicProfile>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSavePublicProfileUrl = () => {
+
+
+
+
+  return `/api/profile-page`
+}
+
+/**
+ * @summary Create or update the authenticated user's public profile page (Pro only)
+ */
+export const savePublicProfile = async (publicProfileInput: PublicProfileInput, options?: RequestInit): Promise<PublicProfileEnvelope> => {
+
+  return customFetch<PublicProfileEnvelope>(getSavePublicProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      publicProfileInput,)
+  }
+);}
+
+
+
+
+export const getSavePublicProfileMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePublicProfile>>, TError,{data: BodyType<PublicProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof savePublicProfile>>, TError,{data: BodyType<PublicProfileInput>}, TContext> => {
+
+const mutationKey = ['savePublicProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof savePublicProfile>>, {data: BodyType<PublicProfileInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  savePublicProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SavePublicProfileMutationResult = NonNullable<Awaited<ReturnType<typeof savePublicProfile>>>
+    export type SavePublicProfileMutationBody = BodyType<PublicProfileInput>
+    export type SavePublicProfileMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Create or update the authenticated user's public profile page (Pro only)
+ */
+export const useSavePublicProfile = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePublicProfile>>, TError,{data: BodyType<PublicProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof savePublicProfile>>,
+        TError,
+        {data: BodyType<PublicProfileInput>},
+        TContext
+      > => {
+      return useMutation(getSavePublicProfileMutationOptions(options));
+    }
+
+export const getPublishPublicProfileUrl = () => {
+
+
+
+
+  return `/api/profile-page/publish`
+}
+
+/**
+ * @summary Publish the authenticated user's public profile page (Pro only)
+ */
+export const publishPublicProfile = async ( options?: RequestInit): Promise<PublicProfileEnvelope> => {
+
+  return customFetch<PublicProfileEnvelope>(getPublishPublicProfileUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPublishPublicProfileMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishPublicProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishPublicProfile>>, TError,void, TContext> => {
+
+const mutationKey = ['publishPublicProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishPublicProfile>>, void> = () => {
+
+
+          return  publishPublicProfile(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishPublicProfileMutationResult = NonNullable<Awaited<ReturnType<typeof publishPublicProfile>>>
+
+    export type PublishPublicProfileMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Publish the authenticated user's public profile page (Pro only)
+ */
+export const usePublishPublicProfile = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishPublicProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof publishPublicProfile>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPublishPublicProfileMutationOptions(options));
+    }
+
+export const getUnpublishPublicProfileUrl = () => {
+
+
+
+
+  return `/api/profile-page/unpublish`
+}
+
+/**
+ * @summary Unpublish the authenticated user's public profile page
+ */
+export const unpublishPublicProfile = async ( options?: RequestInit): Promise<PublicProfileEnvelope> => {
+
+  return customFetch<PublicProfileEnvelope>(getUnpublishPublicProfileUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getUnpublishPublicProfileMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unpublishPublicProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unpublishPublicProfile>>, TError,void, TContext> => {
+
+const mutationKey = ['unpublishPublicProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unpublishPublicProfile>>, void> = () => {
+
+
+          return  unpublishPublicProfile(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnpublishPublicProfileMutationResult = NonNullable<Awaited<ReturnType<typeof unpublishPublicProfile>>>
+
+    export type UnpublishPublicProfileMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Unpublish the authenticated user's public profile page
+ */
+export const useUnpublishPublicProfile = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unpublishPublicProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unpublishPublicProfile>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getUnpublishPublicProfileMutationOptions(options));
+    }
+
+export const getRegeneratePublicProfileSlugUrl = () => {
+
+
+
+
+  return `/api/profile-page/regenerate-slug`
+}
+
+/**
+ * @summary Regenerate the authenticated user's public profile page URL slug (Pro only)
+ */
+export const regeneratePublicProfileSlug = async ( options?: RequestInit): Promise<PublicProfileEnvelope> => {
+
+  return customFetch<PublicProfileEnvelope>(getRegeneratePublicProfileSlugUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRegeneratePublicProfileSlugMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeneratePublicProfileSlug>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof regeneratePublicProfileSlug>>, TError,void, TContext> => {
+
+const mutationKey = ['regeneratePublicProfileSlug'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regeneratePublicProfileSlug>>, void> = () => {
+
+
+          return  regeneratePublicProfileSlug(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegeneratePublicProfileSlugMutationResult = NonNullable<Awaited<ReturnType<typeof regeneratePublicProfileSlug>>>
+
+    export type RegeneratePublicProfileSlugMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Regenerate the authenticated user's public profile page URL slug (Pro only)
+ */
+export const useRegeneratePublicProfileSlug = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeneratePublicProfileSlug>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof regeneratePublicProfileSlug>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRegeneratePublicProfileSlugMutationOptions(options));
     }
 

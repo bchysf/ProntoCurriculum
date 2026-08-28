@@ -24,6 +24,7 @@ const STATIC_PATH_TO_PAGE: Record<string, Page> = {
   '/prezzi': 'prezzi',
   '/come-funziona': 'come-funziona',
   '/archivio': 'archivio',
+  '/profilo-pubblico': 'profile-page',
   '/candidature': 'candidature',
   '/dashboard': 'dashboard',
   '/referral': 'referral',

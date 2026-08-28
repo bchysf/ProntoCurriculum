@@ -7,5 +7,7 @@ Disallow: /candidature
 Disallow: /admin
 Disallow: /referral
 Disallow: /crea-cv/editor
+Disallow: /profilo-pubblico
+Disallow: /p/
 
 Sitemap: https://prontocurriculum.it/sitemap.xml

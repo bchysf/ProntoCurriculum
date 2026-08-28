@@ -12,7 +12,7 @@ const GRAIN =
   `<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/></filter>` +
   `<rect width="180" height="180" filter="url(%23n)" opacity="0.55"/></svg>')`;
 
-const SHELL_CSS = `
+export const SHELL_CSS = `
 @import url('https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&f[]=satoshi@400,500,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
 .pce { --paper:#FFFFFF; --card:#FFFFFF; --ink:#14171F; --ink-60:#565B66; --ink-40:#9297A1; --hair:rgba(20,23,31,.12); --hair-soft:rgba(20,23,31,.07); --accent:#2F2AE5; --accent-ink:#221FB4; --violet:#7C5CFF; --ease:cubic-bezier(.16,1,.3,1); --f-display:'Switzer','Helvetica Neue',Helvetica,Arial,sans-serif; --f-body:'Satoshi','Helvetica Neue',sans-serif; --f-mono:'IBM Plex Mono',monospace; font-family:var(--f-body); background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.5; position:relative; overflow-x:hidden; min-height:100vh; }

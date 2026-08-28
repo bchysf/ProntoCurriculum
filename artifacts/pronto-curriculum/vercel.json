@@ -5,6 +5,7 @@
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/lavoro/:path*", "destination": "/api" },
     { "source": "/strumenti", "destination": "/api" },
-    { "source": "/((?!api/|lavoro/|strumenti$).*)", "destination": "/index.html" }
+    { "source": "/p/:slug", "destination": "/api" },
+    { "source": "/((?!api/|lavoro/|strumenti$|p/).*)", "destination": "/index.html" }
   ]
 }

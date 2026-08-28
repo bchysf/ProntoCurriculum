@@ -421,6 +421,14 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
           </div>
           <div className="dh-feat-bar"><i style={{ width: `${completion}%`, background: completion >= 80 ? '#12805C' : 'var(--accent)' }} /></div>
         </button>
+        <button className="dh-feat" onClick={() => onNavigate('profile-page')}>
+          <div className="dh-feat-top">
+            <span className="dh-feat-ico"><Icon d={IC.globe} size={16} /></span>
+            <b>Pagina pubblica</b>
+            <span className="n" style={{ fontSize: 11, color: 'var(--accent)' }}>PRO</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-40)' }}>Un link professionale con tutte le tue esperienze</div>
+        </button>
       </div>
 
       {/* BANNER */}

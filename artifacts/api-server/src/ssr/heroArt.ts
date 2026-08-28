@@ -1,11 +1,11 @@
-// Deterministic, dependency-free editorial "ink illustration" banners for SSR pages.
-// Mirrors artifacts/pronto-curriculum/src/components/HeroArt.tsx (kept in sync manually —
-// the two apps are separate packages). No AI image generation is wired up; instead every
-// city/profession page gets a generated SVG banner in the site's own "Carta & Inchiostro"
-// palette (accent #2F2AE5 ink on white paper), with a per-slug seed so pages sharing a
-// motif (city, profession) don't render identically.
+// Server-side duplicate of the SPA's deterministic hero-art generator
+// (artifacts/pronto-curriculum/src/components/HeroArt.tsx). Pure string/SVG
+// generation with no React dependency, so it's safe to mirror here — same
+// precedent as shell.ts already manually mirroring the SPA's CSS tokens,
+// since there's no shared package between api-server and the frontend.
+// Keep the 'profile' motif addition in sync if the SPA file changes.
 
-export type HeroMotif = 'guide' | 'ats' | 'market' | 'interview' | 'europass' | 'city' | 'profession';
+export type HeroMotif = "guide" | "ats" | "market" | "interview" | "europass" | "city" | "profession" | "profile";
 
 function hashSeed(input: string): number {
   let h = 0;
@@ -53,12 +53,14 @@ const MOTIF_PATHS: Record<HeroMotif, string> = {
     <path d="M38 38 L38 28 Q38 22 44 22 L56 22 Q62 22 62 28 L62 38"/>
     <line x1="22" y1="52" x2="78" y2="52"/>
     <rect x="46" y="48" width="8" height="8" rx="1"/>`,
+  profile: `<circle cx="50" cy="34" r="16"/>
+    <path d="M22 82 C22 60 34 50 50 50 C66 50 78 60 78 82"/>`,
 };
 
 export function buildHeroSvg(opts: { motif: HeroMotif; seed: string; width?: number; height?: number }): string {
   const { motif, seed } = opts;
   const width = opts.width ?? 800;
-  const height = opts.height ?? 320;
+  const height = opts.height ?? 450;
   const h = hashSeed(seed);
   const angle = h % 360;
   const gid = `hg-${(h % 100000).toString(36)}`;
@@ -66,14 +68,16 @@ export function buildHeroSvg(opts: { motif: HeroMotif; seed: string; width?: num
   const tx = width / 2 - 50 * scale;
   const ty = height / 2 - 50 * scale;
 
-  const dots = Array.from({ length: 6 }).map((_, i) => {
-    const dh = hashSeed(`${seed}-${i}`);
-    const cx = ((dh % 100) / 100) * width;
-    const cy = (((dh >> 4) % 100) / 100) * height;
-    const r = 1.4 + (dh % 3);
-    const violet = dh % 3 === 0;
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${violet ? '#7C5CFF' : '#2F2AE5'}" opacity="${(0.08 + (dh % 10) / 90).toFixed(2)}"/>`;
-  }).join('');
+  const dots = Array.from({ length: 6 })
+    .map((_, i) => {
+      const dh = hashSeed(`${seed}-${i}`);
+      const cx = ((dh % 100) / 100) * width;
+      const cy = (((dh >> 4) % 100) / 100) * height;
+      const r = 1.4 + (dh % 3);
+      const violet = dh % 3 === 0;
+      return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${violet ? "#7C5CFF" : "#2F2AE5"}" opacity="${(0.08 + (dh % 10) / 90).toFixed(2)}"/>`;
+    })
+    .join("");
 
   return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
     <defs>

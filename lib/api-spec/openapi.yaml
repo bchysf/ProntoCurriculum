@@ -14,6 +14,10 @@ tags:
     description: Browser and mobile authentication endpoints.
   - name: Experiences
     description: Personal experience vault CRUD.
+  - name: Highlights
+    description: Volunteering, honors, and side-project highlights CRUD.
+  - name: PublicProfile
+    description: Pro-tier public profile page management.
   - name: AI
     description: AI-powered CV generation and optimization.
   - name: TailoredCVs
@@ -443,6 +447,286 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+  /highlights:
+    get:
+      tags: [Highlights]
+      operationId: listHighlights
+      summary: List all saved highlights for the authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Highlight list returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighlightListEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [Highlights]
+      operationId: createHighlight
+      summary: Create a new saved highlight
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HighlightInput'
+      responses:
+        '201':
+          description: Highlight created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighlightEnvelope'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /highlights/{id}:
+    put:
+      tags: [Highlights]
+      operationId: updateHighlight
+      summary: Update a saved highlight
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HighlightInput'
+      responses:
+        '200':
+          description: Highlight updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighlightEnvelope'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Highlight not found or not owned by user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      tags: [Highlights]
+      operationId: deleteHighlight
+      summary: Delete a saved highlight
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Highlight deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Highlight not found or not owned by user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /profile-page:
+    get:
+      tags: [PublicProfile]
+      operationId: getPublicProfile
+      summary: Get the authenticated user's public profile page configuration
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Public profile configuration returned (null if never created).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    put:
+      tags: [PublicProfile]
+      operationId: savePublicProfile
+      summary: Create or update the authenticated user's public profile page (Pro only)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicProfileInput'
+      responses:
+        '200':
+          description: Public profile saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileEnvelope'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Pro subscription required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /profile-page/publish:
+    post:
+      tags: [PublicProfile]
+      operationId: publishPublicProfile
+      summary: Publish the authenticated user's public profile page (Pro only)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Public profile published.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileEnvelope'
+        '400':
+          description: No profile page saved yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Pro subscription required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /profile-page/unpublish:
+    post:
+      tags: [PublicProfile]
+      operationId: unpublishPublicProfile
+      summary: Unpublish the authenticated user's public profile page
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Public profile unpublished.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No profile page saved yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /profile-page/regenerate-slug:
+    post:
+      tags: [PublicProfile]
+      operationId: regeneratePublicProfileSlug
+      summary: Regenerate the authenticated user's public profile page URL slug (Pro only)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Slug regenerated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileEnvelope'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Pro subscription required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No profile page saved yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -606,6 +890,131 @@ components:
         success:
           type: boolean
           const: true
+    StoredHighlight:
+      type: object
+      required: [id, userId, type, title, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [volunteering, honor, project, other]
+        title:
+          type: string
+        description:
+          type: [string, 'null']
+        date:
+          type: [string, 'null']
+        link:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    HighlightInput:
+      type: object
+      required: [type, title]
+      properties:
+        type:
+          type: string
+          enum: [volunteering, honor, project, other]
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        date:
+          type: string
+        link:
+          type: string
+    HighlightListEnvelope:
+      type: object
+      required: [highlights]
+      properties:
+        highlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoredHighlight'
+    HighlightEnvelope:
+      type: object
+      required: [highlight]
+      properties:
+        highlight:
+          $ref: '#/components/schemas/StoredHighlight'
+    PublicProfileSection:
+      type: object
+      required: [key, visible, order]
+      properties:
+        key:
+          type: string
+          enum: [experiences, education, languages, skills, highlights]
+        visible:
+          type: boolean
+        order:
+          type: number
+    StoredPublicProfile:
+      type: object
+      required: [id, userId, slug, published, createdAt, updatedAt, publicUrl]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        slug:
+          type: string
+        published:
+          type: boolean
+        photo:
+          type: [string, 'null']
+        headline:
+          type: [string, 'null']
+        bio:
+          type: [string, 'null']
+        selectedExperienceIds:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProfileSection'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publicUrl:
+          type: [string, 'null']
+          description: Absolute /p/:slug URL, only present when published.
+    PublicProfileInput:
+      type: object
+      properties:
+        photo:
+          type: string
+        headline:
+          type: string
+        bio:
+          type: string
+        selectedExperienceIds:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProfileSection'
+    PublicProfileEnvelope:
+      type: object
+      properties:
+        profile:
+          oneOf:
+            - $ref: '#/components/schemas/StoredPublicProfile'
+            - type: 'null'
     FetchJobRequest:
       type: object
       required: [url]

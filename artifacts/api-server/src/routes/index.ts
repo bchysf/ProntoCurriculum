@@ -4,6 +4,8 @@ import authRouter from "./auth";
 import parseCvRouter from "./parseCv";
 import optimizeCvRouter from "./optimizeCv";
 import experiencesRouter from "./experiences";
+import highlightsRouter from "./highlights";
+import publicProfileRouter from "./publicProfile";
 import tailorCvRouter from "./tailorCv";
 import translateCvRouter from "./translateCv";
 import cvsRouter from "./cvs";
@@ -31,6 +33,8 @@ router.use(["/auth", "/logout", "/mobile-auth"], authRateLimiter);
 router.use(authRouter);
 
 router.use(experiencesRouter);
+router.use(highlightsRouter);
+router.use(publicProfileRouter);
 router.use(cvsRouter);
 router.use(profileRouter);
 router.use(billingRouter);

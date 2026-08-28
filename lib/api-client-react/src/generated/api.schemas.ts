@@ -96,6 +96,109 @@ export const DeleteSuccessValue = {
 } as const;
 export type DeleteSuccess = typeof DeleteSuccessValue;
 
+export type StoredHighlightType = typeof StoredHighlightType[keyof typeof StoredHighlightType];
+
+
+export const StoredHighlightType = {
+  volunteering: 'volunteering',
+  honor: 'honor',
+  project: 'project',
+  other: 'other',
+} as const;
+
+export interface StoredHighlight {
+  id: string;
+  userId: string;
+  type: StoredHighlightType;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  link?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type HighlightInputType = typeof HighlightInputType[keyof typeof HighlightInputType];
+
+
+export const HighlightInputType = {
+  volunteering: 'volunteering',
+  honor: 'honor',
+  project: 'project',
+  other: 'other',
+} as const;
+
+export interface HighlightInput {
+  type: HighlightInputType;
+  /** @minLength 1 */
+  title: string;
+  description?: string;
+  date?: string;
+  link?: string;
+}
+
+export interface HighlightListEnvelope {
+  highlights: StoredHighlight[];
+}
+
+export interface HighlightEnvelope {
+  highlight: StoredHighlight;
+}
+
+export type PublicProfileSectionKey = typeof PublicProfileSectionKey[keyof typeof PublicProfileSectionKey];
+
+
+export const PublicProfileSectionKey = {
+  experiences: 'experiences',
+  education: 'education',
+  languages: 'languages',
+  skills: 'skills',
+  highlights: 'highlights',
+} as const;
+
+export interface PublicProfileSection {
+  key: PublicProfileSectionKey;
+  visible: boolean;
+  order: number;
+}
+
+export interface StoredPublicProfile {
+  id: string;
+  userId: string;
+  slug: string;
+  published: boolean;
+  /** @nullable */
+  photo?: string | null;
+  /** @nullable */
+  headline?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  selectedExperienceIds?: string[];
+  sections?: PublicProfileSection[];
+  createdAt: string;
+  updatedAt: string;
+  /**
+     * Absolute /p/:slug URL, only present when published.
+     * @nullable
+     */
+  publicUrl: string | null;
+}
+
+export interface PublicProfileInput {
+  photo?: string;
+  headline?: string;
+  bio?: string;
+  selectedExperienceIds?: string[];
+  sections?: PublicProfileSection[];
+}
+
+export interface PublicProfileEnvelope {
+  profile?: StoredPublicProfile | null;
+}
+
 export interface FetchJobRequest {
   /** @minLength 1 */
   url: string;

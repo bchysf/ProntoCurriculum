@@ -1,9 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, subscriptionsTable } from "@workspace/db";
+import { db } from "@workspace/db";
 import { userCvsTable, experiencesTable } from "@workspace/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
-import { isAdminEmail } from "../middlewares/authMiddleware";
+import { isProUser } from "../middlewares/proGate";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
@@ -16,20 +16,6 @@ function getUserId(req: Request, res: Response): string | null {
     return null;
   }
   return userId;
-}
-
-// The site admin gets Pro perks unconditionally — they shouldn't need a
-// subscriptionsTable row (Stripe or manually granted) just to use their own app.
-async function isProUser(userId: string | undefined, email?: string | null): Promise<boolean> {
-  if (isAdminEmail(email)) return true;
-  if (!userId) return false;
-  const [sub] = await db
-    .select({ plan: subscriptionsTable.plan })
-    .from(subscriptionsTable)
-    .where(
-      sql`${subscriptionsTable.userId} = ${userId} and ${subscriptionsTable.status} = 'active' and ${subscriptionsTable.plan} <> 'free' and ${subscriptionsTable.currentPeriodEnd} > now()`
-    );
-  return !!sub;
 }
 
 interface CVExperience {

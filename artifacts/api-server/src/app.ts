@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import stripeWebhookRouter from "./routes/stripeWebhook";
 import ssrRouter from "./routes/ssr";
+import publicProfileSsrRouter from "./routes/publicProfileSsr";
 import { logger } from "./lib/logger";
 import { authMiddleware } from "./middlewares/authMiddleware";
 
@@ -36,8 +37,9 @@ app.use(cookieParser());
 // so it must be mounted before the global express.json() body parser.
 app.use("/api", stripeWebhookRouter);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Default 100kb limit is too small for base64-encoded photo uploads (CV photos, profile photos).
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(authMiddleware);
 
 app.use("/api", router);
@@ -45,5 +47,6 @@ app.use("/api", router);
 // Server-rendered SEO/GEO pages, mounted at the root path (see routes/ssr.ts
 // and vercel.json's rewrite for /lavoro/*).
 app.use(ssrRouter);
+app.use(publicProfileSsrRouter);
 
 export default app;

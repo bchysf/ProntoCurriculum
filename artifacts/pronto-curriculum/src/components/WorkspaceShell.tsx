@@ -32,6 +32,7 @@ const IC = {
   menu: 'M4 6h16|M4 12h16|M4 18h16',
   close: 'M18 6L6 18|M6 6l12 12',
   chevronsLeft: 'M11 17l-5-5 5-5|M18 17l-5-5 5-5',
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z|M3 12h18|M12 3a15 15 0 0 1 4 9 15 15 0 0 1-4 9 15 15 0 0 1-4-9 15 15 0 0 1 4-9z',
 };
 
 const SIDEBAR_COLLAPSE_KEY = 'pc_sidebar_collapsed';
@@ -84,6 +85,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
     { key: 'apps', icon: IC.list, label: t('ws.applications'), page: 'candidature', activeOn: ['candidature'], locked: !isAuthenticated },
     { key: 'letter', icon: IC.mail, label: t('ws.coverLetter'), page: 'cover-letter', activeOn: ['cover-letter'], locked: !isAuthenticated },
     { key: 'archive', icon: IC.briefcase, label: t('ws.archive'), page: 'archivio', activeOn: ['archivio'], locked: !isAuthenticated },
+    { key: 'profile-page', icon: IC.globe, label: 'Pagina pubblica', page: 'profile-page', activeOn: ['profile-page'], locked: !isAuthenticated },
     { key: 'concorsi', icon: IC.building, label: t('ws.concorsi'), page: 'concorsi', activeOn: ['concorsi'], locked: false },
     { key: 'referral', icon: IC.gift, label: t('ws.referral'), page: 'referral', activeOn: ['referral'], locked: !isAuthenticated },
     ...(user?.email?.toLowerCase() === ADMIN_EMAIL

@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import CreateCvWizard from './pages/CreateCvWizard';
 import BuilderStep2 from './pages/BuilderStep2';
 import Archivio from './pages/Archivio';
+import ProfilePageEditor from './pages/ProfilePageEditor';
 import TailorCv from './pages/TailorCv';
 import Candidature from './pages/Candidature';
 import Dashboard from './pages/Dashboard';
@@ -170,6 +171,11 @@ function AppInner() {
         {page === 'archivio' && (
           <WorkspaceShell page={page} {...shellProps}>
             <Archivio onNavigate={navigate} />
+          </WorkspaceShell>
+        )}
+        {page === 'profile-page' && (
+          <WorkspaceShell page={page} {...shellProps}>
+            <ProfilePageEditor onNavigate={navigate} />
           </WorkspaceShell>
         )}
         {page === 'tailor' && (

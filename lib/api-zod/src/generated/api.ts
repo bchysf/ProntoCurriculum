@@ -370,3 +370,254 @@ export const DeleteExperienceResponse = zod.object({
 })
 
 
+/**
+ * @summary List all saved highlights for the authenticated user
+ */
+export const ListHighlightsHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const ListHighlightsResponse = zod.object({
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "type": zod.enum(['volunteering', 'honor', 'project', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "link": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create a new saved highlight
+ */
+export const CreateHighlightHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+
+
+
+export const CreateHighlightBody = zod.object({
+  "type": zod.enum(['volunteering', 'honor', 'project', 'other']),
+  "title": zod.string().min(1),
+  "description": zod.string().optional(),
+  "date": zod.string().optional(),
+  "link": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a saved highlight
+ */
+export const UpdateHighlightParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateHighlightHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+
+
+
+export const UpdateHighlightBody = zod.object({
+  "type": zod.enum(['volunteering', 'honor', 'project', 'other']),
+  "title": zod.string().min(1),
+  "description": zod.string().optional(),
+  "date": zod.string().optional(),
+  "link": zod.string().optional()
+})
+
+export const UpdateHighlightResponse = zod.object({
+  "highlight": zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "type": zod.enum(['volunteering', 'honor', 'project', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "link": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Delete a saved highlight
+ */
+export const DeleteHighlightParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteHighlightHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const DeleteHighlightResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Get the authenticated user's public profile page configuration
+ */
+export const GetPublicProfileHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const GetPublicProfileResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "slug": zod.string(),
+  "published": zod.boolean(),
+  "photo": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "publicUrl": zod.string().nullable().describe('Absolute \/p\/:slug URL, only present when published.')
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Create or update the authenticated user's public profile page (Pro only)
+ */
+export const SavePublicProfileHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const SavePublicProfileBody = zod.object({
+  "photo": zod.string().optional(),
+  "headline": zod.string().optional(),
+  "bio": zod.string().optional(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional()
+})
+
+export const SavePublicProfileResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "slug": zod.string(),
+  "published": zod.boolean(),
+  "photo": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "publicUrl": zod.string().nullable().describe('Absolute \/p\/:slug URL, only present when published.')
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Publish the authenticated user's public profile page (Pro only)
+ */
+export const PublishPublicProfileHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const PublishPublicProfileResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "slug": zod.string(),
+  "published": zod.boolean(),
+  "photo": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "publicUrl": zod.string().nullable().describe('Absolute \/p\/:slug URL, only present when published.')
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Unpublish the authenticated user's public profile page
+ */
+export const UnpublishPublicProfileHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const UnpublishPublicProfileResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "slug": zod.string(),
+  "published": zod.boolean(),
+  "photo": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "publicUrl": zod.string().nullable().describe('Absolute \/p\/:slug URL, only present when published.')
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Regenerate the authenticated user's public profile page URL slug (Pro only)
+ */
+export const RegeneratePublicProfileSlugHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const RegeneratePublicProfileSlugResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "slug": zod.string(),
+  "published": zod.boolean(),
+  "photo": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "selectedExperienceIds": zod.array(zod.string()).optional(),
+  "sections": zod.array(zod.object({
+  "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
+  "visible": zod.boolean(),
+  "order": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "publicUrl": zod.string().nullable().describe('Absolute \/p\/:slug URL, only present when published.')
+}),zod.null()]).optional()
+})
+
+
