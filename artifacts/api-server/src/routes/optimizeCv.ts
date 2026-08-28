@@ -177,14 +177,14 @@ router.post('/optimize-cv', async (req, res) => {
 
 router.post('/optimize-field', async (req, res) => {
   const { field, value, context, lang = 'IT', mode } = req.body as {
-    field?: 'summary' | 'exp' | 'exp-tips';
+    field?: 'summary' | 'exp' | 'exp-tips' | 'exp-role' | 'exp-skills';
     value?: string;
     context?: Record<string, unknown>;
     lang?: string;
     mode?: string;
   };
 
-  if (!field || (!value && field !== 'exp-tips')) {
+  if (!field || (!value && field !== 'exp-tips' && field !== 'exp-role' && field !== 'exp-skills')) {
     res.status(400).json({ error: 'Parametri mancanti' });
     return;
   }
@@ -192,6 +192,34 @@ router.post('/optimize-field', async (req, res) => {
   const langName = LANG_NAMES[lang] ?? 'italiano';
 
   try {
+    if (field === 'exp-role') {
+      const company = (context?.company as string) ?? 'azienda';
+      const desc = (value ?? '').trim();
+      const currentRole = ((context?.currentRole as string) ?? '').trim();
+
+      const prompt = `Sei un HR Director senior. Devi ${currentRole ? 'migliorare la formulazione di' : 'dedurre'} il titolo professionale (job title) di un'esperienza lavorativa su un CV, in ${langName}.\nRegole: titolo breve (2-5 parole), standard di settore, senza azienda o date, senza virgolette.\n${currentRole ? `Titolo attuale (da rendere più professionale/standard, mantenendo il significato): "${currentRole}"` : 'Nessun titolo è stato ancora inserito: deducilo dalla descrizione sottostante.'}\nAzienda: ${company}\nDescrizione dell'esperienza: "${desc || 'non specificata'}"\nRestituisci SOLO il titolo in ${langName}. Niente JSON, niente virgolette esterne, niente spiegazioni.`;
+
+      const raw = await generateText(prompt);
+      const result = raw.trim().replace(/^["'“]+|["'”]+$/g, '');
+      res.json({ result });
+      return;
+    }
+
+    if (field === 'exp-skills') {
+      const role = (context?.role as string) ?? 'non specificato';
+      const company = (context?.company as string) ?? 'azienda';
+      const desc = (value ?? '').trim();
+      const existingSkills = (context?.existingSkills as string[] | undefined) ?? [];
+
+      const prompt = `Sei un HR Director senior. Analizza questa esperienza lavorativa ed estrai/suggerisci le competenze (skill) realmente dimostrate, in ${langName}.\nRegole: 3-6 competenze specifiche e concrete (strumenti, tecnologie, metodologie, aree di competenza) — mai soft skill generiche isolate, mai lingue parlate.\nDeducile SOLO da ciò che è scritto nella descrizione e dal ruolo/azienda, non inventare strumenti o tecnologie mai citati né deducibili con certezza dal contesto.\n${existingSkills.length ? `Competenze già presenti (non ripeterle): ${existingSkills.join(', ')}.` : ''}\nRestituisci SOLO un array JSON di stringhe in ${langName}. Zero testo prima o dopo. Zero markdown.\nEsempio: ["Gestione budget", "Coordinamento fornitori", "Excel avanzato"]\n\nRuolo: ${role} presso ${company}\nDescrizione: "${desc || 'non specificata'}"`;
+
+      const raw = await generateText(prompt);
+      const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const skills = JSON.parse(jsonStr) as string[];
+      res.json({ skills: Array.isArray(skills) ? skills : [] });
+      return;
+    }
+
     if (field === 'exp-tips') {
       const role = (context?.role as string) ?? 'non specificato';
       const company = (context?.company as string) ?? 'azienda';

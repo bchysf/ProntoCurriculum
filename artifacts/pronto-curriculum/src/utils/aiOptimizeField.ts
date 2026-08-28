@@ -99,6 +99,54 @@ export async function aiApplyTip(
   return data.result;
 }
 
+export async function aiSuggestExpRole(
+  exp: { company: string; desc: string; currentRole?: string },
+  lang = 'IT',
+): Promise<string> {
+  const response = await fetch('/api/optimize-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      field: 'exp-role',
+      lang,
+      value: exp.desc,
+      context: { company: exp.company, currentRole: exp.currentRole },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? 'Errore suggerimento ruolo');
+  }
+
+  const data = await response.json() as { result: string };
+  return data.result;
+}
+
+export async function aiSuggestExpSkills(
+  exp: { role: string; company: string; desc: string; existingSkills?: string[] },
+  lang = 'IT',
+): Promise<string[]> {
+  const response = await fetch('/api/optimize-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      field: 'exp-skills',
+      lang,
+      value: exp.desc,
+      context: { role: exp.role, company: exp.company, existingSkills: exp.existingSkills },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? 'Errore suggerimento competenze');
+  }
+
+  const data = await response.json() as { skills: string[] };
+  return Array.isArray(data.skills) ? data.skills : [];
+}
+
 export async function aiExpTips(
   exp: { role: string; company: string; desc: string },
   lang = 'IT',

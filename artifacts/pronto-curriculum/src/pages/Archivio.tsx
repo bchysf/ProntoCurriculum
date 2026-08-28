@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import type { Page } from '../types';
-import { useT } from '../i18n/LanguageContext';
+import { useT, useLanguage } from '../i18n/LanguageContext';
+import { aiOptimizeExp, aiSuggestExpRole, aiSuggestExpSkills } from '../utils/aiOptimizeField';
+import { toast } from 'sonner';
 
 interface StoredExp {
   id: string;
@@ -70,6 +72,7 @@ interface ArchivioProps {
 export default function Archivio({ onNavigate }: ArchivioProps) {
   const { isAuthenticated, isLoading, login } = useAuth();
   const t = useT();
+  const { lang } = useLanguage();
   const [experiences, setExperiences] = useState<StoredExp[]>([]);
   const [fetching, setFetching] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -77,6 +80,62 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
   const [form, setForm] = useState<ExpForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [improvingDesc, setImprovingDesc] = useState(false);
+  const [suggestingRole, setSuggestingRole] = useState(false);
+  const [suggestingSkills, setSuggestingSkills] = useState(false);
+
+  async function handleImproveDescription() {
+    if (!form.description.trim()) {
+      toast.error(t('arch.errNeedDescForAi'));
+      return;
+    }
+    setImprovingDesc(true);
+    try {
+      const result = await aiOptimizeExp({ id: editId ?? 'new', role: form.role, company: form.company, desc: form.description }, lang);
+      setForm(f => ({ ...f, description: result }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('arch.errAi'));
+    } finally {
+      setImprovingDesc(false);
+    }
+  }
+
+  async function handleSuggestRole() {
+    if (!form.description.trim() && !form.role.trim()) {
+      toast.error(t('arch.errNeedDescForAi'));
+      return;
+    }
+    setSuggestingRole(true);
+    try {
+      const result = await aiSuggestExpRole({ company: form.company, desc: form.description, currentRole: form.role }, lang);
+      if (result) setForm(f => ({ ...f, role: result }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('arch.errAi'));
+    } finally {
+      setSuggestingRole(false);
+    }
+  }
+
+  async function handleSuggestSkills() {
+    if (!form.description.trim() && !form.role.trim()) {
+      toast.error(t('arch.errNeedDescForAi'));
+      return;
+    }
+    setSuggestingSkills(true);
+    try {
+      const existingSkills = form.skills ? form.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const suggested = await aiSuggestExpSkills({ role: form.role, company: form.company, desc: form.description, existingSkills }, lang);
+      const merged = [...existingSkills];
+      for (const s of suggested) {
+        if (!merged.some(m => m.toLowerCase() === s.toLowerCase())) merged.push(s);
+      }
+      setForm(f => ({ ...f, skills: merged.join(', ') }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('arch.errAi'));
+    } finally {
+      setSuggestingSkills(false);
+    }
+  }
 
   async function load() {
     setFetching(true);
@@ -208,7 +267,19 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
               <input type="text" placeholder={t('arch.placeholderCompany')} value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label>{t('arch.role')}</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ marginBottom: 0 }}>{t('arch.role')}</label>
+                <button
+                  type="button"
+                  className="ai-btn"
+                  style={{ padding: '2px 8px', fontSize: 11 }}
+                  onClick={() => void handleSuggestRole()}
+                  disabled={suggestingRole}
+                  title={t('arch.suggestRole')}
+                >
+                  {suggestingRole ? '…' : t('arch.suggestRole')}
+                </button>
+              </div>
               <input type="text" placeholder={t('arch.placeholderRole')} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
             </div>
           </div>
@@ -250,12 +321,36 @@ export default function Archivio({ onNavigate }: ArchivioProps) {
           </div>
 
           <div className="form-group" style={{ marginTop: 12 }}>
-            <label>{t('arch.description')}</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ marginBottom: 0 }}>{t('arch.description')}</label>
+              <button
+                type="button"
+                className="ai-btn"
+                style={{ padding: '2px 8px', fontSize: 11 }}
+                onClick={() => void handleImproveDescription()}
+                disabled={improvingDesc}
+                title={t('arch.improveDesc')}
+              >
+                {improvingDesc ? '…' : t('arch.improveDesc')}
+              </button>
+            </div>
             <textarea rows={3} placeholder={t('arch.descPlaceholder')} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
           </div>
 
           <div className="form-group">
-            <label>{t('arch.skillsUsed')}</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ marginBottom: 0 }}>{t('arch.skillsUsed')}</label>
+              <button
+                type="button"
+                className="ai-btn"
+                style={{ padding: '2px 8px', fontSize: 11 }}
+                onClick={() => void handleSuggestSkills()}
+                disabled={suggestingSkills}
+                title={t('arch.suggestSkills')}
+              >
+                {suggestingSkills ? '…' : t('arch.suggestSkills')}
+              </button>
+            </div>
             <input type="text" placeholder={t('arch.skillsPlaceholder')} value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} />
           </div>
 
