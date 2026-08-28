@@ -30,6 +30,7 @@ export * from './mobileTokenExchangeRequest';
 export * from './mobileTokenExchangeSuccess';
 export * from './publicProfileEnvelope';
 export * from './publicProfileInput';
+export * from './publicProfileInputLanguage';
 export * from './publicProfileSection';
 export * from './publicProfileSectionKey';
 export * from './storedExperience';

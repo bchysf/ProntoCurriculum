@@ -974,6 +974,9 @@ components:
           type: [string, 'null']
         bio:
           type: [string, 'null']
+        language:
+          type: string
+          description: "Language the public page is rendered in: IT, EN, FR, DE, ES, PT."
         selectedExperienceIds:
           type: array
           items:
@@ -1000,6 +1003,9 @@ components:
           type: string
         bio:
           type: string
+        language:
+          type: string
+          enum: [IT, EN, FR, DE, ES, PT]
         selectedExperienceIds:
           type: array
           items:

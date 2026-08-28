@@ -32,6 +32,11 @@ export interface PublicProfilePageData {
   photo?: string | null;
   headline?: string | null;
   bio?: string | null;
+  city?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  linkedin?: string | null;
+  website?: string | null;
   sections: PublicProfileSection[];
   experiences: PublicProfileExperience[];
   highlights: PublicProfileHighlight[];
@@ -170,20 +175,17 @@ const SECTION_RENDERERS: Record<PublicProfileSection["key"], (data: PublicProfil
   skills: (d, ui) => renderSkills(d.skills, ui),
 };
 
-const LANG_LABELS: Record<string, string> = { IT: "IT", EN: "EN", FR: "FR", DE: "DE", ES: "ES", PT: "PT" };
-
 const PROFILE_CSS = `
-.pp-langbar { display:flex; gap:6px; }
-.pp-langbar a { font-family:var(--f-mono); font-size:11px; font-weight:500; letter-spacing:.06em; color:var(--ink-40); text-decoration:none; padding:6px 9px; border-radius:7px; }
-.pp-langbar a:hover { color:var(--ink); background:#F4F4F8; }
-.pp-langbar a.active { color:var(--accent); background:rgba(47,42,229,.08); }
-.pp-hero-wrap { position:relative; width:100%; max-width:1120px; aspect-ratio:21/6; border-radius:20px 20px 0 0; overflow:hidden; border:1px solid var(--hair-soft); border-bottom:none; margin-top:8px; }
+.pp-hero-wrap { position:relative; width:100%; max-width:1120px; aspect-ratio:21/5; border-radius:20px 20px 0 0; overflow:hidden; border:1px solid var(--hair-soft); border-bottom:none; margin-top:8px; }
 .pp-hero-wrap svg { display:block; width:100%; height:100%; }
 .pp-header-card { max-width:1120px; border:1px solid var(--hair-soft); border-top:none; border-radius:0 0 20px 20px; padding:0 36px 28px; margin-bottom:36px; position:relative; }
 .pp-photo { width:132px; height:132px; border-radius:50%; object-fit:cover; border:5px solid #fff; box-shadow:0 8px 24px rgba(20,23,31,.16); margin-top:-66px; background:#fff; }
 .pp-photo-fallback { width:132px; height:132px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--violet)); margin-top:-66px; border:5px solid #fff; box-shadow:0 8px 24px rgba(20,23,31,.16); }
 .pp-name { font-family:var(--f-display); font-weight:700; font-size:clamp(26px,3.2vw,38px); letter-spacing:-.03em; line-height:1.1; margin-top:16px; }
 .pp-headline { font-size:15px; color:var(--ink-60); margin-top:6px; font-weight:500; }
+.pp-contact { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-size:13px; color:var(--ink-60); }
+.pp-contact a { color:var(--ink-60); text-decoration:none; }
+.pp-contact a:hover { color:var(--accent); }
 .pp-bio { font-size:15.5px; color:var(--ink-60); line-height:1.75; max-width:720px; margin-top:16px; }
 .pp-layout { display:grid; grid-template-columns:200px 1fr; gap:48px; align-items:start; max-width:1120px; }
 .pp-pagenav { position:sticky; top:88px; display:flex; flex-direction:column; gap:2px; }
@@ -217,7 +219,7 @@ const PROFILE_CSS = `
 export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang: LangCode = "IT"): string {
   const ui = UI_STRINGS[currentLang];
   const title = `${data.fullName} — ProntoCurriculum`;
-  const heroSvg = buildHeroSvg({ motif: "profile", seed: data.slug, width: 1120, height: 280 });
+  const heroSvg = buildHeroSvg({ seed: data.slug, width: 1120, height: 224 });
   const orderedSections = [...data.sections]
     .filter((s) => s.visible)
     .sort((a, b) => a.order - b.order)
@@ -225,9 +227,14 @@ export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang
     .filter((s) => s.content);
   const sectionsHtml = orderedSections.map((s) => `<section class="sec" id="sec-${s.key}">${s.content}</section>`).join("");
   const navLinks = orderedSections.map((s) => `<a href="#sec-${s.key}" data-nav="${s.key}">${escapeHtml(ui.sections[s.key])}</a>`).join("");
-  const langBar = Object.entries(LANG_LABELS)
-    .map(([code, label]) => `<a href="?lang=${code}" class="${code === currentLang ? "active" : ""}">${label}</a>`)
-    .join("");
+
+  const contactParts: string[] = [];
+  if (data.city) contactParts.push(escapeHtml(data.city));
+  if (data.email) contactParts.push(`<a href="mailto:${escapeHtml(data.email)}">${escapeHtml(data.email)}</a>`);
+  if (data.phone) contactParts.push(escapeHtml(data.phone));
+  if (data.linkedin) contactParts.push(`<a href="${escapeHtml(data.linkedin)}" target="_blank" rel="noopener nofollow noreferrer">LinkedIn</a>`);
+  if (data.website) contactParts.push(`<a href="${escapeHtml(data.website)}" target="_blank" rel="noopener nofollow noreferrer">${escapeHtml(data.website.replace(/^https?:\/\//, ""))}</a>`);
+  const contactHtml = contactParts.length ? `<div class="pp-contact">${contactParts.join('<span aria-hidden="true">·</span>')}</div>` : "";
 
   return `<!DOCTYPE html>
 <html lang="${currentLang.toLowerCase()}">
@@ -247,10 +254,7 @@ export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang
     <div class="shell">
       <nav aria-label="Navigazione principale">
         <a class="brand" href="https://prontocurriculum.it"><img src="/logo-icon.png" alt="" /><span>ProntoCurriculum</span></a>
-        <div style="display:flex; align-items:center; gap:18px;">
-          <div class="pp-langbar" aria-label="Lingua della pagina">${langBar}</div>
-          <a class="btn btn-ink btn-sm" href="https://prontocurriculum.it/crea-cv">${escapeHtml(ui.createYourPage)}</a>
-        </div>
+        <a class="btn btn-ink btn-sm" href="https://prontocurriculum.it/crea-cv">${escapeHtml(ui.createYourPage)}</a>
       </nav>
     </div>
   </header>
@@ -261,6 +265,7 @@ export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang
       ${data.photo ? `<img class="pp-photo" src="${escapeHtml(data.photo)}" alt="${escapeHtml(data.fullName)}" />` : `<div class="pp-photo-fallback"></div>`}
       <div class="pp-name">${escapeHtml(data.fullName)}</div>
       ${data.headline ? `<div class="pp-headline">${escapeHtml(data.headline)}</div>` : ""}
+      ${contactHtml}
       ${data.bio ? `<p class="pp-bio">${escapeHtml(data.bio)}</p>` : ""}
     </div>
 

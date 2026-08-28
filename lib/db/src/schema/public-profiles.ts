@@ -27,6 +27,7 @@ export const publicProfilesTable = pgTable("public_profiles", {
   photo: text("photo"),
   headline: varchar("headline", { length: 255 }),
   bio: text("bio"),
+  language: varchar("language", { length: 2 }).notNull().default("IT"),
   selectedExperienceIds: text("selected_experience_ids").array(),
   sections: jsonb("sections")
     .$type<PublicProfileSection[]>()

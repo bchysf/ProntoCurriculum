@@ -18,6 +18,24 @@ function sendHtml(res: Response, html: string, status = 200): void {
   res.send(html);
 }
 
+const MONTH_INDEX: Record<string, number> = {
+  gen: 1, jan: 1, feb: 2, mar: 3, apr: 4, mag: 5, may: 5, giu: 6, jun: 6,
+  lug: 7, jul: 7, ago: 8, aug: 8, set: 9, sep: 9, ott: 10, oct: 10, nov: 11, dic: 12, dec: 12,
+};
+
+// Best-effort chronological key for freeform date strings like "Mar 2020",
+// "2021", "Gennaio 2019" — used to auto-sort experiences most-recent-first
+// since users type dates as free text, not structured values.
+function dateSortKey(dateStr?: string | null): number {
+  if (!dateStr) return 0;
+  const yearMatch = dateStr.match(/\d{4}/);
+  if (!yearMatch) return 0;
+  const year = parseInt(yearMatch[0], 10);
+  const monthMatch = dateStr.toLowerCase().match(/[a-zà-ù]{3,}/);
+  const month = monthMatch ? (MONTH_INDEX[monthMatch[0].slice(0, 3)] ?? 0) : 0;
+  return year * 12 + month;
+}
+
 router.get("/p/:slug", async (req, res) => {
   const slug = String(req.params.slug ?? "");
 
@@ -38,10 +56,15 @@ router.get("/p/:slug", async (req, res) => {
   const experienceRows = selectedIds.length
     ? await db.select().from(experiencesTable).where(inArray(experiencesTable.id, selectedIds))
     : [];
-  const experienceById = new Map(experienceRows.map((e) => [e.id, e]));
-  const orderedExperiences = selectedIds
-    .map((id) => experienceById.get(id))
-    .filter((e): e is (typeof experienceRows)[number] => !!e);
+  const selectedIdSet = new Set(selectedIds);
+  // Always chronological (current roles first, then most recent start date) —
+  // free-text dates mean users can't reliably hand-order these themselves.
+  const orderedExperiences = experienceRows
+    .filter((e) => selectedIdSet.has(e.id))
+    .sort((a, b) => {
+      if (!!a.isCurrent !== !!b.isCurrent) return a.isCurrent ? -1 : 1;
+      return dateSortKey(b.startDate) - dateSortKey(a.startDate);
+    });
 
   const highlightRows = await db.select().from(highlightsTable).where(eq(highlightsTable.userId, profile.userId));
 
@@ -53,6 +76,11 @@ router.get("/p/:slug", async (req, res) => {
     photo: profile.photo,
     headline: profile.headline,
     bio: profile.bio,
+    city: userProfile?.city,
+    phone: userProfile?.phone,
+    email: user?.email,
+    linkedin: userProfile?.linkedin,
+    website: userProfile?.website,
     sections: profile.sections,
     experiences: orderedExperiences.map((e) => ({
       company: e.company,
@@ -77,8 +105,7 @@ router.get("/p/:slug", async (req, res) => {
     updatedAt: profile.updatedAt?.toISOString(),
   };
 
-  const requestedLang = String(req.query.lang ?? "IT").toUpperCase();
-  const lang = (SUPPORTED_LANGS[requestedLang] ? requestedLang : "IT") as LangCode;
+  const lang = (SUPPORTED_LANGS[profile.language] ? profile.language : "IT") as LangCode;
   const finalData = await getTranslatedProfile(data, lang);
 
   sendHtml(res, renderPublicProfileHtml(finalData, lang));

@@ -18,6 +18,8 @@ export interface StoredPublicProfile {
   headline?: string | null;
   /** @nullable */
   bio?: string | null;
+  /** Language the public page is rendered in: IT, EN, FR, DE, ES, PT. */
+  language?: string;
   selectedExperienceIds?: string[];
   sections?: PublicProfileSection[];
   createdAt: Date;

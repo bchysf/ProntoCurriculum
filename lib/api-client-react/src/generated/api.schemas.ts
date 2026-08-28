@@ -176,6 +176,8 @@ export interface StoredPublicProfile {
   headline?: string | null;
   /** @nullable */
   bio?: string | null;
+  /** Language the public page is rendered in: IT, EN, FR, DE, ES, PT. */
+  language?: string;
   selectedExperienceIds?: string[];
   sections?: PublicProfileSection[];
   createdAt: string;
@@ -187,10 +189,23 @@ export interface StoredPublicProfile {
   publicUrl: string | null;
 }
 
+export type PublicProfileInputLanguage = typeof PublicProfileInputLanguage[keyof typeof PublicProfileInputLanguage];
+
+
+export const PublicProfileInputLanguage = {
+  IT: 'IT',
+  EN: 'EN',
+  FR: 'FR',
+  DE: 'DE',
+  ES: 'ES',
+  PT: 'PT',
+} as const;
+
 export interface PublicProfileInput {
   photo?: string;
   headline?: string;
   bio?: string;
+  language?: PublicProfileInputLanguage;
   selectedExperienceIds?: string[];
   sections?: PublicProfileSection[];
 }

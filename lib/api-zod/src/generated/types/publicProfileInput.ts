@@ -5,12 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PublicProfileInputLanguage } from './publicProfileInputLanguage';
 import type { PublicProfileSection } from './publicProfileSection';
 
 export interface PublicProfileInput {
   photo?: string;
   headline?: string;
   bio?: string;
+  language?: PublicProfileInputLanguage;
   selectedExperienceIds?: string[];
   sections?: PublicProfileSection[];
 }

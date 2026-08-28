@@ -31,6 +31,8 @@ interface ProfileSection {
   order: number;
 }
 
+type LangCode = 'IT' | 'EN' | 'FR' | 'DE' | 'ES' | 'PT';
+
 interface PublicProfile {
   id: string;
   slug: string;
@@ -38,10 +40,20 @@ interface PublicProfile {
   photo: string | null;
   headline: string | null;
   bio: string | null;
+  language: LangCode;
   selectedExperienceIds: string[];
   sections: ProfileSection[];
   publicUrl: string | null;
 }
+
+const LANGUAGE_OPTIONS: { code: LangCode; label: string }[] = [
+  { code: 'IT', label: 'Italiano' },
+  { code: 'EN', label: 'English' },
+  { code: 'FR', label: 'Français' },
+  { code: 'DE', label: 'Deutsch' },
+  { code: 'ES', label: 'Español' },
+  { code: 'PT', label: 'Português' },
+];
 
 const DEFAULT_SECTIONS: ProfileSection[] = [
   { key: 'experiences', visible: true, order: 0 },
@@ -86,8 +98,10 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
   const [photo, setPhoto] = useState<string | null>(null);
   const [headline, setHeadline] = useState('');
   const [bio, setBio] = useState('');
+  const [language, setLanguage] = useState<LangCode>('IT');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sections, setSections] = useState<ProfileSection[]>(DEFAULT_SECTIONS);
+  const [syncingFromCv, setSyncingFromCv] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -104,6 +118,19 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
   const [improvingHeadline, setImprovingHeadline] = useState(false);
   const [improvingBio, setImprovingBio] = useState(false);
 
+  interface UserProfileSummary {
+    headline: string | null;
+    summary: string | null;
+    city: string | null;
+    phone: string | null;
+    linkedin: string | null;
+    website: string | null;
+    skills: string[] | null;
+    education: Array<{ id: string; institution: string; degree: string; grade: string; from: string; to: string }> | null;
+    languages: Array<{ id: string; name: string; level: string }> | null;
+  }
+  const [userProfile, setUserProfile] = useState<UserProfileSummary | null>(null);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -116,10 +143,11 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       const profileData = await profileRes.json() as { profile: PublicProfile | null };
       const expData = await expRes.json() as { experiences: StoredExp[] };
       const hlData = await hlRes.json() as { highlights: StoredHighlight[] };
-      const userProfileData = await userProfileRes.json() as { profile: { headline?: string | null; summary?: string | null } | null };
+      const userProfileData = await userProfileRes.json() as { profile: UserProfileSummary | null };
 
       setExperiences(expData.experiences ?? []);
       setHighlights(hlData.highlights ?? []);
+      setUserProfile(userProfileData.profile);
 
       const p = profileData.profile;
       setProfile(p);
@@ -128,12 +156,54 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       // user doesn't have to retype what they already filled in the dashboard.
       setHeadline(p?.headline ?? userProfileData.profile?.headline ?? '');
       setBio(p?.bio ?? userProfileData.profile?.summary ?? '');
+      setLanguage(p?.language ?? 'IT');
       setSelectedIds(p?.selectedExperienceIds ?? []);
       setSections(p?.sections?.length ? p.sections : DEFAULT_SECTIONS);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  async function handleSyncFromCv() {
+    setSyncingFromCv(true);
+    try {
+      const cvsRes = await fetch('/api/cvs', { credentials: 'include' });
+      const cvsData = await cvsRes.json() as { cvs?: Array<{ cvData: { title?: string; phone?: string; city?: string; linkedin?: string; summary?: string; skills?: string[]; education?: unknown[]; languages?: unknown[] } }> };
+      const latest = cvsData.cvs?.[0];
+      if (!latest) {
+        toast.error('Nessun CV salvato da cui sincronizzare');
+        return;
+      }
+      const d = latest.cvData;
+      const body = {
+        headline: userProfile?.headline || d.title || null,
+        phone: userProfile?.phone || d.phone || null,
+        city: userProfile?.city || d.city || null,
+        linkedin: userProfile?.linkedin || d.linkedin || null,
+        website: userProfile?.website || null,
+        summary: userProfile?.summary || d.summary || null,
+        skills: userProfile?.skills?.length ? userProfile.skills : (d.skills ?? []),
+        education: userProfile?.education?.length ? userProfile.education : (d.education ?? []),
+        languages: userProfile?.languages?.length ? userProfile.languages : (d.languages ?? []),
+      };
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Errore durante la sincronizzazione');
+      const data = await res.json() as { profile: UserProfileSummary };
+      setUserProfile(data.profile);
+      if (!headline) setHeadline(data.profile.headline ?? '');
+      if (!bio) setBio(data.profile.summary ?? '');
+      toast.success('Profilo sincronizzato dal tuo ultimo CV');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore durante la sincronizzazione');
+    } finally {
+      setSyncingFromCv(false);
+    }
+  }
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -151,13 +221,14 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     void loadAll();
   }, [isAuthenticated, loadAll]);
 
-  async function persist(patch?: Partial<{ photo: string | null; headline: string; bio: string; selectedExperienceIds: string[]; sections: ProfileSection[] }>) {
+  async function persist(patch?: Partial<{ photo: string | null; headline: string; bio: string; language: LangCode; selectedExperienceIds: string[]; sections: ProfileSection[] }>) {
     setSaving(true);
     try {
       const body = {
         photo: patch?.photo !== undefined ? patch.photo : photo,
         headline: patch?.headline !== undefined ? patch.headline : headline,
         bio: patch?.bio !== undefined ? patch.bio : bio,
+        language: patch?.language ?? language,
         selectedExperienceIds: patch?.selectedExperienceIds ?? selectedIds,
         sections: patch?.sections ?? sections,
       };
@@ -238,18 +309,6 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
   function toggleExperience(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  }
-
-  function moveExperience(id: string, dir: -1 | 1) {
-    setSelectedIds(prev => {
-      const idx = prev.indexOf(id);
-      if (idx < 0) return prev;
-      const next = [...prev];
-      const swapWith = idx + dir;
-      if (swapWith < 0 || swapWith >= next.length) return prev;
-      [next[idx], next[swapWith]] = [next[swapWith]!, next[idx]!];
-      return next;
-    });
   }
 
   async function handleAddExperience() {
@@ -445,7 +504,15 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
             <div style={{ fontSize: 13.5, color: 'var(--gray500)' }}>La tua pagina non è ancora pubblica.</div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select
+            value={language}
+            onChange={e => setLanguage(e.target.value as LangCode)}
+            title="Lingua della pagina pubblica"
+            style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+          >
+            {LANGUAGE_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+          </select>
           {profile?.published ? (
             <>
               <button className="btn btn-line btn-sm" disabled={regenerating} onClick={() => void handleRegenerateSlug()}>
@@ -497,6 +564,46 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         </div>
       </div>
 
+      {/* Formazione / competenze / lingue — read from the general dashboard profile */}
+      <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>Formazione, competenze e lingue</h3>
+          <button className="btn btn-line btn-sm" disabled={syncingFromCv} onClick={() => void handleSyncFromCv()}>
+            {syncingFromCv ? 'Sincronizzazione…' : 'Sincronizza dal tuo ultimo CV'}
+          </button>
+        </div>
+        <p style={{ fontSize: 12.5, color: 'var(--gray500)', marginTop: 0, marginBottom: 14 }}>
+          Questi dati vengono dal tuo profilo generale (dashboard). Modificali lì, oppure importali in un clic dal tuo ultimo CV salvato.
+        </p>
+        {(!userProfile?.education?.length && !userProfile?.skills?.length && !userProfile?.languages?.length) ? (
+          <p style={{ fontSize: 13.5, color: 'var(--gray500)' }}>
+            Nessun dato di formazione, competenze o lingue ancora presente. Sincronizzalo dal tuo ultimo CV oppure vai su{' '}
+            <a onClick={() => onNavigate('dashboard')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>Dashboard &rarr; Il tuo profilo</a>.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {!!userProfile?.education?.length && (
+              <div>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Formazione ({userProfile.education.length})</b>
+                <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.education.map(e => e.degree || e.institution).filter(Boolean).join(' · ')}</div>
+              </div>
+            )}
+            {!!userProfile?.skills?.length && (
+              <div>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Competenze ({userProfile.skills.length})</b>
+                <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.skills.join(' · ')}</div>
+              </div>
+            )}
+            {!!userProfile?.languages?.length && (
+              <div>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Lingue ({userProfile.languages.length})</b>
+                <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.languages.map(l => l.name).filter(Boolean).join(' · ')}</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Experience picker */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -534,17 +641,21 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
         {orderedSelected.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: unselected.length ? 16 : 0 }}>
-            {orderedSelected.map((exp, i) => (
-              <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1.5px solid var(--gray100)', borderRadius: 10, padding: '10px 14px' }}>
+            {orderedSelected.map(exp => (
+              <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1.5px solid var(--gray100)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>
                 <input type="checkbox" checked onChange={() => toggleExperience(exp.id)} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <b style={{ fontSize: 13.5 }}>{exp.role}</b> <span style={{ color: 'var(--gray500)', fontSize: 12.5 }}>@ {exp.company}</span>
+                  {(exp.startDate || exp.isCurrent) && <span style={{ color: 'var(--gray500)', fontSize: 12 }}> · {exp.startDate ?? ''}{exp.isCurrent ? ' - Presente' : ''}</span>}
                 </div>
-                <button className="btn btn-ghost btn-sm" disabled={i === 0} onClick={() => moveExperience(exp.id, -1)} aria-label="Sposta su">↑</button>
-                <button className="btn btn-ghost btn-sm" disabled={i === orderedSelected.length - 1} onClick={() => moveExperience(exp.id, 1)} aria-label="Sposta giù">↓</button>
-              </div>
+              </label>
             ))}
           </div>
+        )}
+        {orderedSelected.length > 0 && (
+          <p style={{ fontSize: 11.5, color: 'var(--gray500)', marginTop: 8 }}>
+            L'ordine sulla pagina pubblica è automatico, dal più recente al meno recente.
+          </p>
         )}
 
         {unselected.length > 0 && (

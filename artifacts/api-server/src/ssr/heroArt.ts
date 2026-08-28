@@ -57,7 +57,7 @@ const MOTIF_PATHS: Record<HeroMotif, string> = {
     <path d="M22 82 C22 60 34 50 50 50 C66 50 78 60 78 82"/>`,
 };
 
-export function buildHeroSvg(opts: { motif: HeroMotif; seed: string; width?: number; height?: number }): string {
+export function buildHeroSvg(opts: { motif?: HeroMotif; seed: string; width?: number; height?: number }): string {
   const { motif, seed } = opts;
   const width = opts.width ?? 800;
   const height = opts.height ?? 450;
@@ -89,8 +89,8 @@ export function buildHeroSvg(opts: { motif: HeroMotif; seed: string; width?: num
     </defs>
     <rect width="${width}" height="${height}" fill="url(#${gid})"/>
     ${dots}
-    <g transform="translate(${tx.toFixed(1)}, ${ty.toFixed(1)}) scale(${scale.toFixed(3)})" fill="none" stroke="#2F2AE5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    ${motif ? `<g transform="translate(${tx.toFixed(1)}, ${ty.toFixed(1)}) scale(${scale.toFixed(3)})" fill="none" stroke="#2F2AE5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       ${MOTIF_PATHS[motif]}
-    </g>
+    </g>` : ""}
   </svg>`;
 }

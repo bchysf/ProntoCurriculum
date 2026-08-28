@@ -45,7 +45,7 @@ router.put("/profile-page", requirePro, async (req: Request, res: Response) => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { photo, headline, bio, selectedExperienceIds, sections } = parsed.data;
+  const { photo, headline, bio, language, selectedExperienceIds, sections } = parsed.data;
 
   const [existing] = await db
     .select({ id: publicProfilesTable.id })
@@ -56,6 +56,7 @@ router.put("/profile-page", requirePro, async (req: Request, res: Response) => {
     photo: photo ?? null,
     headline: headline ?? null,
     bio: bio ?? null,
+    language: language ?? "IT",
     selectedExperienceIds: selectedExperienceIds ?? [],
     sections: sections ?? DEFAULT_PUBLIC_PROFILE_SECTIONS,
   };

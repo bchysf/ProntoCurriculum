@@ -480,6 +480,7 @@ export const GetPublicProfileResponse = zod.object({
   "photo": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "language": zod.string().optional().describe('Language the public page is rendered in: IT, EN, FR, DE, ES, PT.'),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
@@ -504,6 +505,7 @@ export const SavePublicProfileBody = zod.object({
   "photo": zod.string().optional(),
   "headline": zod.string().optional(),
   "bio": zod.string().optional(),
+  "language": zod.enum(['IT', 'EN', 'FR', 'DE', 'ES', 'PT']).optional(),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
@@ -521,6 +523,7 @@ export const SavePublicProfileResponse = zod.object({
   "photo": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "language": zod.string().optional().describe('Language the public page is rendered in: IT, EN, FR, DE, ES, PT.'),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
@@ -550,6 +553,7 @@ export const PublishPublicProfileResponse = zod.object({
   "photo": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "language": zod.string().optional().describe('Language the public page is rendered in: IT, EN, FR, DE, ES, PT.'),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
@@ -579,6 +583,7 @@ export const UnpublishPublicProfileResponse = zod.object({
   "photo": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "language": zod.string().optional().describe('Language the public page is rendered in: IT, EN, FR, DE, ES, PT.'),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
@@ -608,6 +613,7 @@ export const RegeneratePublicProfileSlugResponse = zod.object({
   "photo": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "language": zod.string().optional().describe('Language the public page is rendered in: IT, EN, FR, DE, ES, PT.'),
   "selectedExperienceIds": zod.array(zod.string()).optional(),
   "sections": zod.array(zod.object({
   "key": zod.enum(['experiences', 'education', 'languages', 'skills', 'highlights']),
