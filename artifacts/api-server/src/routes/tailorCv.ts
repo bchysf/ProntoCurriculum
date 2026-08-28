@@ -313,6 +313,21 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
         : []
     );
 
+    // Experiences the AI didn't select go into a condensed "additional experience"
+    // line on the CV instead of being silently dropped.
+    const selectedExperienceIds = new Set((aiResult.experiences ?? []).map(e => e.id));
+    const additionalExperiences = savedExperiences
+      .filter(e => !selectedExperienceIds.has(e.id))
+      .map(e => ({
+        id: e.id,
+        company: e.company ?? "",
+        role: e.role ?? "",
+        city: e.city ?? "",
+        from: e.startDate ?? "",
+        to: e.isCurrent ? "" : (e.endDate ?? ""),
+        desc: "",
+      }));
+
     const cvData = {
       firstName: userInfo.firstName,
       lastName: userInfo.lastName,
@@ -336,6 +351,7 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       skillCategories,
       languages: profileRow?.languages ?? [],
       certifications: [],
+      additionalExperiences,
     };
 
     res.json({ cvData });

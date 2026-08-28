@@ -21,6 +21,9 @@ interface CvDataInput {
   education?: { id?: string; degree?: string }[];
   skills?: string[];
   languages?: { id?: string; name?: string; level?: string }[];
+  certifications?: { id?: string; name?: string; issuer?: string }[];
+  skillCategories?: { id?: string; name?: string }[];
+  additionalExperiences?: { id?: string; role?: string; desc?: string }[];
   [key: string]: unknown;
 }
 
@@ -31,6 +34,9 @@ interface TranslatablePayload {
   education: { id: string; degree: string }[];
   skills: string[];
   languages: { id: string; name: string; level: string }[];
+  certifications: { id: string; name: string; issuer: string }[];
+  skillCategories: { id: string; name: string }[];
+  additionalExperiences: { id: string; role: string; desc: string }[];
 }
 
 router.post('/translate-cv', async (req: Request, res: Response) => {
@@ -74,9 +80,23 @@ router.post('/translate-cv', async (req: Request, res: Response) => {
       name: (l.name as string) ?? '',
       level: (l.level as string) ?? '',
     })),
+    certifications: (cvData.certifications ?? []).map((c, i) => ({
+      id: (c.id as string) ?? String(i),
+      name: (c.name as string) ?? '',
+      issuer: (c.issuer as string) ?? '',
+    })),
+    skillCategories: (cvData.skillCategories ?? []).map((c, i) => ({
+      id: (c.id as string) ?? String(i),
+      name: (c.name as string) ?? '',
+    })),
+    additionalExperiences: (cvData.additionalExperiences ?? []).map((e, i) => ({
+      id: (e.id as string) ?? String(i),
+      role: (e.role as string) ?? '',
+      desc: (e.desc as string) ?? '',
+    })),
   };
 
-  const prompt = `Sei un traduttore professionale specializzato in CV e documenti aziendali.\n\nLINGUA TARGET: ${langName} (codice: ${lang})\n\nRicevi un JSON con SOLO i campi da tradurre. Traduci TUTTI i valori stringa non vuoti:\n- "title": titolo professionale\n- "summary": profilo professionale\n- "experiences[].role": titolo del ruolo\n- "experiences[].desc": descrizione mansioni (mantieni bullet point "• " se presenti)\n- "education[].degree": titolo di studio\n- "skills[]": ogni competenza tecnica o soft skill\n- "languages[].name": nome della lingua (es. "Inglese" → "English" in EN, "Anglais" in FR)\n- "languages[].level": livello CEFR nella lingua target (es. "C1 - Avanzato" → "C1 - Advanced" in EN)\n\nSTILE:\n- Forma impersonale professionale (zero prima persona singolare)\n- Per l'inglese: imperativo/participio passato (Led, Managed, Reduced)\n- Per le altre lingue: stile participio passato senza soggetto\n- Mantieni bullet "• " e numeri/percentuali invariati\n\nVINCOLO ASSOLUTO: restituisci SOLO il JSON con la stessa struttura e gli stessi "id". Zero testo extra, zero markdown.\n\nTraduci in ${langName}:\n\n${JSON.stringify(payload)}`;
+  const prompt = `Sei un traduttore professionale specializzato in CV e documenti aziendali.\n\nLINGUA TARGET: ${langName} (codice: ${lang})\n\nRicevi un JSON con SOLO i campi da tradurre. Traduci TUTTI i valori stringa non vuoti:\n- "title": titolo professionale\n- "summary": profilo professionale\n- "experiences[].role": titolo del ruolo\n- "experiences[].desc": descrizione mansioni (mantieni bullet point "• " se presenti)\n- "education[].degree": titolo di studio\n- "skills[]": ogni competenza tecnica o soft skill\n- "languages[].name": nome della lingua (es. "Inglese" → "English" in EN, "Anglais" in FR)\n- "languages[].level": livello CEFR nella lingua target (es. "C1 - Avanzato" → "C1 - Advanced" in EN)\n- "certifications[].name": nome della certificazione\n- "certifications[].issuer": ente che ha rilasciato la certificazione\n- "skillCategories[].name": nome della categoria di competenze (es. "Competenze tecniche" → "Technical skills" in EN)\n- "additionalExperiences[].role": titolo del ruolo (esperienza aggiuntiva)\n- "additionalExperiences[].desc": descrizione mansioni (mantieni bullet point "• " se presenti)\n\nSTILE:\n- Forma impersonale professionale (zero prima persona singolare)\n- Per l'inglese: imperativo/participio passato (Led, Managed, Reduced)\n- Per le altre lingue: stile participio passato senza soggetto\n- Mantieni bullet "• " e numeri/percentuali invariati\n\nVINCOLO ASSOLUTO: restituisci SOLO il JSON con la stessa struttura e gli stessi "id". Zero testo extra, zero markdown.\n\nTraduci in ${langName}:\n\n${JSON.stringify(payload)}`;
 
   try {
     const raw = await generateText(prompt, { maxTokens: 3000 });
@@ -102,6 +122,21 @@ router.post('/translate-cv', async (req: Request, res: Response) => {
         const tr = translated.languages?.find(l => l.id === ((lang2.id as string) ?? String(i)));
         if (!tr) return lang2;
         return { ...lang2, name: tr.name || lang2.name, level: tr.level || lang2.level };
+      }),
+      certifications: (cvData.certifications ?? []).map((c, i) => {
+        const tr = translated.certifications?.find(t => t.id === ((c.id as string) ?? String(i)));
+        if (!tr) return c;
+        return { ...c, name: tr.name || c.name, issuer: tr.issuer || c.issuer };
+      }),
+      skillCategories: (cvData.skillCategories ?? []).map((c, i) => {
+        const tr = translated.skillCategories?.find(t => t.id === ((c.id as string) ?? String(i)));
+        if (!tr) return c;
+        return { ...c, name: tr.name || c.name };
+      }),
+      additionalExperiences: (cvData.additionalExperiences ?? []).map((e, i) => {
+        const tr = translated.additionalExperiences?.find(t => t.id === ((e.id as string) ?? String(i)));
+        if (!tr) return e;
+        return { ...e, role: tr.role || e.role, desc: tr.desc || e.desc };
       }),
     };
 
