@@ -1,9 +1,19 @@
 import { renderSsrPage, escapeHtml } from "./shell";
 import { REGION_STATS, REGION_SOURCES, CITY_PROFILES, PLANNED_CITIES, getCityProfile } from "./lombardiaData";
+import { getProfessionLinksForCity, getRegionalProfessionLinks } from "./professionPages";
 
 const HUB_PATH = "/lavoro/lombardia";
 
 export function getHubHtml(): string {
+  const regionalProfessionLinks = getRegionalProfessionLinks();
+  const regionalProfessionLinksHtml = regionalProfessionLinks.length
+    ? `<section class="sec">
+        <h2>Guide CV per professione, a livello regionale</h2>
+        <div class="grid-cards">
+          ${regionalProfessionLinks.map((l) => `<a class="city-card" href="${l.href}"><b>${escapeHtml(l.label)}</b></a>`).join("\n")}
+        </div>
+      </section>`
+    : "";
   const cityCards = CITY_PROFILES.map(
     (c) => `<a class="city-card" href="${HUB_PATH}/${c.slug}"><b>${escapeHtml(c.name)}</b><span>${escapeHtml(c.avgRal)} RAL media</span></a>`,
   ).join("\n");
@@ -37,6 +47,8 @@ export function getHubHtml(): string {
         ${plannedCards}
       </div>
     </section>
+
+    ${regionalProfessionLinksHtml}
 
     <section class="sec">
       <h2>Domande frequenti</h2>
@@ -118,6 +130,16 @@ export function getCityHtml(slug: string): string | null {
     )
     .join("\n");
 
+  const professionLinks = getProfessionLinksForCity(city.slug);
+  const professionLinksHtml = professionLinks.length
+    ? `<section class="sec">
+        <h2>Guide CV per professione a ${escapeHtml(city.name)}</h2>
+        <div class="grid-cards">
+          ${professionLinks.map((l) => `<a class="city-card" href="${l.href}"><b>${escapeHtml(l.label)}</b></a>`).join("\n")}
+        </div>
+      </section>`
+    : "";
+
   const body = `
     <nav class="crumb" aria-label="breadcrumb"><a href="/">Home</a><span>/</span><a href="${HUB_PATH}">Lavoro in Lombardia</a><span>/</span><b>${escapeHtml(city.name)}</b></nav>
     <section class="hero">
@@ -139,6 +161,7 @@ export function getCityHtml(slug: string): string | null {
       <h2>Come impostare il CV per candidarti a ${escapeHtml(city.name)}</h2>
       <div class="prose"><p>${escapeHtml(city.advice)}</p></div>
     </section>
+    ${professionLinksHtml}
 
     <section class="sec">
       <h2>Domande frequenti su lavoro e stipendi a ${escapeHtml(city.name)}</h2>

@@ -151,6 +151,41 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/cv-infermiere</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/milano/cv-sviluppatore-software</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/brescia/cv-tecnico-cnc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/lodi/cv-magazziniere</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/pavia/cv-farmacista</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/varese/cv-ingegnere-meccanico</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://prontocurriculum.it/lavoro/lombardia/sondrio/cv-cameriere-stagionale</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://prontocurriculum.it/cercare-lavoro-piemonte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
