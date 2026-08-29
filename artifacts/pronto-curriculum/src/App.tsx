@@ -193,6 +193,7 @@ function AppInner() {
               onNavigate={navigate}
               onCVLoaded={handleCVLoaded}
               onLogin={() => openModal('signup')}
+              onModal={openModal}
             />
           </WorkspaceShell>
         )}

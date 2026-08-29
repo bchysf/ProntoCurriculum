@@ -5,7 +5,7 @@ import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { EntitlementError } from '../utils/entitlement';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
-import { aiCvAssistantChat } from '../utils/aiCvAssistant';
+import { aiCvAssistantChat, experienceInputToExperience } from '../utils/aiCvAssistant';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { translateDateLabel } from '../utils/dateI18n';
 import CVPreview from '../components/CVPreview';
@@ -426,7 +426,7 @@ function AccordionSection({
 
 function AIAssistantPanel({
   experiences, expTips, analyzing, onAnalyzeAll, onApplyTip, applyingTipKey,
-  cvData, onCVChange, lang,
+  cvData, onCVChange, lang, onSaveCV, onTailorFromText,
 }: {
   experiences: { id: string; role: string; company: string }[];
   expTips: Record<string, string[]>;
@@ -437,6 +437,8 @@ function AIAssistantPanel({
   cvData: CVData;
   onCVChange: (data: CVData) => void;
   lang: SupportedLanguage;
+  onSaveCV: () => void;
+  onTailorFromText: (jobText: string) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState(true);
@@ -463,12 +465,31 @@ function AIAssistantPanel({
     setChatMessages(prev => [...prev, { role: 'user', text: message }]);
     setChatSending(true);
     try {
-      const { reply, additionalExperiences } = await aiCvAssistantChat(cvData, message, lang);
-      if (additionalExperiences?.length) {
-        onCVChange({
-          ...cvData,
-          additionalExperiences: [...(cvData.additionalExperiences ?? []), ...additionalExperiences],
-        });
+      const { reply, action } = await aiCvAssistantChat(cvData, message, lang);
+      switch (action.type) {
+        case 'add_experience':
+        case 'search_archive':
+          if (action.experiences.length) {
+            onCVChange({
+              ...cvData,
+              additionalExperiences: [...(cvData.additionalExperiences ?? []), ...action.experiences.map(experienceInputToExperience)],
+            });
+          }
+          break;
+        case 'update_summary':
+          onCVChange({ ...cvData, summary: action.summary });
+          break;
+        case 'update_skills':
+          onCVChange({ ...cvData, skills: [...new Set([...cvData.skills, ...action.skills])] });
+          break;
+        case 'save_cv':
+          onSaveCV();
+          break;
+        case 'tailor_cv':
+          onTailorFromText(action.jobText);
+          break;
+        case 'none':
+          break;
       }
       setChatMessages(prev => [...prev, { role: 'assistant', text: reply || t('ai.done') }]);
     } catch (err) {
@@ -2100,6 +2121,11 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             cvData={cvData}
             onCVChange={onCVChange}
             lang={selectedLanguage}
+            onSaveCV={() => void handleSaveCV()}
+            onTailorFromText={jobText => {
+              sessionStorage.setItem('pc_pending_job', JSON.stringify({ description: jobText }));
+              onNavigate('tailor');
+            }}
           />
         </div>
         )}

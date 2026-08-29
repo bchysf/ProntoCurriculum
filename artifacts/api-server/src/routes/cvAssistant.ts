@@ -1,5 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { db, experiencesTable } from '@workspace/db';
 import { generateText } from '../lib/ai';
 
 const router: IRouter = Router();
@@ -22,28 +24,47 @@ interface ChatExperience {
   desc?: string;
 }
 
-function buildSystemPrompt(lang: string): string {
-  const langName = LANG_NAMES[lang] ?? 'italiano';
-  return `Sei l'assistente conversazionale integrato nel builder di CV di ProntoCurriculum.it. L'utente ti scrive messaggi liberi mentre compila il proprio CV.
+type AssistantAction =
+  | { type: 'add_experience'; experiences: ChatExperience[] }
+  | { type: 'search_archive'; experiences: ChatExperience[] }
+  | { type: 'update_summary'; summary: string }
+  | { type: 'update_skills'; skills: string[] }
+  | { type: 'save_cv' }
+  | { type: 'tailor_cv'; jobText: string }
+  | { type: 'none' };
 
-Il tuo UNICO compito strutturato è: quando l'utente descrive esperienze secondarie che non rientrano nel percorso lavorativo principale — volontariato, lavori freelance, progetti collaterali, stage brevi, attività extracurriculari rilevanti — estrarle come voci strutturate per la sezione "Esperienze aggiuntive" del CV.
+function buildSystemPrompt(lang: string, hasArchive: boolean): string {
+  const langName = LANG_NAMES[lang] ?? 'italiano';
+  return `Sei l'assistente conversazionale integrato nel builder di CV di ProntoCurriculum.it. L'utente ti scrive messaggi liberi mentre compila il proprio CV. Devi classificare l'intento del messaggio in UNA delle seguenti azioni e restituire SOLO un JSON.
+
+AZIONI DISPONIBILI:
+1. "add_experience" — l'utente descrive una NUOVA esperienza secondaria (volontariato, freelance, progetto, stage) da aggiungere come testo libero, non prendendola da esperienze già salvate.
+2. "search_archive" — l'utente chiede di riprendere/richiamare/usare un'esperienza che ha GIÀ salvato nel suo archivio esperienze (es. "aggiungi la mia esperienza in Google", "usa il lavoro che ho salvato come cameriere", "prendi dal mio archivio X").${hasArchive ? '' : ' (l\'utente non ha esperienze salvate: se chiede questo, rispondi spiegando che non ha ancora nulla nell\'archivio, imposta "action" su "none")'}
+3. "update_summary" — l'utente chiede di scrivere o riscrivere il profilo professionale/sommario del CV.
+4. "update_skills" — l'utente elenca competenze da impostare come lista skill del CV.
+5. "save_cv" — l'utente chiede esplicitamente di salvare il CV (es. "salva questo", "salvalo", "save this").
+6. "tailor_cv" — l'utente chiede di creare/generare un CV per una specifica offerta di lavoro o ruolo, incollando o descrivendo la job description (es. "crea un cv per questo annuncio: ...", "fammi un cv per un ruolo di project manager in una startup").
+7. "none" — saluto, domanda generica, richiesta che non rientra sopra, o richiesta di modificare sezioni non gestite qui (istruzione, lingue, certificazioni, contatti) — in questo caso spiega gentilmente di usare i controlli del builder per quella sezione.
 
 REGOLE ASSOLUTE:
-1. Non inventare MAI fatti, aziende, ruoli o date che l'utente non ha menzionato. Se l'utente descrive un'esperienza senza specificare azienda o date, lascia quei campi vuoti ("") — non inventarli.
-2. Se l'utente descrive PIÙ esperienze distinte in un solo messaggio (es. "ho fatto volontariato alla Croce Rossa e anche lavori di graphic design freelance"), crea una voce separata per ciascuna.
-3. Per il campo "desc" di ogni esperienza, scrivi 1-3 bullet (max 25 parole ciascuno) nello stesso stile del resto del CV: azione + cosa + risultato quando possibile, forma impersonale (participio passato), ogni bullet inizia con "• " e separato da un vero \\n. Non inventare risultati o numeri che l'utente non ha detto.
-4. Se il messaggio dell'utente NON descrive un'esperienza da aggiungere (è una domanda, un saluto, una richiesta vaga, o una richiesta che riguarda altre sezioni del CV che non sai gestire), rispondi in modo conversazionale e utile ma imposta "additionalExperiences" a null — non inventare un'esperienza per riempire il campo.
-5. Non puoi modificare altre sezioni del CV (esperienze principali, istruzione, competenze, lingue, certificazioni) — se l'utente chiede di modificarle, spiegagli gentilmente di usare i controlli del builder per quella sezione, e imposta "additionalExperiences" a null.
-6. La tua risposta "reply" è sempre in ${langName}, breve (1-3 frasi), amichevole e concreta — se hai aggiunto esperienze, conferma cosa hai aggiunto.
+- Non inventare MAI fatti, aziende, ruoli, date o competenze che l'utente non ha menzionato.
+- Per "add_experience": crea una voce per ciascuna esperienza distinta descritta. Campo "desc": 1-3 bullet (max 25 parole ciascuno), forma impersonale, ogni bullet inizia con "• " separato da un vero \\n.
+- Per "search_archive": restituisci in "searchQuery" le parole chiave (azienda, ruolo o settore) da cercare nell'archivio dell'utente — la ricerca viene eseguita dal server, non da te.
+- Per "update_summary": scrivi il nuovo sommario in "summary" basandoti SOLO su quanto detto dall'utente nel messaggio (e nel contesto del CV se rilevante), 2-4 frasi, tono professionale.
+- Per "update_skills": estrai la lista di competenze menzionate in "skills" (array di stringhe).
+- Per "tailor_cv": copia in "jobText" il testo della job description o la descrizione del ruolo così come scritta dall'utente (non riassumere, non inventare).
+- La tua risposta "reply" è sempre in ${langName}, breve (1-3 frasi), amichevole e concreta.
 
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
   "reply": "risposta conversazionale breve in ${langName}",
-  "additionalExperiences": [
-    { "company": "nome azienda/organizzazione o stringa vuota", "role": "ruolo o titolo dell'attività", "city": "città o stringa vuota", "from": "data inizio o stringa vuota", "to": "data fine o stringa vuota", "desc": "bullet con '• ' separati da \\n" }
-  ]
-}
-Se non ci sono nuove esperienze da aggiungere, usa "additionalExperiences": null.`;
+  "action": "add_experience" | "search_archive" | "update_summary" | "update_skills" | "save_cv" | "tailor_cv" | "none",
+  "experiences": [ { "company": "", "role": "", "city": "", "from": "", "to": "", "desc": "" } ] | null,
+  "searchQuery": "parole chiave da cercare nell'archivio" | null,
+  "summary": "nuovo sommario" | null,
+  "skills": ["skill1", "skill2"] | null,
+  "jobText": "testo della job description o del ruolo descritto" | null
+}`;
 }
 
 router.post('/cv-assistant/chat', async (req: Request, res: Response) => {
@@ -63,39 +84,106 @@ router.post('/cv-assistant/chat', async (req: Request, res: Response) => {
     return;
   }
 
+  const userId = req.isAuthenticated() ? req.user!.id : null;
+
+  let archiveRows: Array<typeof experiencesTable.$inferSelect> = [];
+  if (userId) {
+    archiveRows = await db.select().from(experiencesTable).where(eq(experiencesTable.userId, userId));
+  }
+  const archiveList = archiveRows.length
+    ? archiveRows.map(e => `- ${e.role} @ ${e.company}${e.city ? `, ${e.city}` : ''}`).join('\n')
+    : 'nessuna';
+
   const existingAdditional = (cvData?.additionalExperiences ?? [])
     .map(e => `- ${e.role || ''} @ ${e.company || ''}`)
     .join('\n');
 
   const contextBlock = `Titolo professionale attuale del CV: ${cvData?.title ?? 'non specificato'}
+Sommario attuale: ${cvData?.summary || 'vuoto'}
 Esperienze aggiuntive già presenti (per evitare duplicati):
-${existingAdditional || 'nessuna'}`;
+${existingAdditional || 'nessuna'}
+Esperienze salvate nell'archivio dell'utente (disponibili per "search_archive"):
+${archiveList}`;
 
-  const prompt = `${buildSystemPrompt(lang)}\n\nCONTESTO DEL CV:\n${contextBlock}\n\nMESSAGGIO DELL'UTENTE:\n"${message.trim().slice(0, 2000)}"`;
+  const prompt = `${buildSystemPrompt(lang, archiveRows.length > 0)}\n\nCONTESTO DEL CV:\n${contextBlock}\n\nMESSAGGIO DELL'UTENTE:\n"${message.trim().slice(0, 2000)}"`;
 
   try {
     const raw = await generateText(prompt, { temperature: 0.5, maxTokens: 1200 });
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    const parsed = JSON.parse(jsonStr) as { reply?: string; additionalExperiences?: ChatExperience[] | null };
+    const parsed = JSON.parse(jsonStr) as {
+      reply?: string;
+      action?: string;
+      experiences?: ChatExperience[] | null;
+      searchQuery?: string | null;
+      summary?: string | null;
+      skills?: string[] | null;
+      jobText?: string | null;
+    };
 
-    const additionalExperiences = Array.isArray(parsed.additionalExperiences)
-      ? parsed.additionalExperiences
-          .filter(e => e.role || e.company || e.desc)
-          .map(e => ({
-            id: randomUUID(),
-            company: e.company ?? '',
-            role: e.role ?? '',
-            city: e.city ?? '',
-            from: e.from ?? '',
-            to: e.to ?? '',
-            desc: e.desc ?? '',
-          }))
-      : null;
+    const toStructuredExperiences = (list: ChatExperience[] | null | undefined) =>
+      Array.isArray(list)
+        ? list
+            .filter(e => e.role || e.company || e.desc)
+            .map(e => ({
+              id: randomUUID(),
+              company: e.company ?? '',
+              role: e.role ?? '',
+              city: e.city ?? '',
+              from: e.from ?? '',
+              to: e.to ?? '',
+              desc: e.desc ?? '',
+            }))
+        : [];
 
-    res.json({
-      reply: parsed.reply ?? '',
-      additionalExperiences,
-    });
+    let action: AssistantAction = { type: 'none' };
+    let reply = parsed.reply ?? '';
+
+    switch (parsed.action) {
+      case 'add_experience':
+        action = { type: 'add_experience', experiences: toStructuredExperiences(parsed.experiences) };
+        break;
+      case 'search_archive': {
+        const query = (parsed.searchQuery ?? '').toLowerCase().trim();
+        const matches = query
+          ? archiveRows.filter(e =>
+              e.role.toLowerCase().includes(query) ||
+              e.company.toLowerCase().includes(query) ||
+              (e.description ?? '').toLowerCase().includes(query))
+          : [];
+        if (!matches.length) {
+          reply = reply || (query
+            ? `Non ho trovato nulla nel tuo archivio che corrisponda a "${parsed.searchQuery}".`
+            : 'Non ho trovato l\'esperienza che cerchi nel tuo archivio.');
+          action = { type: 'none' };
+        } else {
+          action = {
+            type: 'search_archive',
+            experiences: matches.map(e => ({
+              company: e.company, role: e.role, city: e.city ?? '',
+              from: e.startDate ?? '', to: e.isCurrent ? 'Presente' : (e.endDate ?? ''),
+              desc: e.description ?? '',
+            })),
+          };
+        }
+        break;
+      }
+      case 'update_summary':
+        if (parsed.summary?.trim()) action = { type: 'update_summary', summary: parsed.summary.trim() };
+        break;
+      case 'update_skills':
+        if (Array.isArray(parsed.skills) && parsed.skills.length) action = { type: 'update_skills', skills: parsed.skills };
+        break;
+      case 'save_cv':
+        action = { type: 'save_cv' };
+        break;
+      case 'tailor_cv':
+        if (parsed.jobText?.trim()) action = { type: 'tailor_cv', jobText: parsed.jobText.trim() };
+        break;
+      default:
+        action = { type: 'none' };
+    }
+
+    res.json({ reply, action });
   } catch (err) {
     req.log.error({ err }, 'cv-assistant/chat error');
     res.status(500).json({ error: "Errore durante l'elaborazione del messaggio" });

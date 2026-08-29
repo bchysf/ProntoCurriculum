@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Page, CVData, SavedTailoredCv } from '../types';
+import { Page, ModalType, CVData, SavedTailoredCv } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
+import { EntitlementError } from '../utils/entitlement';
 import { toast } from 'sonner';
 import { useT, useLanguage } from '../i18n/LanguageContext';
 
@@ -11,6 +12,7 @@ interface CandidatureProps {
   onNavigate: (page: Page) => void;
   onCVLoaded: (data: CVData) => void;
   onLogin: () => void;
+  onModal: (m: ModalType) => void;
 }
 
 type CrmStatus = 'da_inviare' | 'inviata' | 'colloquio' | 'offerta' | 'archiviata';
@@ -31,7 +33,7 @@ interface InterviewPrepData {
   questionsToAsk: string[];
 }
 
-export default function Candidature({ onNavigate, onCVLoaded, onLogin }: CandidatureProps) {
+export default function Candidature({ onNavigate, onCVLoaded, onLogin, onModal }: CandidatureProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const t = useT();
   const { lang } = useLanguage();
@@ -138,7 +140,11 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin }: Candida
     try {
       await downloadCVAsDOCX(cv.jobTitle || t('cand.applicationFallback'), cv.cvData, cv.template || 'modern');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t('cand.errDocx'));
+      if (err instanceof EntitlementError) {
+        onModal(err.code === 'AUTH_REQUIRED' ? 'signup' : 'pricing');
+      } else {
+        alert(err instanceof Error ? err.message : t('cand.errDocx'));
+      }
     } finally {
       setDownloadingDocxId(null);
     }
