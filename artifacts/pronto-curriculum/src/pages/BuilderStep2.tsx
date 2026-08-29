@@ -14,6 +14,7 @@ import CoverLetterModal from '../components/CoverLetterModal';
 import { Icon, IC } from '../components/StrokeIcon';
 import { CountrySelect, FlagImg, JOB_COUNTRIES } from '../components/CountrySelect';
 import { useAuth } from '../hooks/use-auth';
+import { isDefaultCvData } from '../utils/defaultCvData';
 import { useT } from '../i18n/LanguageContext';
 import { toast } from 'sonner';
 
@@ -468,11 +469,23 @@ function AIAssistantPanel({
       const { reply, action } = await aiCvAssistantChat(cvData, message, lang);
       switch (action.type) {
         case 'add_experience':
-        case 'search_archive':
+          // Free-text description of a side thing (volunteering, freelance) —
+          // stays secondary, matching what the rest of the builder calls
+          // "additional experience".
           if (action.experiences.length) {
             onCVChange({
               ...cvData,
               additionalExperiences: [...(cvData.additionalExperiences ?? []), ...action.experiences.map(experienceInputToExperience)],
+            });
+          }
+          break;
+        case 'search_archive':
+          // Pulled from the saved Experience Archive — these are real past
+          // jobs, so they belong in the main work history, not "additional".
+          if (action.experiences.length) {
+            onCVChange({
+              ...cvData,
+              experiences: [...cvData.experiences, ...action.experiences.map(experienceInputToExperience)],
             });
           }
           break;
@@ -652,6 +665,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   interface SavedProfile {
     firstName: string | null;
     lastName: string | null;
+    email: string | null;
     nameLocked: boolean;
     profile: {
       headline?: string | null; phone?: string | null; city?: string | null;
@@ -689,6 +703,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       ...cvData,
       firstName: savedProfile.firstName || cvData.firstName,
       lastName: savedProfile.lastName || cvData.lastName,
+      email: savedProfile.email || cvData.email,
       title: p?.headline || cvData.title,
       phone: p?.phone || cvData.phone,
       city: p?.city || cvData.city,
@@ -703,6 +718,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const hasSavedProfileData = !!(savedProfile?.firstName || savedProfile?.profile?.phone || savedProfile?.profile?.city
     || savedProfile?.profile?.linkedin || savedProfile?.profile?.summary || savedProfile?.profile?.skills?.length
     || savedProfile?.profile?.education?.length || savedProfile?.profile?.languages?.length);
+
+  // A brand-new CV (still the untouched Mario Rossi sample) auto-fills from
+  // the saved profile the moment it's available, instead of making the user
+  // find and click "Usa i miei dati salvati" every single time.
+  const autoFilledRef = useRef(false);
+  useEffect(() => {
+    if (autoFilledRef.current || !hasSavedProfileData || !isDefaultCvData(cvData)) return;
+    autoFilledRef.current = true;
+    applySavedProfile();
+    // Only once per mount, right when the saved profile first becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSavedProfileData]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
