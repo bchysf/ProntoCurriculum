@@ -58,6 +58,7 @@ export interface DocxExportInput {
       to?: string;
       desc?: string;
     }>;
+    includePrivacyClause?: boolean;
   };
   template?: string;
   lang?: CvLang;
@@ -649,29 +650,31 @@ export async function generateDocxBuffer(
     }
   }
 
-  // 11. Mandatory Privacy Clause at bottom
-  paragraphs.push(
-    new Paragraph({
-      spacing: { before: 360, after: 60 },
-      border: {
-        top: {
-          color: "E2E8F0",
-          space: 12,
-          style: BorderStyle.SINGLE,
-          size: 6,
+  // 11. Privacy clause at bottom — opt-out for candidates applying outside the EU
+  if (cvData.includePrivacyClause !== false) {
+    paragraphs.push(
+      new Paragraph({
+        spacing: { before: 360, after: 60 },
+        border: {
+          top: {
+            color: "E2E8F0",
+            space: 12,
+            style: BorderStyle.SINGLE,
+            size: 6,
+          },
         },
-      },
-      children: [
-        new TextRun({
-          text: t.privacyClause,
-          italics: true,
-          size: 16, // 8pt
-          color: "64748B",
-          font: "Arial",
-        }),
-      ],
-    })
-  );
+        children: [
+          new TextRun({
+            text: t.privacyClause,
+            italics: true,
+            size: 16, // 8pt
+            color: "64748B",
+            font: "Arial",
+          }),
+        ],
+      })
+    );
+  }
 
   // Footer configuration (Watermark)
   const footerChildren: Paragraph[] = [];

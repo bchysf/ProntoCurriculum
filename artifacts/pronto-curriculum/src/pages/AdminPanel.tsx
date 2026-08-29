@@ -11,6 +11,7 @@ interface AdminUserRow {
   id: string;
   name: string;
   email: string;
+  isAdmin: boolean;
   freeTrialUsed: boolean;
   credits: number;
   createdAt: string;
@@ -310,28 +311,41 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
                           <div style={{ fontSize: 12, color: 'var(--gray500)' }}>{u.email}</div>
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <span style={{
-                            background: u.freeTrialUsed ? '#F4F4F8' : 'var(--tint, #EEEDFC)',
-                            color: u.freeTrialUsed ? 'var(--gray500)' : 'var(--gold)',
-                            padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase',
-                          }}>
-                            {u.freeTrialUsed ? 'Prova usata' : 'Prova disponibile'}
-                          </span>
+                          {u.isAdmin ? (
+                            <span style={{
+                              background: 'var(--navy)', color: '#fff',
+                              padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase',
+                            }}>
+                              ★ Admin
+                            </span>
+                          ) : (
+                            <span style={{
+                              background: u.freeTrialUsed ? '#F4F4F8' : 'var(--tint, #EEEDFC)',
+                              color: u.freeTrialUsed ? 'var(--gray500)' : 'var(--gold)',
+                              padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase',
+                            }}>
+                              {u.freeTrialUsed ? 'Prova usata' : 'Prova disponibile'}
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '12px', fontWeight: 600, color: 'var(--navy)' }}>
-                          {u.credits}
+                          {u.isAdmin ? '∞' : u.credits}
                         </td>
                         <td style={{ padding: '12px', color: 'var(--gray500)', fontSize: 12.5 }}>
                           {new Date(u.createdAt).toLocaleDateString('it-IT')}
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right' }}>
-                          <button
-                            className="btn btn-ink btn-sm"
-                            onClick={() => void handleGrantCredits(u.id)}
-                            disabled={grantingId === u.id}
-                          >
-                            {grantingId === u.id ? 'Attivazione…' : 'Regala 1 CV'}
-                          </button>
+                          {u.isAdmin ? (
+                            <span style={{ fontSize: 12, color: 'var(--gray500)' }}>Accesso illimitato</span>
+                          ) : (
+                            <button
+                              className="btn btn-ink btn-sm"
+                              onClick={() => void handleGrantCredits(u.id)}
+                              disabled={grantingId === u.id}
+                            >
+                              {grantingId === u.id ? 'Attivazione…' : 'Regala 1 CV'}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -3,6 +3,7 @@ import pino from "pino";
 import { db, usersTable, userCvsTable, tailoredCvsTable, experiencesTable, subscriptionsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { getRateLimiterStats } from "../middlewares/rateLimiter";
+import { isAdminEmail } from "../middlewares/authMiddleware";
 
 const logger = pino({ name: "AdminRouter" });
 export const adminRouter = Router();
@@ -76,6 +77,7 @@ adminRouter.get("/stats", async (req: Request, res: Response) => {
           id: u.id,
           email: u.email || "nessuna@email.it",
           name,
+          isAdmin: isAdminEmail(u.email),
           freeTrialUsed: sub?.freeTrialUsed ?? false,
           credits: sub?.credits ?? 0,
           createdAt: u.createdAt,

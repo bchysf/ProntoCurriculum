@@ -84,6 +84,10 @@ interface CVPreviewProps {
   cvData: CVData;
   template: TemplateType;
   lang?: CvLang;
+  // Hides the ProntoCurriculum.it footer credit — used for entitled downloads
+  // (admin, or once the free trial/a credit covers this CV) rather than the
+  // watermarked-by-default state before that.
+  showWatermark?: boolean;
 }
 
 function RenderDesc({ text, className }: { text: string; className: string }) {
@@ -104,8 +108,9 @@ function RenderDesc({ text, className }: { text: string; className: string }) {
   return <div className={className}>{text}</div>;
 }
 
-export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewProps) {
+export default function CVPreview({ cvData, template, lang = 'IT', showWatermark = true }: CVPreviewProps) {
   const t = CV_LABELS[lang] ?? CV_LABELS.IT;
+  const showPrivacyClause = cvData.includePrivacyClause !== false;
   const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || t.namePlaceholder;
   const effectiveSkills = cvData.skillCategories?.length
     ? cvData.skillCategories.flatMap(c => c.skills)
@@ -209,8 +214,8 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             </div>
           )}
         </div>
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>}
       </div>
     );
   }
@@ -306,8 +311,8 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             ))}
           </div>
         )}
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>}
       </div>
     );
   }
@@ -421,8 +426,8 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
             ))}
           </div>
         )}
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && <div className="cv-watermark"><div className="cv-watermark-logo">P</div>ProntoCurriculum.it</div>}
       </div>
     );
   }
@@ -536,11 +541,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark">
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && (
+          <div className="cv-watermark">
           <div className="cv-watermark-logo">P</div>
           ProntoCurriculum.it
         </div>
+        )}
       </div>
     );
   }
@@ -636,11 +643,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </>
         )}
 
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark">
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && (
+          <div className="cv-watermark">
           <div className="cv-watermark-logo">P</div>
           ProntoCurriculum.it
         </div>
+        )}
       </div>
     );
   }
@@ -742,11 +751,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           </div>
         )}
 
-        <div className="cv-privacy-clause">{t.privacyClause}</div>
-        <div className="cv-watermark">
+        {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+        {showWatermark && (
+          <div className="cv-watermark">
           <div className="cv-watermark-logo">P</div>
           ProntoCurriculum.it
         </div>
+        )}
       </div>
     );
   }
@@ -861,11 +872,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         </>
       )}
 
-      <div className="cv-privacy-clause">{t.privacyClause}</div>
-      <div className="cv-watermark">
+      {showPrivacyClause && <div className="cv-privacy-clause">{t.privacyClause}</div>}
+      {showWatermark && (
+          <div className="cv-watermark">
         <div className="cv-watermark-logo">P</div>
         ProntoCurriculum.it
       </div>
+        )}
     </div>
   );
 }

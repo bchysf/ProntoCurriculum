@@ -56,6 +56,10 @@ export interface CVData {
   certifications?: Certification[];
   additionalExperiences?: Experience[];
   photo?: string;
+  // Undefined/true = shown (the default for EU-market job applications).
+  // Set false for candidates applying outside the EU, where a GDPR
+  // authorization clause is irrelevant and reads as boilerplate.
+  includePrivacyClause?: boolean;
 }
 
 export interface SavedTailoredCv {

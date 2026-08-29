@@ -321,15 +321,17 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     }
   }
 
-  // ── GDPR PRIVACY CLAUSE ─────────────────────────────────────────────────────
-  checkPage(18);
-  y += sp(6);
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(fs(7));
-  doc.setTextColor(150, 150, 150);
-  const clauseLines = doc.splitTextToSize(L.privacyClause, CW);
-  doc.text(clauseLines, M, y);
-  y += clauseLines.length * sp(3.2);
+  // ── GDPR PRIVACY CLAUSE — opt-out for candidates applying outside the EU ────
+  if (cvData.includePrivacyClause !== false) {
+    checkPage(18);
+    y += sp(6);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(fs(7));
+    doc.setTextColor(150, 150, 150);
+    const clauseLines = doc.splitTextToSize(L.privacyClause, CW);
+    doc.text(clauseLines, M, y);
+    y += clauseLines.length * sp(3.2);
+  }
 
   return { doc, finalY: y };
 }

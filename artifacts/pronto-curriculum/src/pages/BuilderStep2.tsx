@@ -610,6 +610,19 @@ function AIAssistantPanel({
 export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onTemplateChange, initialLanguage, onNavigate, onModal, onAiAction, onGoToArchivio }: BuilderStep2Props) {
   const { isAuthenticated } = useAuth();
   const t = useT();
+  // Hides the ProntoCurriculum.it footer in the live preview once this account
+  // is admin or otherwise entitled to a clean download — it's confusing to see
+  // "your CV isn't branded" language while the preview still shows the badge.
+  const [canHideWatermark, setCanHideWatermark] = useState(false);
+  useEffect(() => {
+    if (!isAuthenticated) { setCanHideWatermark(false); return; }
+    fetch('/api/billing/status', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then((data: { isAdmin?: boolean; canDownloadFree?: boolean } | null) => {
+        setCanHideWatermark(!!data?.isAdmin || !!data?.canDownloadFree);
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -1464,6 +1477,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   <input type="text" placeholder="linkedin.com/in/mariorossi" value={cvData.linkedin} onChange={e => update('linkedin', e.target.value)} />
                 </div>
               </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--gray700, #33363E)', margin: '2px 0 14px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={cvData.includePrivacyClause !== false}
+                  onChange={e => update('includePrivacyClause', e.target.checked)}
+                  style={{ marginTop: 2 }}
+                />
+                <span>
+                  Includi la clausola sul trattamento dei dati (GDPR)
+                  <div className="form-hint" style={{ marginTop: 2 }}>Disattivala se ti candidi per posizioni fuori dall'UE — non è richiesta e può sembrare fuori contesto.</div>
+                </span>
+              </label>
               <div className="form-group">
                 <label>Profilo / Sommario professionale</label>
                 <textarea rows={4} placeholder="Breve descrizione professionale..." value={cvData.summary} onChange={e => update('summary', e.target.value)} />
@@ -1966,7 +1991,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </button>
             <div className="rb-prev-scroll" ref={previewRef}>
               <div className="cv-sheet" style={{ zoom: cvScale }} onClick={() => setMagnifyOpen(true)} title={t('editor.magnify')}>
-                <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
+                <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} />
               </div>
             </div>
             <button className="rb-tpl-pill" onClick={() => setRbTab('custom')}>
@@ -1985,7 +2010,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
               <div className="rb-magnify-scroll" onClick={e => e.stopPropagation()}>
                 <div className="cv-sheet" style={{ zoom: magnifyScale }}>
-                  <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} />
+                  <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} />
                 </div>
               </div>
             </div>
@@ -2026,7 +2051,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div className="rb-tpl-shot" style={{ '--s': tplCardScale } as React.CSSProperties}>
                       {selectedTemplate === tp.id && <span className="rb-tpl-onbadge">{t('editor.inUse')}</span>}
                       <div className="zoomwrap">
-                        <CVPreview cvData={cvData} template={tp.id} lang={selectedLanguage} />
+                        <CVPreview cvData={cvData} template={tp.id} lang={selectedLanguage} showWatermark={!canHideWatermark} />
                       </div>
                     </div>
                     <div className="rb-tpl-meta">
