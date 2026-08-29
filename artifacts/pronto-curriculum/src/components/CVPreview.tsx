@@ -553,10 +553,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           <div className="cv-name">{name}</div>
           <div className="cv-title">{cvData.title || t.titlePlaceholder}</div>
           <div className="cv-contact">
-            {cvData.email && <span>✉ {cvData.email}</span>}
-            {cvData.phone && <span>✆ {cvData.phone}</span>}
-            {cvData.city && <span>◎ {cvData.city}</span>}
-            {cvData.linkedin && <span>in {cvData.linkedin}</span>}
+            {[cvData.email, cvData.phone, cvData.city, cvData.linkedin].filter(Boolean).map((c, i) => <span key={i}>{c}</span>)}
           </div>
         </div>
 
@@ -570,9 +567,7 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         {effectiveSkills.length > 0 && (
           <>
             <div className="cv-section-title">{t.skills}</div>
-            <div className="cv-skill-tags">
-              {effectiveSkills.map(s => <span key={s} className="cv-skill-tag">{s}</span>)}
-            </div>
+            <div className="cv-exp-desc">{skillsText}</div>
           </>
         )}
 
@@ -650,14 +645,120 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
     );
   }
 
-  // modern / minimal / compatto / milano / elegante / corporate share JSX — CSS differs
-  const SINGLE_COL_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano', 'elegante', 'corporate'];
+  // ── Corporate template — stark black-on-white, right-aligned dates.
+  // Deliberately free of color, icons and badges: the format used by
+  // Harvard/Wharton career-services templates and mirrored by consulting
+  // and banking applicants (McKinsey, Goldman, Big Four). ──────────────────
+  if (template === 'corporate') {
+    const dateRange = (from?: string, to?: string) => (from && to ? `${from} – ${to}` : from || to || '');
+    return (
+      <div className="cv-doc cv-corp">
+        <div className="cvc-header">
+          <div className="cvc-name">{name}</div>
+          <div className="cvc-title">{cvData.title || t.titlePlaceholder}</div>
+          <div className="cvc-contact">
+            {[cvData.email, cvData.phone, cvData.city, cvData.linkedin].filter(Boolean).join('   |   ')}
+          </div>
+        </div>
+
+        {cvData.summary && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.profile}</div>
+            <div className="cvc-text">{cvData.summary}</div>
+          </div>
+        )}
+
+        {cvData.experiences.some(e => e.company || e.role) && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.experience}</div>
+            {cvData.experiences.filter(e => e.company || e.role).map(exp => (
+              <div key={exp.id} className="cvc-item">
+                <div className="cvc-item-row">
+                  <span className="cvc-item-role">{exp.role}</span>
+                  <span className="cvc-item-dates">{dateRange(exp.from, exp.to)}</span>
+                </div>
+                {(exp.company || exp.city) && (
+                  <div className="cvc-item-sub">{[exp.company, exp.city].filter(Boolean).join(', ')}</div>
+                )}
+                {exp.desc && <RenderDesc text={exp.desc} className="cvc-text" />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {cvData.education.some(e => e.institution || e.degree) && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.education}</div>
+            {cvData.education.filter(e => e.institution || e.degree).map(edu => (
+              <div key={edu.id} className="cvc-item">
+                <div className="cvc-item-row">
+                  <span className="cvc-item-role">{edu.degree}</span>
+                  <span className="cvc-item-dates">{dateRange(edu.from, edu.to)}</span>
+                </div>
+                {(edu.institution || edu.grade) && (
+                  <div className="cvc-item-sub">{[edu.institution, edu.grade].filter(Boolean).join(', ')}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {effectiveSkills.length > 0 && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.skills}</div>
+            <div className="cvc-text">{skillsText}</div>
+          </div>
+        )}
+
+        {cvData.certifications?.some(c => c.name) && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.certifications}</div>
+            <div className="cvc-text">{cvData.certifications.filter(c => c.name).map(c => [c.name, c.issuer, c.date].filter(Boolean).join(' — ')).join('   |   ')}</div>
+          </div>
+        )}
+
+        {cvData.languages.some(l => l.name) && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.languages}</div>
+            <div className="cvc-text">{cvData.languages.filter(l => l.name).map(l => `${l.name} (${l.level})`).join('   |   ')}</div>
+          </div>
+        )}
+
+        {cvData.additionalExperiences?.some(e => e.company || e.role) && (
+          <div className="cvc-section">
+            <div className="cvc-section-title">{t.additionalExperience}</div>
+            {cvData.additionalExperiences.filter(e => e.company || e.role).map(exp => (
+              <div key={exp.id} className="cvc-item">
+                <div className="cvc-item-row">
+                  <span className="cvc-item-role">{exp.role}</span>
+                  <span className="cvc-item-dates">{dateRange(exp.from, exp.to)}</span>
+                </div>
+                {(exp.company || exp.city) && (
+                  <div className="cvc-item-sub">{[exp.company, exp.city].filter(Boolean).join(', ')}</div>
+                )}
+                {exp.desc && <RenderDesc text={exp.desc} className="cvc-text" />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="cv-privacy-clause">{t.privacyClause}</div>
+        <div className="cv-watermark">
+          <div className="cv-watermark-logo">P</div>
+          ProntoCurriculum.it
+        </div>
+      </div>
+    );
+  }
+
+  // modern / minimal / compatto / milano / elegante share JSX — CSS differs
+  const SINGLE_COL_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano', 'elegante'];
   const templateClass = SINGLE_COL_TEMPLATES.includes(template)
     ? `cv-doc template-${template}`
     : 'cv-doc template-modern';
-  const PHOTO_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano', 'corporate'];
-  const showIcons = template !== 'elegante';
-  const showSkillTags = template !== 'elegante';
+  const PHOTO_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano'];
+  const showIcons = template !== 'elegante' && template !== 'minimal';
+  const showSkillTags = template !== 'elegante' && template !== 'minimal';
 
   return (
     <div className={templateClass}>

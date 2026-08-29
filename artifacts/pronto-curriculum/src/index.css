@@ -1120,67 +1120,46 @@ nav.app-nav {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CORPORATE — Gray header band, formal business structure
+   CORPORATE — stark black-on-white, right-aligned dates. No color,
+   no icons, no badges: the Harvard/Wharton career-services format
+   mirrored by consulting and banking applicants.
    ATS rating: ★★★★★
 ════════════════════════════════════════════════════════════════ */
-.cv-doc.template-corporate .cv-header {
-  background: #ECEFF4;
-  color: var(--navy);
-  padding: 22px 28px;
-  margin: -32px -28px 22px;
-  border-bottom: 3px solid var(--navy);
-  border-top: 3px solid var(--gold);
-  position: relative;
-}
-.cv-doc.template-corporate .cv-name {
+.cv-corp {
   font-family: 'DM Sans', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy);
-  letter-spacing: -0.3px;
+  max-width: 595px;
+  margin: 0 auto;
+  min-height: 842px;
+  padding: 36px 34px;
+  position: relative;
+  background: #fff;
+  color: #1A1A1A;
 }
-.cv-doc.template-corporate .cv-title {
-  font-size: 12px;
-  color: var(--gray500);
-  margin-top: 3px;
-  font-weight: 500;
+.cvc-header {
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1.5px solid #1A1A1A;
 }
-.cv-doc.template-corporate .cv-contact {
-  font-size: 10.5px;
-  color: var(--gray500);
-  display: flex;
-  gap: 18px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-.cv-doc.template-corporate .cv-section-title {
-  font-size: 10px;
+.cvc-name { font-size: 21px; font-weight: 700; letter-spacing: 0.2px; }
+.cvc-title { font-size: 11.5px; color: #4A4A4A; margin-top: 3px; font-weight: 500; }
+.cvc-contact { font-size: 10px; color: #555; margin-top: 8px; letter-spacing: 0.1px; }
+.cvc-section { margin-top: 15px; }
+.cvc-section-title {
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--navy);
-  border-bottom: 1px solid var(--gray300);
-  padding-bottom: 4px;
-  margin: 16px 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  letter-spacing: 1.6px;
+  color: #1A1A1A;
+  border-bottom: 1px solid #1A1A1A;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
 }
-.cv-doc.template-corporate .cv-section-title::before {
-  content: '';
-  width: 9px;
-  height: 9px;
-  border: 2px solid var(--gold);
-  flex-shrink: 0;
-}
-.cv-doc.template-corporate .cv-exp-item {
-  margin-bottom: 11px;
-  padding-left: 10px;
-  border-left: 2px solid var(--gray200);
-}
-.cv-doc.template-corporate .cv-exp-title { font-size: 11.5px; font-weight: 700; color: var(--navy); }
-.cv-doc.template-corporate .cv-exp-meta { font-size: 10px; color: var(--gray500); margin-bottom: 4px; }
-.cv-doc.template-corporate .cv-exp-desc { font-size: 10.5px; color: var(--gray700); line-height: 1.55; }
+.cvc-text { font-size: 10.5px; color: #333; line-height: 1.55; }
+.cvc-item { margin-bottom: 9px; }
+.cvc-item-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.cvc-item-role { font-size: 11.5px; font-weight: 700; color: #1A1A1A; }
+.cvc-item-dates { font-size: 10px; color: #4A4A4A; font-weight: 600; white-space: nowrap; }
+.cvc-item-sub { font-size: 10.5px; color: #555; font-style: italic; margin-bottom: 3px; }
 
 /* ═══════════════════════════════════════════════════════════════
    TEMPLATE MODAL
@@ -2191,7 +2170,8 @@ nav.app-nav {
   #cv-print-portal .cv-doc,
   #cv-print-portal .cv-executive,
   #cv-print-portal .cv-europass,
-  #cv-print-portal .cv-professionale {
+  #cv-print-portal .cv-professionale,
+  #cv-print-portal .cv-corp {
     box-shadow: none !important;
     min-height: unset !important;
     max-width: 100% !important;

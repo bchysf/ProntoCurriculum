@@ -34,7 +34,7 @@ const SPECS: Record<string, TemplateSpec> = {
   milano:        { headerBg: null,     headerText: NAVY,          sectionColor: NAVY,    accentColor: GOLD    },
   elegante:      { headerBg: null,     headerText: BLACK,         sectionColor: [150,100,50], accentColor: GOLD },
   nordico:       { headerBg: null,     headerText: [30,78,52],    sectionColor: [30,78,52],  accentColor: [30,78,52] },
-  corporate:     { headerBg: [236,239,244], headerText: NAVY,    sectionColor: NAVY,    accentColor: GRAY5   },
+  corporate:     { headerBg: null,          headerText: BLACK,   sectionColor: BLACK,   accentColor: GRAY5   },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
