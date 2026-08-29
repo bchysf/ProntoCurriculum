@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, subscriptionsTable } from "@workspace/db";
 import { stripe, STRIPE_PRICES } from "../lib/stripe";
 import { isAdminEmail } from "../middlewares/authMiddleware";
+import { consumeCvEntitlement } from "../middlewares/proGate";
 
 const router: IRouter = Router();
 
@@ -40,95 +41,65 @@ async function getOrCreateCustomer(userId: string, email: string | null | undefi
   return customer.id;
 }
 
-// plan: "single" | "monthly" | "annual" | "unlimited-addon"
+// One-time €1.99 checkout that unlocks one additional CV credit.
 router.post("/billing/checkout-session", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   const userId = req.user!.id;
-  const { plan } = req.body as { plan?: string };
 
   const customerId = await getOrCreateCustomer(userId, req.user!.email);
 
-  if (plan === "single") {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer: customerId,
-      line_items: [{ price: STRIPE_PRICES.singleCv, quantity: 1 }],
-      success_url: `${FRONTEND_URL}/dashboard?checkout=success`,
-      cancel_url: `${FRONTEND_URL}/dashboard?checkout=cancelled`,
-      metadata: { userId, plan: "single" },
-    });
-    return res.json({ url: session.url });
-  }
-
-  if (plan === "monthly" || plan === "annual") {
-    const price = plan === "monthly" ? STRIPE_PRICES.monthly100 : STRIPE_PRICES.annualUnlimited;
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price, quantity: 1 }],
-      success_url: `${FRONTEND_URL}/dashboard?checkout=success`,
-      cancel_url: `${FRONTEND_URL}/dashboard?checkout=cancelled`,
-      metadata: { userId, plan },
-    });
-    return res.json({ url: session.url });
-  }
-
-  if (plan === "unlimited-addon") {
-    const [sub] = await db
-      .select()
-      .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId));
-
-    if (!sub?.stripeSubscriptionId) {
-      return res.status(400).json({ error: "Serve un abbonamento mensile attivo prima di aggiungere il pacchetto illimitati" });
-    }
-
-    await stripe.subscriptionItems.create({
-      subscription: sub.stripeSubscriptionId,
-      price: STRIPE_PRICES.unlimitedAddon,
-    });
-
-    await db
-      .update(subscriptionsTable)
-      .set({ unlimitedAddon: true })
-      .where(eq(subscriptionsTable.userId, userId));
-
-    return res.json({ ok: true });
-  }
-
-  return res.status(400).json({ error: "Piano non valido" });
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer: customerId,
+    line_items: [{ price: STRIPE_PRICES.singleCv, quantity: 1 }],
+    success_url: `${FRONTEND_URL}/dashboard?checkout=success`,
+    cancel_url: `${FRONTEND_URL}/dashboard?checkout=cancelled`,
+    metadata: { userId },
+  });
+  res.json({ url: session.url });
 });
 
+// GET /billing/status — entitlement snapshot for the current visitor.
+// Safe to call anonymously: returns the "needs an account" shape.
 router.get("/billing/status", async (req: Request, res: Response) => {
-  if (!requireAuth(req, res)) return;
-  const userId = req.user!.id;
-
-  const [sub] = await db
-    .select()
-    .from(subscriptionsTable)
-    .where(eq(subscriptionsTable.userId, userId));
-
-  // The site admin gets Pro perks unconditionally, regardless of what (if
-  // anything) is in subscriptionsTable for their account.
-  if (isAdminEmail(req.user!.email)) {
-    res.json({
-      subscription: {
-        ...(sub ?? { unlimitedAddon: false, cvCountThisPeriod: 0 }),
-        plan: "admin",
-        status: "active",
-      },
-    });
+  if (!req.isAuthenticated()) {
+    res.json({ authenticated: false, isAdmin: false, freeTrialUsed: false, credits: 0, canDownloadFree: false });
     return;
   }
 
+  const userId = req.user!.id;
+  if (isAdminEmail(req.user!.email)) {
+    res.json({ authenticated: true, isAdmin: true, freeTrialUsed: false, credits: Infinity, canDownloadFree: true });
+    return;
+  }
+
+  const [sub] = await db
+    .select({ freeTrialUsed: subscriptionsTable.freeTrialUsed, credits: subscriptionsTable.credits })
+    .from(subscriptionsTable)
+    .where(eq(subscriptionsTable.userId, userId));
+
+  const freeTrialUsed = sub?.freeTrialUsed ?? false;
+  const credits = sub?.credits ?? 0;
   res.json({
-    subscription: sub ?? {
-      plan: "free",
-      status: "inactive",
-      unlimitedAddon: false,
-      cvCountThisPeriod: 0,
-    },
+    authenticated: true,
+    isAdmin: false,
+    freeTrialUsed,
+    credits,
+    canDownloadFree: !freeTrialUsed || credits > 0,
   });
+});
+
+// POST /billing/consume — spend one entitlement (free trial, then credits) at
+// the moment a CV is actually generated. Returns 402 when payment is needed.
+router.post("/billing/consume", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+
+  const result = await consumeCvEntitlement(req.user!.id, req.user!.email);
+  if (!result.ok) {
+    res.status(402).json({ error: "Hai esaurito la prova gratuita. Sblocca un altro CV per €1,99.", code: result.reason });
+    return;
+  }
+  res.json({ ok: true, usedFreeTrial: result.usedFreeTrial, remainingCredits: result.remainingCredits });
 });
 
 export default router;

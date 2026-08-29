@@ -3,11 +3,10 @@ import { db } from "@workspace/db";
 import { userCvsTable, experiencesTable } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
-import { isProUser } from "../middlewares/proGate";
+import { consumeCvEntitlement } from "../middlewares/proGate";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
-const FREE_CV_LIMIT = 1;
 
 function getUserId(req: Request, res: Response): string | null {
   const userId = req.user?.id;
@@ -128,15 +127,6 @@ router.post("/cvs", async (req: Request, res: Response) => {
       .where(eq(userCvsTable.userId, userId))
       .orderBy(desc(userCvsTable.updatedAt));
 
-    const isPro = await isProUser(userId, req.user?.email);
-    if (!isPro && existing.length >= FREE_CV_LIMIT) {
-      res.status(403).json({
-        error: "Il piano gratuito include 1 CV salvato. Passa a Pro per salvarne di più.",
-        code: "FREE_CV_LIMIT_REACHED",
-      });
-      return;
-    }
-
     if (existing.length >= MAX_SAVED_CVS) {
       for (const row of existing.slice(MAX_SAVED_CVS - 1)) {
         await db.delete(userCvsTable).where(eq(userCvsTable.id, row.id));
@@ -218,12 +208,14 @@ router.delete("/cvs/:id", async (req: Request, res: Response) => {
 });
 
 router.post("/cvs/export/docx", async (req: Request, res: Response) => {
+  const userId = getUserId(req, res);
+  if (!userId) return;
+
   try {
-    const { cvData, template = "modern", lang = "IT", includeWatermark } = req.body as {
+    const { cvData, template = "modern", lang = "IT" } = req.body as {
       cvData?: DocxExportInput["cvData"];
       template?: string;
       lang?: CvLang;
-      includeWatermark?: boolean;
     };
 
     if (!cvData) {
@@ -231,15 +223,17 @@ router.post("/cvs/export/docx", async (req: Request, res: Response) => {
       return;
     }
 
-    // Determine watermark based on user's active subscription plan if logged in, or fallback to parameter / true
-    const isPro = await isProUser(req.user?.id, req.user?.email);
-    const watermark = isPro ? false : (includeWatermark !== undefined ? includeWatermark : true);
+    const entitlement = await consumeCvEntitlement(userId, req.user?.email);
+    if (!entitlement.ok) {
+      res.status(402).json({ error: "Hai esaurito la prova gratuita. Sblocca un altro CV per €1,99.", code: entitlement.reason });
+      return;
+    }
 
     const buffer = await generateDocxBuffer({
       cvData,
       template,
       lang,
-      includeWatermark: watermark,
+      includeWatermark: false,
     });
 
     const firstName = normalizeStr(cvData.firstName) || "curriculum";
@@ -271,12 +265,17 @@ router.get("/cvs/:id/export/docx", async (req: Request, res: Response) => {
       return;
     }
 
-    const isPro = await isProUser(req.user?.id, req.user?.email);
+    const entitlement = await consumeCvEntitlement(userId, req.user?.email);
+    if (!entitlement.ok) {
+      res.status(402).json({ error: "Hai esaurito la prova gratuita. Sblocca un altro CV per €1,99.", code: entitlement.reason });
+      return;
+    }
+
     const buffer = await generateDocxBuffer({
       cvData: cv.cvData as DocxExportInput["cvData"],
       template: cv.template || "modern",
       lang: (req.query.lang as CvLang) || "IT",
-      includeWatermark: !isPro,
+      includeWatermark: false,
     });
 
     const dataObj = cv.cvData as { firstName?: string; lastName?: string };

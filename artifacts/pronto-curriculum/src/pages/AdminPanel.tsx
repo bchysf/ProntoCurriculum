@@ -11,8 +11,8 @@ interface AdminUserRow {
   id: string;
   name: string;
   email: string;
-  plan: string;
-  cvCountThisPeriod: number;
+  freeTrialUsed: boolean;
+  credits: number;
   createdAt: string;
 }
 
@@ -37,7 +37,7 @@ interface AdminStats {
     totalCvs: number;
     totalTailoredCvs: number;
     totalExperiences: number;
-    activeProSubscriptions: number;
+    usersWithCredits: number;
     newUsersLast30Days: number;
     conversionRate: string;
   };
@@ -102,14 +102,14 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
     void fetchStats();
   }, [fetchStats]);
 
-  const handleGrantPro = async (id: string) => {
+  const handleGrantCredits = async (id: string) => {
     setGrantingId(id);
     try {
-      const res = await fetch(`/api/admin/user/${id}/grant-pro`, {
+      const res = await fetch(`/api/admin/user/${id}/grant-credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ days: 30, plan: 'monthly' }),
+        body: JSON.stringify({ credits: 1 }),
       });
       const body = await res.json().catch(() => ({})) as { error?: string; message?: string };
       if (!res.ok) {
@@ -173,7 +173,7 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
     ['CV creati', stats.platform.totalCvs, 'CV salvati nel database'],
     ['CV su misura', stats.platform.totalTailoredCvs, 'Generati dall\'AI per un\'offerta'],
     ['Esperienze in archivio', stats.platform.totalExperiences, 'Esperienze salvate dagli utenti'],
-    ['Abbonamenti Pro attivi', stats.platform.activeProSubscriptions, 'Piani a pagamento non scaduti'],
+    ['Utenti con crediti CV', stats.platform.usersWithCredits, 'Hanno almeno 1 CV a pagamento disponibile'],
     ['Nuovi utenti (30gg)', stats.platform.newUsersLast30Days, 'Registrati negli ultimi 30 giorni'],
     ['Attivazione', stats.platform.conversionRate, 'Utenti con almeno 1 CV creato'],
   ] : [];
@@ -285,7 +285,7 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
             <div className="panel" style={{ padding: 24 }}>
               <h3 style={{ fontSize: 16, marginBottom: 4 }}>Ultimi 20 utenti registrati</h3>
               <p className="psub" style={{ marginBottom: 20 }}>
-                Dati letti dal database a ogni aggiornamento. "Regala 30gg Pro" scrive davvero sull'abbonamento dell'utente.
+                Dati letti dal database a ogni aggiornamento. "Regala 1 CV" scrive davvero un credito sull'account dell'utente.
               </p>
 
               <div style={{ overflowX: 'auto' }}>
@@ -293,8 +293,8 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
                       <th className="mono" style={{ padding: '10px 12px' }}>Utente</th>
-                      <th className="mono" style={{ padding: '10px 12px' }}>Piano</th>
-                      <th className="mono" style={{ padding: '10px 12px' }}>CV nel periodo</th>
+                      <th className="mono" style={{ padding: '10px 12px' }}>Stato</th>
+                      <th className="mono" style={{ padding: '10px 12px' }}>Crediti</th>
                       <th className="mono" style={{ padding: '10px 12px' }}>Registrato il</th>
                       <th className="mono" style={{ padding: '10px 12px', textAlign: 'right' }}>Azioni</th>
                     </tr>
@@ -311,31 +311,27 @@ export default function AdminPanel({ onNavigate }: AdminPanelProps) {
                         </td>
                         <td style={{ padding: '12px' }}>
                           <span style={{
-                            background: u.plan === 'free' ? '#F4F4F8' : 'var(--tint, #EEEDFC)',
-                            color: u.plan === 'free' ? 'var(--gray500)' : 'var(--gold)',
+                            background: u.freeTrialUsed ? '#F4F4F8' : 'var(--tint, #EEEDFC)',
+                            color: u.freeTrialUsed ? 'var(--gray500)' : 'var(--gold)',
                             padding: '3px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase',
                           }}>
-                            {u.plan === 'monthly' ? 'Pro mensile' : u.plan === 'annual' ? 'Pro annuale' : 'Free'}
+                            {u.freeTrialUsed ? 'Prova usata' : 'Prova disponibile'}
                           </span>
                         </td>
                         <td style={{ padding: '12px', fontWeight: 600, color: 'var(--navy)' }}>
-                          {u.cvCountThisPeriod}
+                          {u.credits}
                         </td>
                         <td style={{ padding: '12px', color: 'var(--gray500)', fontSize: 12.5 }}>
                           {new Date(u.createdAt).toLocaleDateString('it-IT')}
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right' }}>
-                          {u.plan === 'free' ? (
-                            <button
-                              className="btn btn-ink btn-sm"
-                              onClick={() => void handleGrantPro(u.id)}
-                              disabled={grantingId === u.id}
-                            >
-                              {grantingId === u.id ? 'Attivazione…' : 'Regala 30gg Pro'}
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: 12, color: '#12805C', fontWeight: 600 }}>✓ Pro attivo</span>
-                          )}
+                          <button
+                            className="btn btn-ink btn-sm"
+                            onClick={() => void handleGrantCredits(u.id)}
+                            disabled={grantingId === u.id}
+                          >
+                            {grantingId === u.id ? 'Attivazione…' : 'Regala 1 CV'}
+                          </button>
                         </td>
                       </tr>
                     ))}

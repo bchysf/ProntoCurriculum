@@ -3,6 +3,7 @@ import { CV_LABELS, type CvLang } from '../components/CVPreview';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { consumeCvEntitlement } from './entitlement';
 
 // ── exact CSS variable values from index.css ──────────────────────────────────
 const NAVY   = [11, 29, 58]   as [number, number, number]; // #0B1D3A
@@ -333,55 +334,22 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
   return { doc, finalY: y };
 }
 
-// Diagonal watermark + footer note on every page — free plan only.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyFreeWatermark(doc: any) {
-  const pages: number = doc.getNumberOfPages();
-  for (let i = 1; i <= pages; i++) {
-    doc.setPage(i);
-
-    doc.saveGraphicsState();
-    doc.setGState(new doc.GState({ opacity: 0.08 }));
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(44);
-    doc.setTextColor(47, 42, 229);
-    doc.text('ProntoCurriculum.it', 105, 175, { align: 'center', angle: 40 });
-    doc.restoreGraphicsState();
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(170, 170, 170);
-    doc.text('Creato con ProntoCurriculum.it — passa a Pro per rimuovere la filigrana', 105, 293, { align: 'center' });
-  }
-}
-
-// The watermark is removed only for a verified active paid plan.
-async function hasActivePaidPlan(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/billing/status', { credentials: 'include' });
-    if (!res.ok) return false;
-    const data = await res.json() as { subscription?: { plan?: string; status?: string } };
-    const sub = data.subscription;
-    return !!sub && sub.plan !== 'free' && sub.status === 'active';
-  } catch {
-    return false;
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
+// Throws EntitlementError (AUTH_REQUIRED / NEEDS_PAYMENT) if the caller has no
+// free trial or paid credit left — callers should catch it and route to the
+// right modal instead of generating the file.
 export async function downloadCVAsPDF(
   name: string,
   cvData: CVData,
   template = 'modern',
   lang: CvLang = 'IT',
 ): Promise<void> {
+  await consumeCvEntitlement();
+
   const PAGE_H = 297;
   const BOTTOM_MARGIN = 15;
 
-  const [{ finalY }, isPaid] = await Promise.all([
-    buildPDF(cvData, template, lang, { measureOnly: true }),
-    hasActivePaidPlan(),
-  ]);
+  const { finalY } = await buildPDF(cvData, template, lang, { measureOnly: true });
 
   // Shrink font size and spacing just enough to fit one page — but not below
   // MIN_FIT_SCALE, past which we let the CV spill onto a genuine second page
@@ -392,7 +360,6 @@ export async function downloadCVAsPDF(
     : 1;
 
   const { doc } = await buildPDF(cvData, template, lang, { scale });
-  if (!isPaid) applyFreeWatermark(doc);
   const filename = name
     ? `CV_${name.replace(/\s+/g, '_')}.pdf`
     : 'CV_ProntoCurriculum.pdf';

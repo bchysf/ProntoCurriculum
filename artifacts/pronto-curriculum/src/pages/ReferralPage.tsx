@@ -9,10 +9,6 @@ interface ReferralPageProps {
 interface ReferralStats {
   referralCode: string;
   referralUrl: string;
-  invitesSent: number;
-  friendsSignedUp: number;
-  friendsCreatedCv: number;
-  rewardedDaysPro: number;
   creditsEarned: number;
 }
 
@@ -21,13 +17,9 @@ export default function ReferralPage({ onNavigate }: ReferralPageProps) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ReferralStats>({
-    referralCode: 'PRONTO-IT2026',
-    referralUrl: 'https://prontocurriculum.it/join?ref=PRONTO-IT2026',
-    invitesSent: 14,
-    friendsSignedUp: 4,
-    friendsCreatedCv: 3,
-    rewardedDaysPro: 90,
-    creditsEarned: 15,
+    referralCode: '',
+    referralUrl: '',
+    creditsEarned: 0,
   });
 
   useEffect(() => {
@@ -39,7 +31,7 @@ export default function ReferralPage({ onNavigate }: ReferralPageProps) {
         }
       })
       .catch(() => {
-        // Keeps default demo fallback if offline
+        // Keeps the blank-state UI instead of an unhandled rejection if offline
       })
       .finally(() => setLoading(false));
   }, []);
@@ -129,23 +121,11 @@ export default function ReferralPage({ onNavigate }: ReferralPageProps) {
         </div>
       </div>
 
-      {/* Progress Cards */}
+      {/* Credits earned */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 36 }}>
-        <div className="stat" style={{ cursor: 'default' }}>
-          <span className="mono">{t('ref.visitsInvites')}</span>
-          <div className="stat-num">{stats.invitesSent}</div>
-          <div className="stat-sub">{t('ref.visitsSub')}</div>
-        </div>
-
-        <div className="stat" style={{ cursor: 'default' }}>
-          <span className="mono">{t('ref.cvByFriends')}</span>
-          <div className="stat-num" style={{ color: '#12805C' }}>{stats.friendsCreatedCv}</div>
-          <div className="stat-sub up">{t('ref.cvByFriendsSub')}</div>
-        </div>
-
         <div className="stat" style={{ cursor: 'default', background: 'var(--tint)', borderColor: 'rgba(47, 42, 229, 0.2)' }}>
           <span className="mono" style={{ color: 'var(--accent)' }}>{t('ref.proDaysUnlocked')}</span>
-          <div className="stat-num" style={{ color: 'var(--accent)' }}>+{stats.rewardedDaysPro} {t('ref.days')}</div>
+          <div className="stat-num" style={{ color: 'var(--accent)' }}>+{stats.creditsEarned} {t('ref.days')}</div>
           <div className="stat-sub" style={{ color: 'var(--accent)' }}>{t('ref.proDaysSub')}</div>
         </div>
       </div>

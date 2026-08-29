@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CVData, TemplateType, ModalType, SavedCV, Page } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
+import { EntitlementError } from '../utils/entitlement';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
 import { aiCvAssistantChat } from '../utils/aiCvAssistant';
@@ -862,11 +863,44 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     return () => window.removeEventListener('keydown', onKey);
   }, [magnifyOpen]);
 
+  // Auto-saves the in-progress CV before sending the user to Stripe (a full
+  // page redirect) so it's waiting for them in the Dashboard when they return.
+  const autoSaveBeforeCheckout = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'Il mio CV';
+      await fetch('/api/cvs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, cvData, template: selectedTemplate }),
+      });
+    } catch {
+      // Best-effort — the paywall still opens even if the autosave fails.
+    }
+  };
+
+  const handleEntitlementError = async (err: unknown): Promise<boolean> => {
+    if (!(err instanceof EntitlementError)) return false;
+    if (err.code === 'AUTH_REQUIRED') {
+      onModal('signup');
+    } else {
+      await autoSaveBeforeCheckout();
+      onModal('pricing');
+    }
+    return true;
+  };
+
   const handleDownload = async () => {
     setDownloading(true);
     try {
       const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
       await downloadCVAsPDF(name, cvData, selectedTemplate, selectedLanguage);
+      onModal('success');
+    } catch (err: unknown) {
+      if (!(await handleEntitlementError(err))) {
+        alert(err instanceof Error ? err.message : 'Errore durante il download del PDF');
+      }
     } finally {
       setDownloading(false);
     }
@@ -877,8 +911,11 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     try {
       const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ');
       await downloadCVAsDOCX(name, cvData, selectedTemplate, selectedLanguage);
+      onModal('success');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+      if (!(await handleEntitlementError(err))) {
+        alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+      }
     } finally {
       setDownloadingDOCX(false);
     }

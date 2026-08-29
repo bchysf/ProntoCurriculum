@@ -1,4 +1,5 @@
 import type { CVData } from '../types';
+import { EntitlementError } from './entitlement';
 
 /**
  * Downloads the given CVData as a Word (.docx) file by calling our backend API.
@@ -21,6 +22,9 @@ export async function downloadCVAsDOCX(
         lang,
       }),
     });
+
+    if (res.status === 401) throw new EntitlementError('AUTH_REQUIRED');
+    if (res.status === 402) throw new EntitlementError('NEEDS_PAYMENT');
 
     if (!res.ok) {
       let errText = 'Errore sconosciuto';

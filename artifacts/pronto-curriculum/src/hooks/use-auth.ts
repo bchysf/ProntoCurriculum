@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { createElement } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -32,13 +33,21 @@ function userFromSession(session: Session): AuthUser {
   };
 }
 
+const AuthContext = createContext<AuthState | null>(null);
+
 /**
- * Uses Supabase Authentication with Google Sign-In (redirect flow).
- * After sign-in, syncs the user with the backend via POST /api/auth/sync.
+ * Single shared auth state for the whole app (provided once at the root).
+ * Two things feed it:
+ *  - Supabase's client session (Google OAuth), via onAuthStateChange.
+ *  - Our own httpOnly session cookie (email/password auth), which has no
+ *    client-side Supabase session at all — so on mount we also ask the
+ *    backend directly via GET /api/auth/user to rehydrate after a page
+ *    reload or in a component that mounts after login already happened.
  */
-export function useAuth(): AuthState {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [supabaseChecked, setSupabaseChecked] = useState(false);
+  const [cookieChecked, setCookieChecked] = useState(false);
   const syncedTokens = useRef<Set<string>>(new Set());
 
   const syncWithBackend = useCallback(async (session: Session): Promise<AuthUser | null> => {
@@ -57,11 +66,22 @@ export function useAuth(): AuthState {
     }
   }, []);
 
+  // Rehydrate from the httpOnly session cookie (covers email/password auth,
+  // which never creates a Supabase client session).
+  useEffect(() => {
+    fetch('/api/auth/user', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then((data: { user: AuthUser } | null) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {})
+      .finally(() => setCookieChecked(true));
+  }, []);
+
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session) {
-        setUser(null);
-        setIsLoading(false);
+        setSupabaseChecked(true);
         return;
       }
 
@@ -70,7 +90,7 @@ export function useAuth(): AuthState {
         const synced = await syncWithBackend(session);
         setUser(synced ?? userFromSession(session));
       }
-      setIsLoading(false);
+      setSupabaseChecked(true);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -132,13 +152,21 @@ export function useAuth(): AuthState {
     }
   }, []);
 
-  return {
+  const value: AuthState = {
     user,
-    isLoading,
+    isLoading: !supabaseChecked || !cookieChecked,
     isAuthenticated: !!user,
     login,
     loginWithEmail,
     signUpWithEmail,
     logout,
   };
+
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 }

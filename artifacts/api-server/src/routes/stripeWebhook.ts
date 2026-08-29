@@ -1,8 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import express from "express";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db, subscriptionsTable } from "@workspace/db";
-import { stripe, STRIPE_PRICES } from "../lib/stripe";
+import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 import type Stripe from "stripe";
 
@@ -36,73 +36,20 @@ router.post(
 
     try {
       switch (event.type) {
+        // The only paid product is a one-time €1.99 CV credit — on successful
+        // payment, add one credit to the buyer's account.
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
           const userId = session.metadata?.userId;
-          const plan = session.metadata?.plan;
-          if (!userId) break;
-
-          if (session.mode === "subscription" && session.subscription) {
-            const subscriptionId =
-              typeof session.subscription === "string" ? session.subscription : session.subscription.id;
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            await db
-              .update(subscriptionsTable)
-              .set({
-                stripeSubscriptionId: subscription.id,
-                plan: plan === "annual" ? "annual" : "monthly",
-                status: subscription.status,
-                currentPeriodEnd: new Date(subscription.items.data[0]!.current_period_end * 1000),
-                cvCountThisPeriod: 0,
-              })
-              .where(eq(subscriptionsTable.userId, userId));
-          }
-          // mode === "payment" (single CV) is fulfilled client-side by re-checking
-          // /billing/status → cvCountThisPeriod is not touched; single downloads are
-          // tracked by the caller unlocking that one CV export.
-          break;
-        }
-
-        case "customer.subscription.updated": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const userId = subscription.metadata?.userId ?? (await lookupUserId(subscription.customer as string));
-          if (!userId) break;
-
-          const hasAddon = subscription.items.data.some((item) => item.price.id === STRIPE_PRICES.unlimitedAddon);
+          if (!userId || session.mode !== "payment" || session.payment_status !== "paid") break;
 
           await db
-            .update(subscriptionsTable)
-            .set({
-              status: subscription.status,
-              unlimitedAddon: hasAddon,
-              currentPeriodEnd: new Date(subscription.items.data[0]!.current_period_end * 1000),
-            })
-            .where(eq(subscriptionsTable.userId, userId));
-          break;
-        }
-
-        case "customer.subscription.deleted": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const userId = subscription.metadata?.userId ?? (await lookupUserId(subscription.customer as string));
-          if (!userId) break;
-
-          await db
-            .update(subscriptionsTable)
-            .set({ plan: "free", status: "canceled", unlimitedAddon: false, stripeSubscriptionId: null })
-            .where(eq(subscriptionsTable.userId, userId));
-          break;
-        }
-
-        case "invoice.payment_succeeded": {
-          const invoice = event.data.object as Stripe.Invoice;
-          if (invoice.billing_reason === "subscription_cycle") {
-            const userId = await lookupUserId(invoice.customer as string);
-            if (!userId) break;
-            await db
-              .update(subscriptionsTable)
-              .set({ cvCountThisPeriod: 0 })
-              .where(eq(subscriptionsTable.userId, userId));
-          }
+            .insert(subscriptionsTable)
+            .values({ userId, credits: 1 })
+            .onConflictDoUpdate({
+              target: subscriptionsTable.userId,
+              set: { credits: sql`${subscriptionsTable.credits} + 1`, updatedAt: new Date() },
+            });
           break;
         }
 
@@ -117,13 +64,5 @@ router.post(
     return res.json({ received: true });
   },
 );
-
-async function lookupUserId(stripeCustomerId: string): Promise<string | null> {
-  const [row] = await db
-    .select({ userId: subscriptionsTable.userId })
-    .from(subscriptionsTable)
-    .where(eq(subscriptionsTable.stripeCustomerId, stripeCustomerId));
-  return row?.userId ?? null;
-}
 
 export default router;

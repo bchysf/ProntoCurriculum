@@ -29,7 +29,7 @@ adminRouter.get("/stats", async (req: Request, res: Response) => {
       db.select({ count: sql<number>`count(*)::int` }).from(usersTable)
         .where(sql`${usersTable.createdAt} > now() - interval '30 days'`),
       db.select({ count: sql<number>`count(*)::int` }).from(subscriptionsTable)
-        .where(sql`${subscriptionsTable.status} = 'active' and ${subscriptionsTable.plan} <> 'free' and ${subscriptionsTable.currentPeriodEnd} > now()`),
+        .where(sql`${subscriptionsTable.credits} > 0`),
     ]);
 
     // Recent 20 users with their subscription
@@ -49,7 +49,7 @@ adminRouter.get("/stats", async (req: Request, res: Response) => {
         totalCvs: cvsCountResult?.count ?? 0,
         totalTailoredCvs: tailoredCountResult?.count ?? 0,
         totalExperiences: experiencesCountResult?.count ?? 0,
-        activeProSubscriptions: activeSubsResult?.count ?? 0,
+        usersWithCredits: activeSubsResult?.count ?? 0,
         newUsersLast30Days: newUsers30dResult?.count ?? 0,
         // Real activation rate: users that created at least one CV.
         conversionRate: totalUsers > 0 ? `${Math.round((usersWithCv / totalUsers) * 1000) / 10}%` : "—",
@@ -76,8 +76,8 @@ adminRouter.get("/stats", async (req: Request, res: Response) => {
           id: u.id,
           email: u.email || "nessuna@email.it",
           name,
-          plan: sub?.plan || "free",
-          cvCountThisPeriod: sub?.cvCountThisPeriod ?? 0,
+          freeTrialUsed: sub?.freeTrialUsed ?? false,
+          credits: sub?.credits ?? 0,
           createdAt: u.createdAt,
         };
       }),
@@ -90,36 +90,28 @@ adminRouter.get("/stats", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/admin/user/:id/grant-pro
-adminRouter.post("/user/:id/grant-pro", async (req: Request, res: Response) => {
+// POST /api/admin/user/:id/grant-credits — manually gift CV credits (support/goodwill).
+adminRouter.post("/user/:id/grant-credits", async (req: Request, res: Response) => {
   try {
     const userIdStr = Array.isArray(req.params.id) ? req.params.id[0] : String(req.params.id || "");
-    const { days = 30, plan = "monthly" } = req.body;
-
-    const periodEnd = new Date(Date.now() + Number(days) * 24 * 60 * 60 * 1000);
+    const { credits = 1 } = req.body;
+    const amount = Number(credits);
 
     await db
       .insert(subscriptionsTable)
-      .values({
-        userId: userIdStr,
-        plan: plan as "free" | "monthly" | "annual",
-        status: "active",
-        currentPeriodEnd: periodEnd,
-      })
+      .values({ userId: userIdStr, credits: amount })
       .onConflictDoUpdate({
         target: subscriptionsTable.userId,
         set: {
-          plan: plan as "free" | "monthly" | "annual",
-          status: "active",
-          currentPeriodEnd: periodEnd,
+          credits: sql`${subscriptionsTable.credits} + ${amount}`,
           updatedAt: new Date(),
         },
       });
 
-    logger.info({ userId: userIdStr, days, plan }, "✅ Granted Pro plan via Admin Panel");
-    res.json({ success: true, message: `Utente aggiornato al piano ${plan} per +${days} giorni.` });
+    logger.info({ userId: userIdStr, amount }, "✅ Granted CV credits via Admin Panel");
+    res.json({ success: true, message: `Aggiunti ${amount} crediti CV all'utente.` });
   } catch (err: unknown) {
-    logger.error({ err }, "Error granting pro status");
+    logger.error({ err }, "Error granting credits");
     res.status(500).json({ error: "Errore nell'aggiornamento dell'utente." });
   }
 });

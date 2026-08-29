@@ -20,7 +20,4 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
 
 export const STRIPE_PRICES = {
   singleCv: "price_1TrSLX8ZsAfc3sY8DQ3SdpoH",
-  monthly100: "price_1TrSLY8ZsAfc3sY8GXIIFNiO",
-  unlimitedAddon: "price_1TrSLY8ZsAfc3sY8TOwX0uEi",
-  annualUnlimited: "price_1TrSLY8ZsAfc3sY8JHzFpjLu",
 } as const;

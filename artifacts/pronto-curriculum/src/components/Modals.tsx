@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ModalType } from '../types';
 
 interface ModalsProps {
@@ -10,10 +10,19 @@ interface ModalsProps {
   onLogin: () => void;
   onLoginWithEmail: (email: string, password: string) => Promise<string | null>;
   onSignUpWithEmail: (email: string, password: string) => Promise<string | null>;
+  // Switches the currently-open modal to the login/signup form — used when an
+  // unauthenticated visitor tries to check out, instead of forcing Google.
+  onRequireAuth: () => void;
 }
 
-export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAuthenticated, onLogin, onLoginWithEmail, onSignUpWithEmail }: ModalsProps) {
-  const [selectedTier, setSelectedTier] = useState<'monthly' | 'annual' | 'single'>('monthly');
+interface BillingStatus {
+  authenticated: boolean;
+  freeTrialUsed: boolean;
+  credits: number;
+  canDownloadFree: boolean;
+}
+
+export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAuthenticated, onLogin, onLoginWithEmail, onSignUpWithEmail, onRequireAuth }: ModalsProps) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -21,6 +30,14 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
+  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
+
+  useEffect(() => {
+    if (modal !== 'pricing' || !isAuthenticated) return;
+    fetch('/api/billing/status', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setBillingStatus(data); });
+  }, [modal, isAuthenticated]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +64,9 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
     if (e.target === e.currentTarget) onClose();
   };
 
-  const startCheckout = async (plan: 'monthly' | 'annual' | 'single') => {
+  const startCheckout = async () => {
     if (!isAuthenticated) {
-      onClose();
-      onLogin();
+      onRequireAuth();
       return;
     }
     setCheckoutLoading(true);
@@ -58,8 +74,6 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
       const res = await fetch('/api/billing/checkout-session', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -102,7 +116,7 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
               <div className="auth-sub">
                 {authTab === 'login'
                   ? 'Accedi per ritrovare i tuoi CV, le candidature e l\'archivio esperienze.'
-                  : 'Salva i tuoi progressi, scarica il CV e gestisci le tue candidature.'}
+                  : 'Crea un account per scaricare il tuo primo CV gratis, senza filigrana.'}
               </div>
 
               <button className="btn-google" onClick={() => { onClose(); onLogin(); }}>
@@ -160,10 +174,6 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
                   </>
                 )}
               </div>
-
-              <button className="auth-skip" onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
-                Continua senza account
-              </button>
             </>
           )}
         </div>
@@ -173,48 +183,30 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
       {modal === 'pricing' && (
         <div className="modal-box fade-in">
           <button className="modal-close" onClick={onClose}>×</button>
-          <div className="modal-title">Scegli il tuo piano</div>
-          <div className="modal-sub">Sblocca il tuo CV professionale senza filigrana. Sconto -30% permanente.</div>
+          {billingStatus && !billingStatus.freeTrialUsed ? (
+            <>
+              <div className="modal-title">Il tuo primo CV è gratis</div>
+              <div className="modal-sub">Crealo e scaricalo senza filigrana: la prova gratuita non è ancora stata usata.</div>
+            </>
+          ) : (
+            <>
+              <div className="modal-title">Sblocca il tuo CV</div>
+              <div className="modal-sub">Hai già usato la tua prova gratuita. Ogni CV successivo costa €1,99, pagamento singolo, nessun abbonamento.</div>
+            </>
+          )}
           <div className="tier-cards">
-            <div className={`tier-card ${selectedTier === 'monthly' ? 'selected' : ''}`} onClick={() => setSelectedTier('monthly')}>
+            <div className="tier-card selected">
               <div className="tier-card-info">
-                <h4>⚡ Piano Mensile</h4>
-                <p>100 CV al mese · AI rephrasing · niente filigrana</p>
+                <h4>📄 Un CV, un pagamento</h4>
+                <p>Download senza filigrana · rephrasing AI incluso · nessun rinnovo automatico</p>
               </div>
               <div className="tier-price">
-                <span className="tier-price-old">€9,99</span>
-                €6,99<span style={{ fontSize: 14, fontWeight: 400 }}>/mese</span>
-                <span className="tier-badge">-30%</span>
-              </div>
-            </div>
-            <div className={`tier-card ${selectedTier === 'annual' ? 'selected' : ''}`} onClick={() => setSelectedTier('annual')}>
-              <div className="tier-card-info">
-                <h4>🏆 Piano Annuale</h4>
-                <p>CV illimitati per un anno intero</p>
-              </div>
-              <div className="tier-price">
-                <span className="tier-price-old">€49,99</span>
-                €34,99<span style={{ fontSize: 14, fontWeight: 400 }}>/anno</span>
-                <span className="tier-badge">-30%</span>
-              </div>
-            </div>
-            <div className={`tier-card ${selectedTier === 'single' ? 'selected' : ''}`} onClick={() => setSelectedTier('single')}>
-              <div className="tier-card-info">
-                <h4>📄 Singolo CV</h4>
-                <p>Acquisto una tantum, nessun abbonamento</p>
-              </div>
-              <div className="tier-price">
-                <span className="tier-price-old">€2,99</span>
-                €1,99
-                <span className="tier-badge">-30%</span>
+                €1,99<span style={{ fontSize: 14, fontWeight: 400 }}>/CV</span>
               </div>
             </div>
           </div>
-          <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} disabled={checkoutLoading} onClick={() => startCheckout(selectedTier)}>
+          <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} disabled={checkoutLoading} onClick={() => void startCheckout()}>
             {checkoutLoading ? 'Attendi…' : 'Procedi al pagamento →'}
-          </button>
-          <button className="btn btn-ghost" style={{ width: '100%', fontSize: 13 }} onClick={() => { onClose(); setTimeout(() => onSuccess(), 100); }}>
-            ⬇ Continua gratis con filigrana
           </button>
         </div>
       )}

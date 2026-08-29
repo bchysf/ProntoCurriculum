@@ -211,9 +211,8 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       setCheckingPro(true);
       try {
         const res = await fetch('/api/billing/status', { credentials: 'include' });
-        const data = await res.json() as { subscription?: { plan?: string; status?: string } };
-        const sub = data.subscription;
-        setIsPro(!!sub && sub.plan !== 'free' && sub.status === 'active');
+        const data = await res.json() as { isAdmin?: boolean; canDownloadFree?: boolean };
+        setIsPro(!!data.isAdmin || !!data.canDownloadFree);
       } finally {
         setCheckingPro(false);
       }

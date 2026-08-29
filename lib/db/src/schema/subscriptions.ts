@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import { boolean, integer, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 import { usersTable } from "./auth";
 
+// Tracks each user's pay-per-CV entitlement: one free trial generation, then
+// paid credits (each bought for a single CV via Stripe one-time checkout).
 export const subscriptionsTable = pgTable("subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id")
@@ -9,14 +11,8 @@ export const subscriptionsTable = pgTable("subscriptions", {
     .unique()
     .references(() => usersTable.id, { onDelete: "cascade" }),
   stripeCustomerId: varchar("stripe_customer_id"),
-  stripeSubscriptionId: varchar("stripe_subscription_id"),
-  // "free" | "monthly" | "annual"
-  plan: varchar("plan", { length: 20 }).notNull().default("free"),
-  // true when the unlimited add-on price item is active on the subscription
-  unlimitedAddon: boolean("unlimited_addon").notNull().default(false),
-  status: varchar("status", { length: 30 }).notNull().default("inactive"),
-  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
-  cvCountThisPeriod: integer("cv_count_this_period").notNull().default(0),
+  freeTrialUsed: boolean("free_trial_used").notNull().default(false),
+  credits: integer("credits").notNull().default(0),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

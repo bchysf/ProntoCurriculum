@@ -24,7 +24,7 @@ import ComeFunziona from './pages/ComeFunziona';
 import { initGA4, trackPageView } from './utils/analytics';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
-import { useAuth } from './hooks/use-auth';
+import { AuthProvider, useAuth } from './hooks/use-auth';
 import { LanguageProvider } from './i18n/LanguageContext';
 import type { SupportedLanguage } from './utils/aiTranslate';
 import { pathToPage, pageToPath } from './utils/routes';
@@ -268,6 +268,7 @@ function AppInner() {
         onLogin={login}
         onLoginWithEmail={loginWithEmail}
         onSignUpWithEmail={signUpWithEmail}
+        onRequireAuth={() => openModal('signup')}
       />
       <Toaster position="bottom-center" richColors />
       <CookieConsent onNavigate={navigate} />
@@ -277,8 +278,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AppInner />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <AppInner />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
