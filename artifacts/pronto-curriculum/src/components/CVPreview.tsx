@@ -553,10 +553,10 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
           <div className="cv-name">{name}</div>
           <div className="cv-title">{cvData.title || t.titlePlaceholder}</div>
           <div className="cv-contact">
-            {cvData.email && <span>{cvData.email}</span>}
-            {cvData.phone && <span>{cvData.phone}</span>}
-            {cvData.city && <span>{cvData.city}</span>}
-            {cvData.linkedin && <span>{cvData.linkedin}</span>}
+            {cvData.email && <span>✉ {cvData.email}</span>}
+            {cvData.phone && <span>✆ {cvData.phone}</span>}
+            {cvData.city && <span>◎ {cvData.city}</span>}
+            {cvData.linkedin && <span>in {cvData.linkedin}</span>}
           </div>
         </div>
 
@@ -570,7 +570,9 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
         {effectiveSkills.length > 0 && (
           <>
             <div className="cv-section-title">{t.skills}</div>
-            <div className="cv-exp-desc">{skillsText}</div>
+            <div className="cv-skill-tags">
+              {effectiveSkills.map(s => <span key={s} className="cv-skill-tag">{s}</span>)}
+            </div>
           </>
         )}
 
@@ -653,20 +655,23 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
   const templateClass = SINGLE_COL_TEMPLATES.includes(template)
     ? `cv-doc template-${template}`
     : 'cv-doc template-modern';
+  const PHOTO_TEMPLATES = ['modern', 'minimal', 'compatto', 'milano', 'corporate'];
+  const showIcons = template !== 'elegante';
+  const showSkillTags = template !== 'elegante';
 
   return (
     <div className={templateClass}>
       <div className="cv-header">
-        {(template === 'modern') && hasPhoto && (
-          <img src={cvData.photo} alt="foto" style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--gold)', position: 'absolute', top: 20, right: 20 }} />
+        {PHOTO_TEMPLATES.includes(template) && hasPhoto && (
+          <img src={cvData.photo} alt="foto" className="cv-header-photo" />
         )}
         <div className="cv-name">{name}</div>
         <div className="cv-title">{cvData.title || t.titlePlaceholder}</div>
         <div className="cv-contact">
-          {cvData.email && <span>{cvData.email}</span>}
-          {cvData.phone && <span>{cvData.phone}</span>}
-          {cvData.city && <span>{cvData.city}</span>}
-          {cvData.linkedin && <span>{cvData.linkedin}</span>}
+          {cvData.email && <span>{showIcons ? '✉ ' : ''}{cvData.email}</span>}
+          {cvData.phone && <span>{showIcons ? '✆ ' : ''}{cvData.phone}</span>}
+          {cvData.city && <span>{showIcons ? '◎ ' : ''}{cvData.city}</span>}
+          {cvData.linkedin && <span>{showIcons ? 'in ' : ''}{cvData.linkedin}</span>}
         </div>
       </div>
 
@@ -680,7 +685,13 @@ export default function CVPreview({ cvData, template, lang = 'IT' }: CVPreviewPr
       {effectiveSkills.length > 0 && (
         <>
           <div className="cv-section-title">{t.skills}</div>
-          <div className="cv-exp-desc">{skillsText}</div>
+          {showSkillTags ? (
+            <div className="cv-skill-tags">
+              {effectiveSkills.map(s => <span key={s} className="cv-skill-tag">{s}</span>)}
+            </div>
+          ) : (
+            <div className="cv-exp-desc">{skillsText}</div>
+          )}
         </>
       )}
 

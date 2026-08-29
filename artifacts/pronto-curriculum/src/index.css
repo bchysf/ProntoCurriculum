@@ -650,6 +650,19 @@ nav.app-nav {
 
 /* CV PREVIEW — see .cv-doc-scaler section below for main styles */
 
+.cv-doc,
+.cv-executive,
+.cv-europass,
+.cv-professionale {
+  /* The site's global --navy/--gold were repurposed for the indigo UI brand;
+     CV documents need their own real navy/gold so accents don't render as
+     bright indigo. Scoping the override here keeps the rest of the app intact. */
+  --navy: #16233F;
+  --navy2: #0E1830;
+  --gold: #B08D3F;
+  --gold2: #8F7233;
+}
+
 .cv-doc {
   padding: 32px 28px;
   font-family: 'DM Sans', sans-serif;
@@ -659,6 +672,31 @@ nav.app-nav {
   position: relative;
 }
 
+.cv-header-photo {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--gold);
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.cv-skill-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.cv-skill-tag {
+  display: inline-block;
+  background: var(--gray100);
+  color: var(--navy);
+  border: 1px solid var(--gray300);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
 /* Modern template */
 .cv-doc.template-modern .cv-header {
   background: var(--navy);
@@ -666,6 +704,7 @@ nav.app-nav {
   padding: 22px 28px;
   margin: -32px -28px 22px;
   border-bottom: 4px solid var(--gold);
+  position: relative;
 }
 .cv-doc.template-modern .cv-name {
   font-family: 'Playfair Display', serif;
@@ -690,6 +729,16 @@ nav.app-nav {
   border-bottom: 1px solid var(--gray100);
   padding-bottom: 5px;
   margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.cv-doc.template-modern .cv-section-title::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+  flex-shrink: 0;
 }
 .cv-doc.template-modern .cv-exp-item { margin-bottom: 10px; }
 .cv-doc.template-modern .cv-exp-title { font-size: 12px; font-weight: 600; }
@@ -701,6 +750,7 @@ nav.app-nav {
   border-bottom: 2px solid var(--navy);
   padding-bottom: 14px;
   margin-bottom: 16px;
+  position: relative;
 }
 .cv-doc.template-minimal .cv-name {
   font-family: 'Playfair Display', serif;
@@ -723,7 +773,18 @@ nav.app-nav {
   text-transform: uppercase;
   letter-spacing: 2px;
   color: var(--navy);
-  margin: 14px 0 8px;
+  margin: 14px 0 10px;
+  position: relative;
+  padding-bottom: 6px;
+}
+.cv-doc.template-minimal .cv-section-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 22px;
+  height: 2px;
+  background: var(--gold);
 }
 .cv-doc.template-minimal .cv-exp-item {
   margin-bottom: 10px;
@@ -779,6 +840,24 @@ nav.app-nav {
   border-bottom: 1px solid #1a1a1a;
   padding-bottom: 3px;
   margin: 18px 0 9px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.cv-doc.template-classico .cv-section-title::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cv-doc.template-classico .cv-skill-tags { gap: 6px; }
+.cv-doc.template-classico .cv-skill-tag {
+  background: none;
+  border: 1px solid #1a1a1a;
+  color: #1a1a1a;
+  border-radius: 2px;
 }
 .cv-doc.template-classico .cv-exp-item { margin-bottom: 11px; }
 .cv-doc.template-classico .cv-exp-title { font-size: 11.5px; font-weight: 700; color: #1a1a1a; }
@@ -866,7 +945,11 @@ nav.app-nav {
   padding-bottom: 2px;
   margin: 12px 0 6px;
 }
-.cv-doc.template-compatto .cv-exp-item { margin-bottom: 8px; }
+.cv-doc.template-compatto .cv-exp-item {
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--gray200);
+}
 .cv-doc.template-compatto .cv-exp-title { font-size: 10.5px; font-weight: 700; }
 .cv-doc.template-compatto .cv-exp-meta { font-size: 9.5px; color: var(--gray500); margin-bottom: 2px; }
 .cv-doc.template-compatto .cv-exp-desc { font-size: 9.5px; color: var(--gray700); line-height: 1.45; }
@@ -882,6 +965,7 @@ nav.app-nav {
   margin: 0 0 0 0;
   border-top: 5px solid var(--navy);
   padding-top: 20px;
+  position: relative;
 }
 .cv-doc.template-milano .cv-name {
   font-family: 'DM Sans', sans-serif;
@@ -1045,6 +1129,8 @@ nav.app-nav {
   padding: 22px 28px;
   margin: -32px -28px 22px;
   border-bottom: 3px solid var(--navy);
+  border-top: 3px solid var(--gold);
+  position: relative;
 }
 .cv-doc.template-corporate .cv-name {
   font-family: 'DM Sans', sans-serif;
@@ -1076,8 +1162,22 @@ nav.app-nav {
   border-bottom: 1px solid var(--gray300);
   padding-bottom: 4px;
   margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
-.cv-doc.template-corporate .cv-exp-item { margin-bottom: 11px; }
+.cv-doc.template-corporate .cv-section-title::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--gold);
+  flex-shrink: 0;
+}
+.cv-doc.template-corporate .cv-exp-item {
+  margin-bottom: 11px;
+  padding-left: 10px;
+  border-left: 2px solid var(--gray200);
+}
 .cv-doc.template-corporate .cv-exp-title { font-size: 11.5px; font-weight: 700; color: var(--navy); }
 .cv-doc.template-corporate .cv-exp-meta { font-size: 10px; color: var(--gray500); margin-bottom: 4px; }
 .cv-doc.template-corporate .cv-exp-desc { font-size: 10.5px; color: var(--gray700); line-height: 1.55; }
@@ -1710,7 +1810,11 @@ nav.app-nav {
   border-radius: 100px;
   background: rgba(255,255,255,0.1);
   margin-bottom: 5px;
-  display: inline-block;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
 }
 
 .cve-main {
