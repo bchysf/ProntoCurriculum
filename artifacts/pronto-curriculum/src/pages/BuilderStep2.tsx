@@ -260,7 +260,7 @@ const RB_CSS = `
 
 .rb-tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .rb-tpl-card { background: none; border: none; padding: 0; cursor: pointer; text-align: left; font-family: inherit; }
-.rb-tpl-shot { aspect-ratio: 210 / 280; background: #fff; border: 1px solid rgba(20,23,31,.08); border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 2px 10px rgba(20,23,31,.05); transition: all .18s; }
+.rb-tpl-shot { aspect-ratio: 595 / 842; background: #fff; border: 1px solid rgba(20,23,31,.08); border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 2px 10px rgba(20,23,31,.05); transition: all .18s; }
 .rb-tpl-card:hover .rb-tpl-shot { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(20,23,31,.13); }
 .rb-tpl-card.on .rb-tpl-shot { outline: 3px solid var(--gold, #2F2AE5); outline-offset: 2px; }
 .rb-tpl-shot .zoomwrap { transform: scale(var(--s)); transform-origin: top left; width: 595px; pointer-events: none; }
@@ -776,6 +776,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [cvScale, setCvScale] = useState(0.9);
+  const tplGridRef = useRef<HTMLDivElement>(null);
+  const [tplCardScale, setTplCardScale] = useState(0.345);
   const [magnifyOpen, setMagnifyOpen] = useState(false);
   const [magnifyScale, setMagnifyScale] = useState(1.2);
 
@@ -814,6 +816,12 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
+      // The pane is unmounted while the Template/ATS tabs are shown, which
+      // fires one last ResizeObserver callback reporting width 0 as it
+      // leaves the DOM — ignore that instead of latching the scale at its
+      // 0.3 floor until the next real resize (which, after unmount, never
+      // comes, since we've stopped observing this dead node anyway).
+      if (w <= 0) return;
       const margin = 80;
       const scale = Math.max(0.3, (w - margin) / 595);
       setCvScale(scale);
@@ -822,7 +830,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     obs.observe(el);
     update();
     return () => obs.disconnect();
-  }, []);
+    // Re-run whenever the Edit/Preview pane (and its previewRef node) remounts,
+    // since a fresh DOM node needs a fresh observer.
+  }, [rbTab]);
+
+  // Template gallery thumbnails: scale each card's CV render to match its
+  // actual rendered width (all cards share one width via CSS Grid), instead
+  // of a fixed --s constant that either left a mismatched gap or cropped
+  // content depending on how many columns the grid ended up fitting.
+  useEffect(() => {
+    if (rbTab !== 'custom') return;
+    const grid = tplGridRef.current;
+    if (!grid) return;
+    const update = () => {
+      const card = grid.querySelector('.rb-tpl-shot');
+      const w = card?.clientWidth ?? 0;
+      if (w <= 0) return;
+      setTplCardScale(w / 595);
+    };
+    const obs = new ResizeObserver(update);
+    obs.observe(grid);
+    update();
+    return () => obs.disconnect();
+  }, [rbTab]);
 
   useEffect(() => {
     if (!magnifyOpen) return;
@@ -1949,14 +1979,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 </div>
                 <button className="btn btn-gold btn-sm" onClick={() => setRbTab('edit')}>{t('editor.backToEditor')}</button>
               </div>
-              <div className="rb-tpl-grid">
+              <div className="rb-tpl-grid" ref={tplGridRef}>
                 {TPL_LIST.map(tp => (
                   <button
                     key={tp.id}
                     className={`rb-tpl-card${selectedTemplate === tp.id ? ' on' : ''}`}
                     onClick={() => onTemplateChange(tp.id)}
                   >
-                    <div className="rb-tpl-shot" style={{ '--s': 0.345 } as React.CSSProperties}>
+                    <div className="rb-tpl-shot" style={{ '--s': tplCardScale } as React.CSSProperties}>
                       {selectedTemplate === tp.id && <span className="rb-tpl-onbadge">{t('editor.inUse')}</span>}
                       <div className="zoomwrap">
                         <CVPreview cvData={cvData} template={tp.id} lang={selectedLanguage} />
