@@ -4,6 +4,7 @@ import { userCvsTable, experiencesTable } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { generateDocxBuffer, type DocxExportInput, type CvLang } from "../lib/docxGenerator";
 import { consumeCvEntitlement } from "../middlewares/proGate";
+import { syncProfileFromCv } from "../lib/profileSync";
 
 const router: IRouter = Router();
 const MAX_SAVED_CVS = 20;
@@ -144,6 +145,8 @@ router.post("/cvs", async (req: Request, res: Response) => {
       .returning();
 
     await syncExperiencesFromCV(userId, cvData, req.log);
+    syncProfileFromCv(userId, cvData as Parameters<typeof syncProfileFromCv>[1])
+      .catch(err => req.log.error({ err }, "Failed to sync profile from saved CV"));
 
     res.json({ cv: inserted });
   } catch (err) {
@@ -228,6 +231,8 @@ router.post("/cvs/export/docx", async (req: Request, res: Response) => {
       res.status(402).json({ error: "Hai esaurito la prova gratuita. Sblocca un altro CV per €1,99.", code: entitlement.reason });
       return;
     }
+    syncProfileFromCv(userId, cvData as Parameters<typeof syncProfileFromCv>[1])
+      .catch(err => req.log.error({ err }, "Failed to sync profile from downloaded CV"));
 
     const buffer = await generateDocxBuffer({
       cvData,
@@ -270,6 +275,8 @@ router.get("/cvs/:id/export/docx", async (req: Request, res: Response) => {
       res.status(402).json({ error: "Hai esaurito la prova gratuita. Sblocca un altro CV per €1,99.", code: entitlement.reason });
       return;
     }
+    syncProfileFromCv(userId, cv.cvData as Parameters<typeof syncProfileFromCv>[1])
+      .catch(err => req.log.error({ err }, "Failed to sync profile from downloaded CV"));
 
     const buffer = await generateDocxBuffer({
       cvData: cv.cvData as DocxExportInput["cvData"],

@@ -623,6 +623,65 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       })
       .catch(() => {});
   }, [isAuthenticated]);
+
+  // Saved profile: filled in automatically the first time this account saves
+  // or downloads a CV (see profileSync.ts on the backend), then offered back
+  // on every CV after that via "Usa i miei dati salvati". The name is locked
+  // once set — one account is one person, so it can't be retyped per CV.
+  interface SavedProfile {
+    firstName: string | null;
+    lastName: string | null;
+    nameLocked: boolean;
+    profile: {
+      headline?: string | null; phone?: string | null; city?: string | null;
+      linkedin?: string | null; summary?: string | null; skills?: string[] | null;
+      education?: Array<{ id: string; institution: string; degree: string; grade: string; from: string; to: string }> | null;
+      languages?: Array<{ id: string; name: string; level: string }> | null;
+    } | null;
+  }
+  const [savedProfile, setSavedProfile] = useState<SavedProfile | null>(null);
+  useEffect(() => {
+    if (!isAuthenticated) { setSavedProfile(null); return; }
+    fetch('/api/profile', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then((data: SavedProfile | null) => setSavedProfile(data))
+      .catch(() => {});
+  }, [isAuthenticated]);
+
+  // Once the account name is locked, this CV must carry that same name —
+  // otherwise one login could be used to generate CVs for different people.
+  useEffect(() => {
+    if (!savedProfile?.nameLocked) return;
+    const lockedFirst = savedProfile.firstName || '';
+    const lockedLast = savedProfile.lastName || '';
+    if (cvData.firstName !== lockedFirst || cvData.lastName !== lockedLast) {
+      onCVChange({ ...cvData, firstName: lockedFirst, lastName: lockedLast });
+    }
+    // Only re-run when the locked name itself changes, not on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProfile?.nameLocked, savedProfile?.firstName, savedProfile?.lastName]);
+
+  const applySavedProfile = useCallback(() => {
+    if (!savedProfile) return;
+    const p = savedProfile.profile;
+    onCVChange({
+      ...cvData,
+      firstName: savedProfile.firstName || cvData.firstName,
+      lastName: savedProfile.lastName || cvData.lastName,
+      title: p?.headline || cvData.title,
+      phone: p?.phone || cvData.phone,
+      city: p?.city || cvData.city,
+      linkedin: p?.linkedin || cvData.linkedin,
+      summary: p?.summary || cvData.summary,
+      skills: p?.skills?.length ? p.skills : cvData.skills,
+      education: p?.education?.length ? p.education : cvData.education,
+      languages: p?.languages?.length ? p.languages : cvData.languages,
+    });
+  }, [savedProfile, cvData, onCVChange]);
+
+  const hasSavedProfileData = !!(savedProfile?.firstName || savedProfile?.profile?.phone || savedProfile?.profile?.city
+    || savedProfile?.profile?.linkedin || savedProfile?.profile?.summary || savedProfile?.profile?.skills?.length
+    || savedProfile?.profile?.education?.length || savedProfile?.profile?.languages?.length);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['personal']));
   const [newSkill, setNewSkill] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -1407,6 +1466,16 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
             {/* DATI PERSONALI */}
             <AccordionSection title="Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
+              {hasSavedProfileData && (
+                <button
+                  type="button"
+                  className="btn btn-line btn-sm"
+                  style={{ width: '100%', justifyContent: 'center', marginBottom: 14, gap: 7 }}
+                  onClick={applySavedProfile}
+                >
+                  <Icon d={IC.user} size={14} /> Usa i miei dati salvati
+                </button>
+              )}
               <div className="photo-section">
                 {cvData.photo ? (
                   <div className="photo-has-photo">
@@ -1446,13 +1515,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <div className="form-row">
                 <div className="form-group">
                   <label>Nome *</label>
-                  <input type="text" placeholder="Mario" value={cvData.firstName} onChange={e => update('firstName', e.target.value)} />
+                  <input type="text" placeholder="Mario" value={cvData.firstName} disabled={savedProfile?.nameLocked} onChange={e => update('firstName', e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label>Cognome *</label>
-                  <input type="text" placeholder="Rossi" value={cvData.lastName} onChange={e => update('lastName', e.target.value)} />
+                  <input type="text" placeholder="Rossi" value={cvData.lastName} disabled={savedProfile?.nameLocked} onChange={e => update('lastName', e.target.value)} />
                 </div>
               </div>
+              {savedProfile?.nameLocked && (
+                <div className="form-hint" style={{ marginTop: -8, marginBottom: 14 }}>
+                  Il nome è collegato al tuo account e non può essere modificato qui.
+                </div>
+              )}
               <div className="form-group">
                 <label>Titolo professionale</label>
                 <input type="text" placeholder="es. Senior Software Engineer" value={cvData.title} onChange={e => update('title', e.target.value)} />

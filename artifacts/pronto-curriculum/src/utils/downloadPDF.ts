@@ -348,6 +348,15 @@ export async function downloadCVAsPDF(
 ): Promise<void> {
   await consumeCvEntitlement();
 
+  // Best-effort — saves this CV's contact/skills/etc. to the account profile
+  // so the next CV can be built from it. Never blocks the actual download.
+  fetch('/api/profile/sync-from-cv', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ cvData }),
+  }).catch(() => {});
+
   const PAGE_H = 297;
   const BOTTOM_MARGIN = 15;
 
