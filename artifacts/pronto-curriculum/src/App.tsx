@@ -113,10 +113,46 @@ function AppInner() {
   const openModal = useCallback((m: ModalType) => setModal(m), []);
   const closeModal = useCallback(() => setModal(null), []);
 
-  const handleWizardComplete = (data: CVData, template: TemplateType, language: SupportedLanguage) => {
-    setCvData(data);
+  const handleWizardComplete = async (data: CVData, template: TemplateType, language: SupportedLanguage) => {
     setSelectedTemplate(template);
     setInitialLanguage(language);
+
+    // Backfill whatever the wizard left blank (name, contact, bio, education…)
+    // from the account's saved profile, so a returning user never has to
+    // retype their own information into a new CV.
+    let merged = data;
+    try {
+      const res = await fetch('/api/profile', { credentials: 'include' });
+      if (res.ok) {
+        const saved = await res.json() as {
+          firstName?: string | null; lastName?: string | null; email?: string | null;
+          profile?: {
+            headline?: string | null; phone?: string | null; city?: string | null;
+            linkedin?: string | null; summary?: string | null; skills?: string[] | null;
+            education?: CVData['education'] | null; languages?: CVData['languages'] | null;
+          } | null;
+        };
+        const p = saved.profile;
+        merged = {
+          ...data,
+          firstName: data.firstName || saved.firstName || data.firstName,
+          lastName: data.lastName || saved.lastName || data.lastName,
+          email: data.email || saved.email || data.email,
+          title: data.title || p?.headline || data.title,
+          phone: data.phone || p?.phone || data.phone,
+          city: data.city || p?.city || data.city,
+          linkedin: data.linkedin || p?.linkedin || data.linkedin,
+          summary: data.summary || p?.summary || data.summary,
+          skills: data.skills.length ? data.skills : (p?.skills ?? data.skills),
+          education: data.education.length ? data.education : (p?.education ?? data.education),
+          languages: data.languages.length ? data.languages : (p?.languages ?? data.languages),
+        };
+      }
+    } catch {
+      // No saved profile (or not signed in) — the wizard's own data is fine as-is.
+    }
+
+    setCvData(merged);
     navigate('builder-step2');
   };
 
