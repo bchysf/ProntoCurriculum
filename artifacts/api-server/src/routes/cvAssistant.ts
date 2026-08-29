@@ -39,7 +39,7 @@ function buildSystemPrompt(lang: string, hasArchive: boolean): string {
 
 AZIONI DISPONIBILI:
 1. "add_experience" — l'utente descrive una NUOVA esperienza secondaria (volontariato, freelance, progetto, stage) da aggiungere come testo libero, non prendendola da esperienze già salvate.
-2. "search_archive" — l'utente chiede di riprendere/richiamare/usare un'esperienza che ha GIÀ salvato nel suo archivio esperienze (es. "aggiungi la mia esperienza in Google", "usa il lavoro che ho salvato come cameriere", "prendi dal mio archivio X").${hasArchive ? '' : ' (l\'utente non ha esperienze salvate: se chiede questo, rispondi spiegando che non ha ancora nulla nell\'archivio, imposta "action" su "none")'}
+2. "search_archive" — l'utente chiede di riprendere/richiamare/usare una o più esperienze che ha GIÀ salvato nel suo archivio esperienze (es. "aggiungi la mia esperienza in Google", "usa il lavoro che ho salvato come cameriere", "prendi dal mio archivio X", "aggiungi tutto quello che ho salvato", "importa il mio archivio"). Se l'utente vuole TUTTE le esperienze salvate (non solo una specifica), imposta "searchQuery" a "*". Esegui SEMPRE questa azione quando riconosci l'intento — non chiedere conferma prima, il risultato verrà mostrato subito nel CV.${hasArchive ? '' : ' (l\'utente non ha esperienze salvate: se chiede questo, rispondi spiegando che non ha ancora nulla nell\'archivio, imposta "action" su "none")'}
 3. "update_summary" — l'utente chiede di scrivere o riscrivere il profilo professionale/sommario del CV.
 4. "update_skills" — l'utente elenca competenze da impostare come lista skill del CV.
 5. "save_cv" — l'utente chiede esplicitamente di salvare il CV (es. "salva questo", "salvalo", "save this").
@@ -48,19 +48,20 @@ AZIONI DISPONIBILI:
 
 REGOLE ASSOLUTE:
 - Non inventare MAI fatti, aziende, ruoli, date o competenze che l'utente non ha menzionato.
+- Quando riconosci una delle azioni 1-6, ESEGUILA SUBITO nella stessa risposta (compila i campi richiesti) — non rispondere chiedendo "come vuoi procedere?" o "vuoi che proceda?": l'utente ha già dato l'istruzione, la tua risposta stessa È l'esecuzione. Chiedi chiarimenti SOLO se l'istruzione è davvero ambigua al punto da non poter scegliere nessuna azione.
 - Per "add_experience": crea una voce per ciascuna esperienza distinta descritta. Campo "desc": 1-3 bullet (max 25 parole ciascuno), forma impersonale, ogni bullet inizia con "• " separato da un vero \\n.
-- Per "search_archive": restituisci in "searchQuery" le parole chiave (azienda, ruolo o settore) da cercare nell'archivio dell'utente — la ricerca viene eseguita dal server, non da te.
+- Per "search_archive": restituisci in "searchQuery" le parole chiave (azienda, ruolo o settore), oppure "*" per tutto l'archivio — la ricerca viene eseguita dal server, non da te.
 - Per "update_summary": scrivi il nuovo sommario in "summary" basandoti SOLO su quanto detto dall'utente nel messaggio (e nel contesto del CV se rilevante), 2-4 frasi, tono professionale.
 - Per "update_skills": estrai la lista di competenze menzionate in "skills" (array di stringhe).
 - Per "tailor_cv": copia in "jobText" il testo della job description o la descrizione del ruolo così come scritta dall'utente (non riassumere, non inventare).
-- La tua risposta "reply" è sempre in ${langName}, breve (1-3 frasi), amichevole e concreta.
+- IMPORTANTE — lingua della risposta: il campo "reply" deve SEMPRE essere scritto nella STESSA lingua in cui l'utente ha scritto il suo messaggio, indipendentemente dalla lingua del CV. Se l'utente scrive in inglese, "reply" è in inglese; se scrive in italiano, "reply" è in italiano; e così via — rileva la lingua dal messaggio dell'utente, non usare ${langName} come lingua fissa per "reply". La lingua ${langName} vale invece per il contenuto strutturato che finisce nel CV (esperienze, sommario), perché il CV deve restare in una lingua coerente.
 
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
-  "reply": "risposta conversazionale breve in ${langName}",
+  "reply": "risposta conversazionale breve, nella stessa lingua del messaggio dell'utente",
   "action": "add_experience" | "search_archive" | "update_summary" | "update_skills" | "save_cv" | "tailor_cv" | "none",
   "experiences": [ { "company": "", "role": "", "city": "", "from": "", "to": "", "desc": "" } ] | null,
-  "searchQuery": "parole chiave da cercare nell'archivio" | null,
+  "searchQuery": "parole chiave, o \"*\" per tutto l'archivio" | null,
   "summary": "nuovo sommario" | null,
   "skills": ["skill1", "skill2"] | null,
   "jobText": "testo della job description o del ruolo descritto" | null
@@ -144,12 +145,14 @@ ${archiveList}`;
         break;
       case 'search_archive': {
         const query = (parsed.searchQuery ?? '').toLowerCase().trim();
-        const matches = query
-          ? archiveRows.filter(e =>
+        // "*" (or the model leaving it blank on an "add everything" style
+        // request) means the whole archive, not zero results.
+        const matches = (!query || query === '*')
+          ? archiveRows
+          : archiveRows.filter(e =>
               e.role.toLowerCase().includes(query) ||
               e.company.toLowerCase().includes(query) ||
-              (e.description ?? '').toLowerCase().includes(query))
-          : [];
+              (e.description ?? '').toLowerCase().includes(query));
         if (!matches.length) {
           reply = reply || (query
             ? `Non ho trovato nulla nel tuo archivio che corrisponda a "${parsed.searchQuery}".`

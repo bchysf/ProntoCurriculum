@@ -59,6 +59,22 @@ const DEFAULT_CV_DATA: CVData = {
   languages: [{ id: '1', name: 'Inglese', level: 'C1 - Avanzato' }],
 };
 
+// Local draft of the CV in progress — survives a reload of the builder,
+// which previously reset straight back to the Mario Rossi sample data.
+const CV_DRAFT_KEY = 'pc_cv_draft';
+interface CvDraft { cvData: CVData; template: TemplateType; lang: SupportedLanguage }
+function loadCvDraft(): CvDraft | null {
+  try {
+    const raw = localStorage.getItem(CV_DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as CvDraft) : null;
+  } catch {
+    return null;
+  }
+}
+function isDefaultCvData(data: CVData): boolean {
+  return JSON.stringify(data) === JSON.stringify(DEFAULT_CV_DATA);
+}
+
 function AppInner() {
   const { user, isAuthenticated, login, loginWithEmail, signUpWithEmail, logout } = useAuth();
   const initialRoute = pathToPage(window.location.pathname);
@@ -66,9 +82,27 @@ function AppInner() {
   const [activeBlogSlug, setActiveBlogSlug] = useState<string | undefined>(initialRoute.slug ?? 'guida-cv');
   const [modal, setModal] = useState<ModalType>(null);
   const [aiLoadingText, setAiLoadingText] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
-  const [cvData, setCvData] = useState<CVData>(DEFAULT_CV_DATA);
-  const [initialLanguage, setInitialLanguage] = useState<SupportedLanguage>('IT');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(() => loadCvDraft()?.template ?? 'modern');
+  const [cvData, setCvData] = useState<CVData>(() => loadCvDraft()?.cvData ?? DEFAULT_CV_DATA);
+  const [initialLanguage, setInitialLanguage] = useState<SupportedLanguage>(() => loadCvDraft()?.lang ?? 'IT');
+  // Only relevant right after choosing "start a new CV" while a draft already
+  // existed — lets the wizard render instead of the resume-or-restart choice.
+  const [freshWizardStart, setFreshWizardStart] = useState(false);
+
+  useEffect(() => {
+    if (isDefaultCvData(cvData)) {
+      localStorage.removeItem(CV_DRAFT_KEY);
+      return;
+    }
+    const draft: CvDraft = { cvData, template: selectedTemplate, lang: initialLanguage };
+    localStorage.setItem(CV_DRAFT_KEY, JSON.stringify(draft));
+  }, [cvData, selectedTemplate, initialLanguage]);
+
+  // Re-arm the resume-or-restart choice every time the wizard is re-entered
+  // from elsewhere — "start fresh" should only skip it for this one visit.
+  useEffect(() => {
+    if (page !== 'builder-step1') setFreshWizardStart(false);
+  }, [page]);
 
   useEffect(() => {
     if (localStorage.getItem('pc_cookie_consent') === 'all') {
@@ -150,7 +184,31 @@ function AppInner() {
         )}
         {page === 'builder-step1' && (
           <WorkspaceShell page={page} {...shellProps}>
-            <CreateCvWizard onComplete={handleWizardComplete} />
+            {!isDefaultCvData(cvData) && !freshWizardStart ? (
+              <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 20px' }}>
+                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Hai un CV non completato</h2>
+                <p style={{ color: 'var(--gray500)', marginBottom: 28, lineHeight: 1.5 }}>
+                  Abbiamo trovato una bozza di "{[cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'CV'}" salvata sul tuo browser. Vuoi continuare da dove avevi lasciato, o iniziarne uno nuovo?
+                </p>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <button className="btn btn-gold" onClick={() => navigate('builder-step2')}>Continua la bozza</button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      localStorage.removeItem(CV_DRAFT_KEY);
+                      setCvData(DEFAULT_CV_DATA);
+                      setSelectedTemplate('modern');
+                      setInitialLanguage('IT');
+                      setFreshWizardStart(true);
+                    }}
+                  >
+                    Inizia da zero
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <CreateCvWizard onComplete={handleWizardComplete} />
+            )}
           </WorkspaceShell>
         )}
         {page === 'builder-step2' && (
