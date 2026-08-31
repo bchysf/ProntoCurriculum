@@ -56,10 +56,36 @@ export interface CVData {
   certifications?: Certification[];
   additionalExperiences?: Experience[];
   photo?: string;
+  // The language this CV's content was written in — set on AI-generated
+  // (tailored) CVs so the editor/preview render section labels ("Skills",
+  // "Experience", ...) in the same language as the content, instead of
+  // defaulting to Italian.
+  lang?: string;
   // Undefined/true = shown (the default for EU-market job applications).
   // Set false for candidates applying outside the EU, where a GDPR
   // authorization clause is irrelevant and reads as boilerplate.
   includePrivacyClause?: boolean;
+}
+
+export interface CoverLetterData {
+  fitScore: number | null;
+  fitNote: string;
+  recipient: string;
+  hookParagraph: string;
+  valueParagraph: string;
+  cultureParagraph: string;
+  closingParagraph: string;
+  signOff: string;
+}
+
+export interface SavedCoverLetter {
+  id: string;
+  userId: string;
+  jobTitle: string;
+  companyName: string;
+  tone: string;
+  letterData: CoverLetterData;
+  createdAt: string;
 }
 
 export interface SavedTailoredCv {

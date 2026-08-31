@@ -352,6 +352,7 @@ Crea il CV su misura selezionando le esperienze più rilevanti e riscrivendo le 
       languages: profileRow?.languages ?? [],
       certifications: [],
       additionalExperiences,
+      lang,
     };
 
     res.json({ cvData });

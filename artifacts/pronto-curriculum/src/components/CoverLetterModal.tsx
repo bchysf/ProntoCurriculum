@@ -21,7 +21,8 @@ interface CoverLetterModalProps {
   onClose: () => void;
 }
 
-const TONES: { id: 'formal' | 'enthusiastic' | 'concise' | 'executive'; label: string }[] = [
+const TONES: { id: 'human' | 'formal' | 'enthusiastic' | 'concise' | 'executive'; label: string }[] = [
+  { id: 'human', label: 'Naturale' },
   { id: 'formal', label: 'Formale' },
   { id: 'enthusiastic', label: 'Entusiasta' },
   { id: 'concise', label: 'Conciso' },
@@ -40,7 +41,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
   const [jobText, setJobText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [tone, setTone] = useState<'formal' | 'enthusiastic' | 'concise' | 'executive'>('formal');
+  const [tone, setTone] = useState<'human' | 'formal' | 'enthusiastic' | 'concise' | 'executive'>('human');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [result, setResult] = useState<CoverLetterResult | null>(null);
@@ -96,6 +97,21 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
       }
 
       setResult(genJson.data);
+
+      // Best-effort save so the letter shows up in the dashboard/candidature
+      // list — not blocking, and a failure here shouldn't hide the letter
+      // the user just successfully generated.
+      fetch('/api/cover-letter/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          letterData: genJson.data,
+          jobTitle: jobTitle || cvData.title || '',
+          companyName: companyName || '',
+          tone,
+        }),
+      }).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Errore imprevisto.';
       toast.error(message);

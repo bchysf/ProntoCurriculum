@@ -138,7 +138,7 @@ export default function Candidature({ onNavigate, onCVLoaded, onLogin, onModal }
   const handleQuickDownloadDOCX = async (cv: SavedTailoredCv) => {
     setDownloadingDocxId(cv.id);
     try {
-      await downloadCVAsDOCX(cv.jobTitle || t('cand.applicationFallback'), cv.cvData, cv.template || 'modern');
+      await downloadCVAsDOCX(cv.jobTitle || t('cand.applicationFallback'), cv.cvData, cv.template || 'modern', cv.cvData.lang || 'IT');
     } catch (err: unknown) {
       if (err instanceof EntitlementError) {
         onModal(err.code === 'AUTH_REQUIRED' ? 'signup' : 'pricing');

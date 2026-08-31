@@ -165,6 +165,11 @@ function AppInner() {
   const handleCVLoaded = useCallback((data: CVData, template?: string) => {
     setCvData(data);
     if (template) setSelectedTemplate(template as TemplateType);
+    // A tailored CV (from the extension, or the "CV su misura" tool) carries
+    // the language it was actually generated in — without this the editor's
+    // section labels default back to Italian while the AI-written content
+    // stays in whatever language was requested, e.g. English.
+    if (data.lang) setInitialLanguage(data.lang as SupportedLanguage);
   }, []);
 
   const handleSuccess = () => setModal('success');

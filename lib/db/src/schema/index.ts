@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./cover-letters";
 export * from "./experiences";
 export * from "./highlights";
 export * from "./public-profiles";

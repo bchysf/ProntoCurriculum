@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Page, CVData, SavedCV, SavedTailoredCv } from '../types';
+import { Page, CVData, SavedCV, SavedTailoredCv, SavedCoverLetter } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { useT } from '../i18n/LanguageContext';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
@@ -171,11 +171,14 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
 
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
   const [tailoredCVs, setTailoredCVs] = useState<SavedTailoredCv[]>([]);
+  const [coverLetters, setCoverLetters] = useState<SavedCoverLetter[]>([]);
   const [experiences, setExperiences] = useState<ExperienceRow[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [fetching, setFetching] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingLetterId, setDeletingLetterId] = useState<string | null>(null);
+  const [copiedLetterId, setCopiedLetterId] = useState<string | null>(null);
   const [downloadingDocxId, setDownloadingDocxId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -196,19 +199,22 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
   const fetchAll = useCallback(async () => {
     setFetching(true);
     try {
-      const [cvsRes, tailoredRes, expsRes, profileRes] = await Promise.all([
+      const [cvsRes, tailoredRes, lettersRes, expsRes, profileRes] = await Promise.all([
         fetch('/api/cvs', { credentials: 'include' }),
         fetch('/api/tailored-cvs', { credentials: 'include' }),
+        fetch('/api/cover-letters', { credentials: 'include' }),
         fetch('/api/experiences', { credentials: 'include' }),
         fetch('/api/profile', { credentials: 'include' }),
       ]);
       const cvsData = await cvsRes.json() as { cvs?: SavedCV[] };
       const tailoredData = await tailoredRes.json() as { tailoredCvs?: SavedTailoredCv[] };
+      const lettersData = await lettersRes.json() as { coverLetters?: SavedCoverLetter[] };
       const expsData = await expsRes.json() as { experiences?: ExperienceRow[] };
       const profileData = await profileRes.json() as { profile?: UserProfile | null };
 
       setSavedCVs(cvsData.cvs ?? []);
       setTailoredCVs(tailoredData.tailoredCvs ?? []);
+      setCoverLetters(lettersData.coverLetters ?? []);
       setExperiences(expsData.experiences ?? []);
       const p = profileData.profile ?? null;
       setProfile(p);
@@ -272,10 +278,35 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
     } finally { setRenamingId(null); setRenameValue(''); }
   };
 
+  const handleDeleteLetter = async (id: string) => {
+    setDeletingLetterId(id);
+    try {
+      const res = await fetch(`/api/cover-letters/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Errore durante l\'eliminazione della lettera');
+      setCoverLetters(prev => prev.filter(l => l.id !== id));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Errore durante l\'eliminazione della lettera');
+    } finally { setDeletingLetterId(null); }
+  };
+
+  const handleCopyLetter = async (letter: SavedCoverLetter) => {
+    const { recipient, hookParagraph, valueParagraph, cultureParagraph, closingParagraph, signOff } = letter.letterData;
+    const text = [recipient, hookParagraph, valueParagraph, cultureParagraph, closingParagraph, signOff]
+      .filter(Boolean)
+      .join('\n\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLetterId(letter.id);
+      setTimeout(() => setCopiedLetterId(null), 1500);
+    } catch {
+      alert(text);
+    }
+  };
+
   const handleQuickDownloadDOCX = async (cv: SavedCV) => {
     setDownloadingDocxId(cv.id);
     try {
-      await downloadCVAsDOCX(cv.name || 'CV', cv.cvData, cv.template || 'modern');
+      await downloadCVAsDOCX(cv.name || 'CV', cv.cvData, cv.template || 'modern', cv.cvData.lang || 'IT');
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
     } finally {
@@ -546,6 +577,40 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
                 </div>
                 <span className="dh-pill">{t('dash.tailoredBadge')}</span>
                 <button className="btn btn-line btn-sm" onClick={() => handleEditTailored(cv)}>{t('dash.openCV')}</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* COVER LETTERS */}
+      <div className="dh-sec">
+        <div className="dh-sec-head">
+          <h3>{t('dash.letters')}</h3>
+          <a onClick={() => onNavigate('cover-letter')}>{t('dash.newLetter')}</a>
+        </div>
+        {coverLetters.length === 0 ? (
+          <div className="dh-row" style={{ justifyContent: 'space-between' }}>
+            <div className="grow">
+              <b>{t('dash.noLetters')}</b>
+              <div className="sub">{t('dash.noLettersHint')}</div>
+            </div>
+            <button className="btn btn-line btn-sm" onClick={() => onNavigate('cover-letter')}>{t('dash.newLetter')}</button>
+          </div>
+        ) : (
+          <div className="dh-rows">
+            {coverLetters.slice(0, 4).map(letter => (
+              <div className="dh-row" key={letter.id}>
+                <div className="grow">
+                  <b>{letter.jobTitle || t('dash.newLetter')}{letter.companyName ? ` · ${letter.companyName}` : ''}</b>
+                  <div className="sub">{t('dash.generatedOn')} {fmt(letter.createdAt)}</div>
+                </div>
+                <button className="btn btn-line btn-sm" onClick={() => void handleCopyLetter(letter)}>
+                  {copiedLetterId === letter.id ? t('dash.copiedLetter') : t('dash.copyLetter')}
+                </button>
+                <button className="btn btn-line btn-sm btn-danger" disabled={deletingLetterId === letter.id} onClick={() => void handleDeleteLetter(letter.id)} aria-label={t('dash.delete')}>
+                  {deletingLetterId === letter.id ? '…' : <Icon d={IC.trash} size={13} />}
+                </button>
               </div>
             ))}
           </div>

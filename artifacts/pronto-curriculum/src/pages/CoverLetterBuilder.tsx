@@ -40,7 +40,7 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [tone, setTone] = useState<'formal' | 'enthusiastic' | 'concise' | 'executive'>('formal');
+  const [tone, setTone] = useState<'human' | 'formal' | 'enthusiastic' | 'concise' | 'executive'>('human');
   const [language, setLanguage] = useState('IT');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -82,6 +82,21 @@ export default function CoverLetterBuilder({ cvData, template = 'modern', onNavi
 
       setLetterData(json.data);
       toast.success(t('cl.generatedSuccess'));
+
+      // Best-effort save so the letter shows up in the dashboard/candidature
+      // list — not blocking, and a failure here shouldn't hide the letter
+      // the user just successfully generated.
+      fetch('/api/cover-letter/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          letterData: json.data,
+          jobTitle: jobTitle || cvData?.title || '',
+          companyName: companyName || '',
+          tone,
+        }),
+      }).catch(() => {});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(message);
@@ -253,6 +268,7 @@ ${letterData.signOff}`;
                   onChange={(e) => setTone(e.target.value as unknown as typeof tone)}
                   style={{ width: '100%' }}
                 >
+                  <option value="human">{t('cl.toneHuman')}</option>
                   <option value="formal">{t('cl.toneFormal')}</option>
                   <option value="enthusiastic">{t('cl.toneEnthusiastic')}</option>
                   <option value="concise">{t('cl.toneConcise')}</option>
