@@ -81,6 +81,7 @@
     "@workspace/api-server": "workspace:*",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
+    "mammoth": "^1.12.2",
     "pdfjs-dist": "^5.7.284"
   }
 }

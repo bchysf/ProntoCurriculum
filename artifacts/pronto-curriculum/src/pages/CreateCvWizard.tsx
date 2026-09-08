@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { CVData, TemplateType } from '../types';
-import { extractTextFromPDF, extractPhotoFromPDF } from '../utils/parseCV';
+import { extractTextFromPDF, extractPhotoFromPDF, extractTextFromDOCX } from '../utils/parseCV';
 import { aiParseCV, aiParseLinkedInText } from '../utils/aiParseCV';
 import { LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { Icon, IC } from '../components/StrokeIcon';
@@ -154,8 +154,11 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
     let photo: string | null = null;
     try {
       const isPdf = file.name.toLowerCase().endsWith('.pdf');
+      const isDocx = file.name.toLowerCase().endsWith('.docx');
       if (isPdf) {
         [text, photo] = await Promise.all([extractTextFromPDF(file), extractPhotoFromPDF(file)]);
+      } else if (isDocx) {
+        text = await extractTextFromDOCX(file);
       } else {
         text = await file.text();
       }
@@ -261,7 +264,7 @@ export default function CreateCvWizard({ onComplete }: CreateCvWizardProps) {
                   <input
                     ref={fileRef}
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.docx"
                     style={{ display: 'none' }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                   />

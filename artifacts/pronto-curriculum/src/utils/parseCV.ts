@@ -376,6 +376,15 @@ export function parseCVText(raw: string): Partial<CVData> {
   return result;
 }
 
+/* ──────────────────────────── DOCX reader ──────────────────────── */
+
+export async function extractTextFromDOCX(file: File): Promise<string> {
+  const mammoth = await import('mammoth');
+  const arrayBuffer = await file.arrayBuffer();
+  const { value } = await mammoth.extractRawText({ arrayBuffer });
+  return value;
+}
+
 /* ──────────────────────────── PDF reader ───────────────────────── */
 
 async function getPdfJsWithWorker() {
