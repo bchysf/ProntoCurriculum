@@ -316,7 +316,7 @@ export default function BlogArticle({ slug, onNavigate }: BlogArticleProps) {
             </article>
 
             {/* SIDEBAR */}
-            <aside className="ba-side" aria-label="Indice dei contenuti">
+            <aside className="ba-side" aria-label={t('chrome.tocLabel')}>
               <span className="mono">{t('ba.tocLabel')}</span>
               <nav className="ba-toc">
                 {article.sections.map(sec => (

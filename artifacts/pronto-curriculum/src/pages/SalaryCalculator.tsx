@@ -332,7 +332,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
               <h2>{t('sal.paramsTitle')}</h2>
 
               <div className="sc-field">
-                <div className="sc-seg" role="tablist" aria-label="Modalità di calcolo">
+                <div className="sc-seg" role="tablist" aria-label={t('chrome.calcModeLabel')}>
                   <button role="tab" aria-selected={!customRalMode} className={!customRalMode ? 'on' : ''} onClick={() => setCustomRalMode(false)}>
                     {t('sal.byCcnl')}
                   </button>
@@ -498,7 +498,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           </div>
 
           {/* GUIDE / SEO */}
-          <section className="sec" style={{ padding: '80px 0 0' }} aria-label="Guida al calcolo dello stipendio netto">
+          <section className="sec" style={{ padding: '80px 0 0' }} aria-label={t('chrome.netSalaryGuide')}>
             <div className="sec-head rv">
               <h2 className="sec-title">{t('sal.guideTitle')} <span className="ac">{t('sal.guideTitleAc')}</span></h2>
               <span className="mono sec-num">{t('sal.guideNum')}</span>
@@ -544,7 +544,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           </section>
 
           {/* FAQ */}
-          <section className="sec" style={{ padding: '72px 0 0' }} aria-label="Domande frequenti sul calcolo dello stipendio">
+          <section className="sec" style={{ padding: '72px 0 0' }} aria-label={t('chrome.salaryFAQ')}>
             <div className="sec-head rv">
               <h2 className="sec-title">{t('home.sec6.h2a')} <span className="ac">{t('home.sec6.h2b')}</span></h2>
               <span className="mono sec-num">{t('sal.faqSalary')}</span>
@@ -560,7 +560,7 @@ export default function SalaryCalculator({ onNavigate }: SalaryCalculatorProps) 
           </section>
 
           {/* FINAL CTA */}
-          <section style={{ padding: '72px 0 88px' }} aria-label="Crea il tuo CV">
+          <section style={{ padding: '72px 0 88px' }} aria-label={t('chrome.createYourCV')}>
             <div className="cta-band rv">
               <div>
                 <span className="mono">{t('sal.nextStep')}</span>

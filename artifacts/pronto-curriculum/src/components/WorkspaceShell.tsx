@@ -157,7 +157,7 @@ export default function WorkspaceShell({ page, isAuthenticated, onNavigate, onLo
             options={LANG_OPTIONS.map(l => ({ code: l.code, label: l.label, flag: l.flag }))}
             value={lang}
             onChange={c => setLang(c as typeof lang)}
-            ariaLabel="Lingua dell'app"
+            ariaLabel={t('chrome.appLanguage')}
             style={{ margin: '10px 0 8px' }}
           />
 

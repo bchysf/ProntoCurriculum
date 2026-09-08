@@ -256,10 +256,10 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
     setDeletingId(id);
     try {
       const res = await fetch(`/api/cvs/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (!res.ok) throw new Error('Errore durante l\'eliminazione del CV');
+      if (!res.ok) throw new Error(t('dashboard.deleteCvError'));
       setSavedCVs(prev => prev.filter(c => c.id !== id));
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante l\'eliminazione del CV');
+      alert(err instanceof Error ? err.message : t('dashboard.deleteCvError'));
     } finally { setDeletingId(null); }
   };
 
@@ -270,11 +270,11 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ name: renameValue }),
       });
-      if (!res.ok) throw new Error('Errore durante la rinomina del CV');
+      if (!res.ok) throw new Error(t('dashboard.renameCvError'));
       const data = await res.json() as { cv: SavedCV };
       setSavedCVs(prev => prev.map(c => c.id === id ? data.cv : c));
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante la rinomina del CV');
+      alert(err instanceof Error ? err.message : t('dashboard.renameCvError'));
     } finally { setRenamingId(null); setRenameValue(''); }
   };
 
@@ -282,10 +282,10 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
     setDeletingLetterId(id);
     try {
       const res = await fetch(`/api/cover-letters/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (!res.ok) throw new Error('Errore durante l\'eliminazione della lettera');
+      if (!res.ok) throw new Error(t('dashboard.deleteLetterError'));
       setCoverLetters(prev => prev.filter(l => l.id !== id));
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante l\'eliminazione della lettera');
+      alert(err instanceof Error ? err.message : t('dashboard.deleteLetterError'));
     } finally { setDeletingLetterId(null); }
   };
 
@@ -308,7 +308,7 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
     try {
       await downloadCVAsDOCX(cv.name || 'CV', cv.cvData, cv.template || 'modern', cv.cvData.lang || 'IT');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+      alert(err instanceof Error ? err.message : t('editor.wordDownloadError'));
     } finally {
       setDownloadingDocxId(null);
     }
@@ -332,14 +332,14 @@ export default function Dashboard({ onNavigate, onCVLoaded, onLogin }: Dashboard
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('Errore durante il salvataggio del profilo');
+      if (!res.ok) throw new Error(t('dashboard.saveProfileError'));
       const data = await res.json() as { profile: UserProfile };
       setProfile(data.profile);
       setEditingProfile(false);
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2500);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Errore durante il salvataggio del profilo');
+      alert(err instanceof Error ? err.message : t('dashboard.saveProfileError'));
     } finally { setProfileSaving(false); }
   };
 

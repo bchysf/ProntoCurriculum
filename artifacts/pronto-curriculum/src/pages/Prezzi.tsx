@@ -133,7 +133,7 @@ export default function Prezzi({ onNavigate, onModal }: PrezziProps) {
           </section>
 
           {/* FINAL CTA */}
-          <section style={{ padding: '72px 0 88px' }} aria-label="Crea il tuo CV">
+          <section style={{ padding: '72px 0 88px' }} aria-label={t('chrome.createYourCV')}>
             <div className="cta-band rv">
               <div>
                 <span className="mono">{t('pz.noCardRequired')}</span>

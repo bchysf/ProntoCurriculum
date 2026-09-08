@@ -277,7 +277,7 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <span className={active === 'calcolo-stipendio' ? 'active' : ''} onClick={() => onNavigate('calcolo-stipendio')}>{t('home.nav.salaryCalc')}</span>
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div className="lang-switch" aria-label="Lingua">
+              <div className="lang-switch" aria-label={t('chrome.langSwitchLabel')}>
                 {LANG_OPTIONS.map(l => (
                   <button
                     key={l.code}
@@ -308,7 +308,7 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <p className="foot-about">
                 {t('home.footer.about')}
               </p>
-              <div className="foot-langs" aria-label="Lingue disponibili">
+              <div className="foot-langs" aria-label={t('chrome.availableLangs')}>
                 {LANG_OPTIONS.map(l => (
                   <button
                     key={l.code}
@@ -336,7 +336,7 @@ export default function EditorialChrome({ onNavigate, active, tagline, children 
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('blog-article', 'punteggio-ats'); }}>{t('home.footer.atsGuide')}</a>
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('calcolo-stipendio'); }}>{t('home.footer.salaryCalc')}</a>
               <a href="/lavoro/lombardia">Lavoro in Lombardia</a>
-              <a href="/strumenti">Tutti gli strumenti</a>
+              <a href="/strumenti">{t('chrome.allTools')}</a>
             </nav>
             <nav className="foot-col" aria-label="Legale">
               <h4>{t('home.footer.legal')}</h4>

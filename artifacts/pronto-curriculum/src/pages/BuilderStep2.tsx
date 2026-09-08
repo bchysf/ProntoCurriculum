@@ -80,7 +80,7 @@ interface ATSResult {
   chronometric: { score: number; max: number; details: string[] };
 }
 
-function computeATSScore(cv: CVData, jd: string): ATSResult {
+function computeATSScore(cv: CVData, jd: string, t: (key: string) => string): ATSResult {
   const allText = [
     cv.firstName, cv.lastName, cv.title, cv.summary,
     ...cv.experiences.map(e => `${e.company} ${e.role} ${e.desc}`),
@@ -94,13 +94,13 @@ function computeATSScore(cv: CVData, jd: string): ATSResult {
   const mergedMatches = allText.match(/[a-zA-ZÀ-ÿ]{22,}/g);
   if (mergedMatches && mergedMatches.length > 0) {
     parsingScore = Math.max(0, parsingScore - 15);
-    parsingIssues.push(`${mergedMatches.length} parole attaccate rilevate`);
+    parsingIssues.push(t('ats.mergedWords').replace('{count}', String(mergedMatches.length)));
   }
   if (/[□■●►▶◆★☆]/.test(allText)) {
     parsingScore = Math.max(0, parsingScore - 10);
-    parsingIssues.push('Caratteri speciali che compromettono il parsing');
+    parsingIssues.push(t('ats.specialChars'));
   }
-  if (parsingIssues.length === 0) parsingIssues.push('Struttura lineare, testo pulito ✓');
+  if (parsingIssues.length === 0) parsingIssues.push(t('ats.cleanStructure'));
 
   // 2. Keyword Match (max 50)
   let keywordScore = 0;
@@ -128,12 +128,12 @@ function computeATSScore(cv: CVData, jd: string): ATSResult {
     const withMonths = expsWithDates.filter(e => monthRegex.test(e.from) || monthRegex.test(e.to));
     if (withMonths.length === expsWithDates.length) {
       chronoScore += 10;
-      chronoDetails.push('Date complete con mese e anno ✓');
+      chronoDetails.push(t('ats.completeDates'));
     } else {
-      chronoDetails.push(`${withMonths.length}/${expsWithDates.length} esperienze con mese nelle date (es. "Gen 2020")`);
+      chronoDetails.push(t('ats.someMonthDates').replace('{done}', String(withMonths.length)).replace('{total}', String(expsWithDates.length)));
     }
   } else {
-    chronoDetails.push('Aggiungi date alle esperienze lavorative');
+    chronoDetails.push(t('ats.addDates'));
   }
   const expsWithDesc = cv.experiences.filter(e => e.desc && e.desc.trim().length > 0);
   if (expsWithDesc.length > 0) {
@@ -141,12 +141,12 @@ function computeATSScore(cv: CVData, jd: string): ATSResult {
     const pct = withMetrics.length / expsWithDesc.length;
     if (pct >= 0.7) {
       chronoScore += 10;
-      chronoDetails.push(`${Math.round(pct * 100)}% delle descrizioni con metriche quantificabili ✓`);
+      chronoDetails.push(t('ats.metricsPct').replace('{pct}', String(Math.round(pct * 100))));
     } else {
-      chronoDetails.push(`Solo ${Math.round(pct * 100)}% ha dati numerici (obiettivo: 70%+)`);
+      chronoDetails.push(t('ats.metricsPctLow').replace('{pct}', String(Math.round(pct * 100))));
     }
   } else {
-    chronoDetails.push('Aggiungi descrizioni con risultati numerici alle esperienze');
+    chronoDetails.push(t('ats.addMetrics'));
   }
 
   return {
@@ -819,7 +819,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const name = saveName.trim() || `${cvData.firstName || ''} ${cvData.lastName || ''}`.trim() || 'Il mio CV';
+      const name = saveName.trim() || `${cvData.firstName || ''} ${cvData.lastName || ''}`.trim() || t('builder.defaultCvName');
       const res = await fetch('/api/cvs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -832,10 +832,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         setSaveName('');
       } else {
         const err = await res.json() as { error?: string };
-        toast.error(err.error ?? 'Errore nel salvataggio');
+        toast.error(err.error ?? t('builder.saveError'));
       }
     } catch {
-      toast.error('Errore di rete');
+      toast.error(t('common.networkError'));
     } finally {
       setIsSaving(false);
     }
@@ -874,17 +874,17 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const handleSalary = async () => {
     const title = (salTitle || cvData.title || '').trim();
-    if (!title) { toast.error('Indica un ruolo per la stima retributiva.'); return; }
+    if (!title) { toast.error(t('editor.salaryRoleRequired')); return; }
     setSalLoading(true);
     try {
       const params = new URLSearchParams({ title, location: salLoc, country: salCountry });
       const res = await fetch(`/api/jobs/salary?${params}`);
       const body = await res.json() as { salary?: typeof salData; error?: string };
-      if (!res.ok || !body.salary) throw new Error(body.error ?? 'Dati non disponibili');
+      if (!res.ok || !body.salary) throw new Error(body.error ?? t('editor.salaryDataUnavailable'));
       setSalData(body.salary);
     } catch (err) {
       setSalData(null);
-      toast.error(err instanceof Error ? err.message : 'Errore nella stima retributiva');
+      toast.error(err instanceof Error ? err.message : t('editor.salaryError'));
     } finally {
       setSalLoading(false);
     }
@@ -988,7 +988,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const autoSaveBeforeCheckout = async () => {
     if (!isAuthenticated) return;
     try {
-      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'Il mio CV';
+      const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || t('builder.defaultCvName');
       await fetch('/api/cvs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1019,7 +1019,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       onModal('success');
     } catch (err: unknown) {
       if (!(await handleEntitlementError(err))) {
-        alert(err instanceof Error ? err.message : 'Errore durante il download del PDF');
+        alert(err instanceof Error ? err.message : t('editor.pdfDownloadError'));
       }
     } finally {
       setDownloading(false);
@@ -1034,7 +1034,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       onModal('success');
     } catch (err: unknown) {
       if (!(await handleEntitlementError(err))) {
-        alert(err instanceof Error ? err.message : 'Errore durante il download del file Word (.docx)');
+        alert(err instanceof Error ? err.message : t('editor.wordDownloadError'));
       }
     } finally {
       setDownloadingDOCX(false);
@@ -1067,9 +1067,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         skills: result.skillCategories?.flatMap(c => c.skills) ?? cvData.skills,
         skillCategories: result.skillCategories?.length ? result.skillCategories : cvData.skillCategories,
       });
-      toast.success('CV ottimizzato con AI');
+      toast.success(t('editor.cvOptimizedToast'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
+      toast.error(err instanceof Error ? err.message : t('editor.optimizeError'));
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -1133,7 +1133,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   };
 
   const handleSuggestSkills = () => {
-    onAiAction('Analizzando il tuo profilo e suggerendo competenze...', () => {
+    onAiAction(t('editor.analyzingSkillsText'), () => {
       const toAdd = SUGGESTED_SKILLS.filter(s => !cvData.skills.includes(s));
       onCVChange({ ...cvData, skills: [...cvData.skills, ...toAdd] });
     });
@@ -1146,7 +1146,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       const result = await aiOptimizeSummary(cvData, selectedLanguage);
       onCVChange({ ...cvData, summary: result });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
+      toast.error(err instanceof Error ? err.message : t('editor.optimizeError'));
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -1176,9 +1176,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         })),
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Errore traduzione';
+      const msg = err instanceof Error ? err.message : t('editor.translationErrorShort');
       setTranslateError(msg);
-      toast.error(`Traduzione fallita: ${msg}`);
+      toast.error(`${t('editor.translationFailedPrefix')}${msg}`);
     } finally {
       setTranslating(false);
       setModal(null);
@@ -1193,7 +1193,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       const result = await aiTranslateField('summary', cvData.summary, selectedLanguage);
       onCVChange({ ...cvData, summary: result });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante la traduzione');
+      toast.error(err instanceof Error ? err.message : t('editor.translateError'));
     } finally {
       setTranslating(false);
       setModal(null);
@@ -1211,7 +1211,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante la traduzione');
+      toast.error(err instanceof Error ? err.message : t('editor.translateError'));
     } finally {
       setTranslating(false);
       setModal(null);
@@ -1229,7 +1229,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante l'ottimizzazione AI");
+      toast.error(err instanceof Error ? err.message : t('editor.optimizeError'));
     } finally {
       setOptimizing(false);
       setModal(null);
@@ -1246,7 +1246,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       updated[idx] = { ...updated[idx], desc: result };
       onCVChange({ ...cvData, experiences: updated });
     } catch {
-      toast.error('Errore durante la rigenerazione');
+      toast.error(t('editor.regenerateError'));
     } finally {
       setRephrasingExpId(null);
     }
@@ -1266,7 +1266,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       const tips = await aiExpTips({ role: exp.role, company: exp.company, desc: exp.desc }, selectedLanguage);
       setExpTips(prev => ({ ...prev, [exp.id]: tips }));
     } catch {
-      toast.error('Errore durante il caricamento dei suggerimenti');
+      toast.error(t('editor.tipsLoadError'));
       setOpenTipsId(null);
     } finally {
       setTipsLoadingId(null);
@@ -1304,9 +1304,9 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
         experiences: cvData.experiences.map(e => e.id === expId ? { ...e, desc: rewritten } : e),
       });
       setExpTips(prev => ({ ...prev, [expId]: (prev[expId] ?? []).filter((_, i) => i !== tipIndex) }));
-      toast.success('Suggerimento applicato al CV');
+      toast.success(t('editor.tipAppliedToast'));
     } catch {
-      toast.error('Errore durante l\'applicazione del suggerimento');
+      toast.error(t('editor.tipApplyError'));
     } finally {
       setApplyingTipKey(null);
     }
@@ -1324,7 +1324,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const hasPhotoTemplate = selectedTemplate === 'executive' || selectedTemplate === 'professionale' || selectedTemplate === 'modern';
 
-  const ats = computeATSScore(cvData, jobDescription);
+  const ats = computeATSScore(cvData, jobDescription, t);
   const atsColor = ats.total >= 80 ? 'var(--success)' : ats.total >= 50 ? '#D99A2B' : 'var(--danger)';
   const completeness = computeCompleteness(cvData, jobDescription);
 
@@ -1335,8 +1335,8 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           <div className="modal-box" style={{ textAlign: 'center', padding: 48 }}>
             <div className="ai-pulse-ring" />
             <div style={{ color: '#2F2AE5', marginBottom: 16 }}><Icon d={IC.spark} size={32} /></div>
-            <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, fontWeight: 560, marginBottom: 8 }}>L'AI sta ottimizzando…</div>
-            <div style={{ color: 'var(--gray500)', fontSize: 14 }}>Sommario, esperienze e competenze in un click</div>
+            <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, fontWeight: 560, marginBottom: 8 }}>{t('editor.aiOptimizingModalTitle')}</div>
+            <div style={{ color: 'var(--gray500)', fontSize: 14 }}>{t('editor.aiOptimizingModalSub')}</div>
           </div>
         </div>
       )}
@@ -1350,7 +1350,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <input
               type="text"
               value={saveName}
-              placeholder={`${cvData.firstName || 'Il mio'} ${cvData.lastName || 'CV'}`.trim()}
+              placeholder={`${cvData.firstName} ${cvData.lastName}`.trim() || t('builder.defaultCvName')}
               onChange={e => setSaveName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && isAuthenticated) void handleSaveCV(); }}
               title={t('editor.docNameTitle')}
@@ -1937,7 +1937,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     </div>
                     <div className="form-group">
                       <label>{t('editor.grade')}</label>
-                      <input type="text" placeholder="es. 110/110 con lode" value={edu.grade} onChange={e => updateEdu(edu.id, 'grade', e.target.value)} />
+                      <input type="text" placeholder="es. 110/110 con lode" value={edu.grade} onChange={e => updateEdu(edu.id, 'grade', e.target.value)} /> {/* i18n-ok: example value, same convention as other field placeholders */}
                     </div>
                   </div>
                   <div className="form-row">
@@ -2207,21 +2207,21 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <div className="rb-panel">
                 <div className="rb-ring-row">
                   <div className="rb-ring" style={{ background: `conic-gradient(${atsColor} 0 ${ats.total}%, #EDEDF2 ${ats.total}% 100%)` }}>
-                    <div><b style={{ color: atsColor }}>{ats.total}</b><small>SU 100</small></div>
+                    <div><b style={{ color: atsColor }}>{ats.total}</b><small>{t('editor.outOf100')}</small></div>
                   </div>
                   <div className="rb-kpi">
                     <div className="rb-kpi-row">
-                      <b>Parsing strutturale</b>
+                      <b>{t('editor.parsingScore')}</b>
                       <div className="rb-kpi-bar"><i style={{ width: `${(ats.parsing.score / ats.parsing.max) * 100}%`, background: ats.parsing.score >= 25 ? 'var(--success)' : ats.parsing.score >= 15 ? '#D99A2B' : 'var(--danger)' }} /></div>
                       <span className="v" style={{ color: ats.parsing.score >= 25 ? 'var(--success)' : '#B7791F' }}>{ats.parsing.score}/{ats.parsing.max}</span>
                     </div>
                     <div className="rb-kpi-row">
-                      <b>Keyword match con l'annuncio</b>
+                      <b>{t('editor.keywordScore')}</b>
                       <div className="rb-kpi-bar"><i style={{ width: `${(ats.keywords.score / ats.keywords.max) * 100}%`, background: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? '#D99A2B' : 'var(--danger)' }} /></div>
                       <span className="v" style={{ color: ats.keywords.score >= 40 ? 'var(--success)' : ats.keywords.score >= 20 ? '#B7791F' : 'var(--danger)' }}>{ats.keywords.score}/{ats.keywords.max}</span>
                     </div>
                     <div className="rb-kpi-row">
-                      <b>Rigore cronologico e metrico</b>
+                      <b>{t('editor.chronoScore')}</b>
                       <div className="rb-kpi-bar"><i style={{ width: `${(ats.chronometric.score / ats.chronometric.max) * 100}%`, background: ats.chronometric.score >= 16 ? 'var(--success)' : ats.chronometric.score >= 8 ? '#D99A2B' : 'var(--danger)' }} /></div>
                       <span className="v" style={{ color: ats.chronometric.score >= 16 ? 'var(--success)' : '#B7791F' }}>{ats.chronometric.score}/{ats.chronometric.max}</span>
                     </div>
@@ -2234,13 +2234,13 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
               <div className="rb-panel">
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>Confronta con un annuncio di lavoro</b>
-                  <span style={{ fontSize: 12, color: '#9297A1' }}>Il match keyword (50 punti) si calcola sull'annuncio incollato</span>
+                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>{t('editor.compareJobListingTitle')}</b>
+                  <span style={{ fontSize: 12, color: '#9297A1' }}>{t('editor.keywordMatchHint')}</span>
                 </div>
                 <div className="form-group">
                   <textarea
                     rows={6}
-                    placeholder="Incolla qui il testo dell'offerta di lavoro…"
+                    placeholder={t('editor.pasteJobListing')}
                     value={jobDescription}
                     onChange={e => setJobDescription(e.target.value)}
                   />
@@ -2266,22 +2266,22 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               {/* Salary estimator */}
               <div className="rb-panel">
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>Quanto vali sul mercato</b>
-                  <span style={{ fontSize: 12, color: '#9297A1' }}>Retribuzioni reali dagli annunci · la tua posizione dipende dal punteggio ATS</span>
+                  <b style={{ fontSize: 15, fontFamily: 'var(--f-display, Switzer, sans-serif)' }}>{t('editor.salaryTitle')}</b>
+                  <span style={{ fontSize: 12, color: '#9297A1' }}>{t('editor.salarySubtitle')}</span>
                 </div>
                 <p style={{ fontSize: 12.5, color: '#565B66', margin: '0 0 14px', lineHeight: 1.5 }}>
-                  Confrontiamo il tuo ruolo con le retribuzioni pubblicate negli annunci: più il CV è forte, più in alto ti collochi nella fascia.
+                  {t('editor.salaryDesc')}
                 </p>
                 <div className="rb-sal-form">
                   <input
                     style={{ flex: '2 1 200px' }}
-                    placeholder={cvData.title || 'Ruolo (es. Project Manager)'}
+                    placeholder={cvData.title || t('editor.rolePlaceholder')}
                     value={salTitle}
                     onChange={e => setSalTitle(e.target.value)}
                   />
                   <input
                     style={{ flex: '1 1 120px' }}
-                    placeholder="Città (opzionale)"
+                    placeholder={t('editor.cityOptional')}
                     value={salLoc}
                     onChange={e => setSalLoc(e.target.value)}
                   />
@@ -2290,11 +2290,11 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     options={JOB_COUNTRIES}
                     value={salCountry}
                     onChange={setSalCountry}
-                    ariaLabel="Paese"
+                    ariaLabel={t('editor.country')}
                     style={{ flex: '1 1 150px' }}
                   />
                   <button className="btn btn-gold btn-sm" onClick={() => void handleSalary()} disabled={salLoading}>
-                    {salLoading ? 'Calcolo…' : 'Calcola'}
+                    {salLoading ? t('editor.calculating') : t('editor.calculate')}
                   </button>
                 </div>
 
@@ -2309,20 +2309,20 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <div style={{ marginTop: 8 }}>
                       <div className="rb-sal-range">
                         <span className="rb-sal-me" style={{ left: `${mePct}%` }}>
-                          <span className="flag">Tu · {fmtK(estimate)}</span>
+                          <span className="flag">{t('editor.you')} · {fmtK(estimate)}</span>
                           <span className="pin" style={{ display: 'block' }} />
                         </span>
                         <span className="rb-sal-tick" style={{ left: '0%' }}>{fmtK(salData.p25)}</span>
-                        <span className="rb-sal-tick" style={{ left: '50%' }}>mediana {fmtK(salData.median)}</span>
+                        <span className="rb-sal-tick" style={{ left: '50%' }}>{t('editor.median')} {fmtK(salData.median)}</span>
                         <span className="rb-sal-tick" style={{ left: '100%' }}>{fmtK(salData.p75)}</span>
                       </div>
                       <div className="rb-sal-stats">
-                        <div className="rb-sal-stat"><b>{salData.currency} {estimate.toLocaleString('it-IT')}</b><span>Stima con CV a {ats.total}/100</span></div>
-                        <div className="rb-sal-stat"><b style={{ color: '#12805C' }}>+{salData.currency} {plus10.toLocaleString('it-IT')}</b><span>Ogni +10 punti ATS</span></div>
-                        <div className="rb-sal-stat"><b>{salData.samples.toLocaleString('it-IT')}</b><span>Annunci analizzati</span></div>
+                        <div className="rb-sal-stat"><b>{salData.currency} {estimate.toLocaleString('it-IT')}</b><span>{t('editor.estimateWithScore').replace('{score}', String(ats.total))}</span></div>
+                        <div className="rb-sal-stat"><b style={{ color: '#12805C' }}>+{salData.currency} {plus10.toLocaleString('it-IT')}</b><span>{t('editor.perAtsPoints')}</span></div>
+                        <div className="rb-sal-stat"><b>{salData.samples.toLocaleString('it-IT')}</b><span>{t('editor.listingsAnalyzed')}</span></div>
                       </div>
                       <div style={{ marginTop: 12, fontSize: 11.5, color: '#9297A1' }}>
-                        Fonte: {salData.source}. Stima indicativa lorda annua, non un'offerta.
+                        {t('editor.salarySource').replace('{source}', salData.source)}
                       </div>
                     </div>
                   );

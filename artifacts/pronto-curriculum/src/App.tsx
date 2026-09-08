@@ -25,7 +25,7 @@ import { initGA4, trackPageView } from './utils/analytics';
 import { Toaster } from './components/ui/sonner';
 import { Page, ModalType, TemplateType, CVData } from './types';
 import { AuthProvider, useAuth } from './hooks/use-auth';
-import { LanguageProvider } from './i18n/LanguageContext';
+import { LanguageProvider, useT } from './i18n/LanguageContext';
 import type { SupportedLanguage } from './utils/aiTranslate';
 import { pathToPage, pageToPath } from './utils/routes';
 import { DEFAULT_CV_DATA, isDefaultCvData } from './utils/defaultCvData';
@@ -44,6 +44,7 @@ function loadCvDraft(): CvDraft | null {
 }
 
 function AppInner() {
+  const t = useT();
   const { user, isAuthenticated, login, loginWithEmail, signUpWithEmail, logout } = useAuth();
   const initialRoute = pathToPage(window.location.pathname);
   const [page, setPage] = useState<Page>(initialRoute.page);
@@ -195,12 +196,12 @@ function AppInner() {
           <WorkspaceShell page={page} {...shellProps}>
             {!isDefaultCvData(cvData) && !freshWizardStart ? (
               <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 20px' }}>
-                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Hai un CV non completato</h2>
+                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>{t('draft.title')}</h2>
                 <p style={{ color: 'var(--gray500)', marginBottom: 28, lineHeight: 1.5 }}>
-                  Abbiamo trovato una bozza di "{[cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'CV'}" salvata sul tuo browser. Vuoi continuare da dove avevi lasciato, o iniziarne uno nuovo?
+                  {t('draft.body').replace('{name}', [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || 'CV')}
                 </p>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                  <button className="btn btn-gold" onClick={() => navigate('builder-step2')}>Continua la bozza</button>
+                  <button className="btn btn-gold" onClick={() => navigate('builder-step2')}>{t('draft.continue')}</button>
                   <button
                     className="btn btn-ghost"
                     onClick={() => {
@@ -211,7 +212,7 @@ function AppInner() {
                       setFreshWizardStart(true);
                     }}
                   >
-                    Inizia da zero
+                    {t('draft.startFresh')}
                   </button>
                 </div>
               </div>

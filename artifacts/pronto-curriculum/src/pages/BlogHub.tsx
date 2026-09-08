@@ -170,7 +170,7 @@ export default function BlogHub({ onNavigate }: BlogHubProps) {
           </section>
 
           {/* FILTERS */}
-          <section aria-label="Filtra gli articoli">
+          <section aria-label={t('chrome.filterArticles')}>
             <div className="bh-filters rv">
               <div className="bh-tabs" role="tablist" aria-label="Categorie">
                 {categories.map(cat => (

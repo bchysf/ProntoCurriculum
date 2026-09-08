@@ -793,7 +793,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         </section>
 
         {/* DAL CV AL LAVORO */}
-        <section className="sec" style={{ paddingTop: 0 }} aria-label="Come ti aiutiamo a trovare lavoro">
+        <section className="sec" style={{ paddingTop: 0 }} aria-label={t('chrome.howWeHelp')}>
           <div className="sec-head rv">
             <h2>{t('home.sec3.h2a')}<br /><span className="ac">{t('home.sec3.h2b')}</span></h2>
             <span className="mono sec-num">03 — {t('home.sec3.num')}</span>
@@ -807,7 +807,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
         </section>
 
         {/* SOCIAL PROOF & TESTIMONIALS */}
-        <section className="sec" style={{ paddingTop: 20 }} aria-label="Storie di successo e statistiche di affidabilità">
+        <section className="sec" style={{ paddingTop: 20 }} aria-label={t('chrome.successStories')}>
           <div className="sec-head rv">
             <h2>{t('home.sec4.h2a')} <span className="ac">ProntoCurriculum.</span></h2>
             <span className="mono sec-num">04 — {t('home.sec4.num')}</span>
@@ -938,7 +938,7 @@ export default function Home({ onNavigate, onModal }: HomeProps) {
                 <p className="foot-about">
                   {t('home.footer.about')}
                 </p>
-                <div className="foot-langs" aria-label="Lingue disponibili">
+                <div className="foot-langs" aria-label={t('chrome.availableLangs')}>
                   {LANG_OPTIONS.map(l => (
                     <button
                       key={l.code}
