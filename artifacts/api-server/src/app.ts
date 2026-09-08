@@ -11,6 +11,11 @@ import { authMiddleware } from "./middlewares/authMiddleware";
 
 const app: Express = express();
 
+// Behind a reverse proxy/load balancer (Docker deploy), req.ip otherwise
+// resolves to the proxy's own address for every request, collapsing the
+// per-IP AI rate limiter into one shared bucket for all anonymous traffic.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,

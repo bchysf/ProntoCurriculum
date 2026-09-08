@@ -30,6 +30,10 @@ export interface RateLimiterOptions {
   maxRequests: number; // e.g. 30 requests per window
   keyPrefix?: string;
   message?: string;
+  // Only counts/blocks requests with no authenticated user; logged-in
+  // requests pass straight through. Used to give anonymous traffic (the
+  // easiest to spray from rotating IPs) a tighter ceiling than accounts do.
+  anonymousOnly?: boolean;
 }
 
 /**
@@ -41,11 +45,17 @@ export function createRateLimiter({
   maxRequests,
   keyPrefix = "rl",
   message = "Hai superato il limite massimo di richieste ammesse. Attendi alcuni minuti prima di riprovare.",
+  anonymousOnly = false,
 }: RateLimiterOptions) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      const userId = (req as { user?: { id?: string } }).user?.id;
+      if (anonymousOnly && userId) {
+        next();
+        return;
+      }
       // Use user ID from auth middleware if available, otherwise IP address
-      const identifier = (req as { user?: { id?: string } }).user?.id || req.ip || req.socket.remoteAddress || "unknown-ip";
+      const identifier = userId || req.ip || req.socket.remoteAddress || "unknown-ip";
       const key = `${keyPrefix}:${identifier}`;
       const now = Date.now();
 
@@ -96,6 +106,18 @@ export const aiRateLimiter = createRateLimiter({
   message: "Limite chiamate AI raggiunto (35 richieste per 15 minuti). Il nostro sistema protegge l'integrità del servizio. Attendi brevemente.",
 });
 
+// Tighter ceiling that applies only to unauthenticated requests, stacked in
+// front of aiRateLimiter. Logged-in accounts have real signup friction;
+// anonymous traffic is the cheap vector for spraying rotated IPs at the
+// AI-calling endpoints, so it gets a lower cap of its own.
+export const aiRateLimiterAnon = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 12,
+  keyPrefix: "ai-anon",
+  anonymousOnly: true,
+  message: "Limite chiamate AI per utenti non autenticati raggiunto. Accedi per continuare a usare l'AI, oppure riprova tra qualche minuto.",
+});
+
 export const authRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   maxRequests: 20, // 20 auth requests
@@ -115,6 +137,7 @@ export const apiRateLimit = generalRateLimiter;
 // Static config mirror of the limiters above, keyed by prefix.
 const LIMITER_CONFIG: Record<string, { windowMs: number; maxRequests: number; label: string }> = {
   ai: { windowMs: 15 * 60 * 1000, maxRequests: 35, label: "Chiamate AI" },
+  "ai-anon": { windowMs: 15 * 60 * 1000, maxRequests: 12, label: "Chiamate AI (anonimi)" },
   auth: { windowMs: 15 * 60 * 1000, maxRequests: 20, label: "Autenticazione" },
   gen: { windowMs: 5 * 60 * 1000, maxRequests: 250, label: "API generali" },
 };
