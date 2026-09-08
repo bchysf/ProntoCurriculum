@@ -5,7 +5,8 @@
       "name": "pronto-curriculum",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "artifacts/pronto-curriculum"],
-      "port": 5173
+      "port": 5180,
+      "autoPort": true
     }
   ]
 }

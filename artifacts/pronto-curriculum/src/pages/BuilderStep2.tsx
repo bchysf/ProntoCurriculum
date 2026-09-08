@@ -1513,7 +1513,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </div>
 
             {/* DATI PERSONALI */}
-            <AccordionSection title="Dati personali" open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
+            <AccordionSection title={t('editor.sectionPersonal')} open={openSections.has('personal')} onToggle={() => toggleSection('personal')}>
               {hasSavedProfileData && (
                 <button
                   type="button"
@@ -1521,7 +1521,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   style={{ width: '100%', justifyContent: 'center', marginBottom: 14, gap: 7 }}
                   onClick={applySavedProfile}
                 >
-                  <Icon d={IC.user} size={14} /> Usa i miei dati salvati
+                  <Icon d={IC.user} size={14} /> {t('editor.useSavedData')}
                 </button>
               )}
               <div className="photo-section">
@@ -1530,18 +1530,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     <img src={cvData.photo} alt="foto profilo" className="photo-existing" />
                     <div className="photo-has-info">
                       <span className="photo-has-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <Icon d={IC.check} size={13} style={{ color: 'var(--success)' }} /> Foto profilo caricata
+                        <Icon d={IC.check} size={13} style={{ color: 'var(--success)' }} /> {t('editor.photoUploaded')}
                       </span>
                       {hasPhotoTemplate
-                        ? <span className="photo-has-sub">Verrà usata nel template selezionato</span>
-                        : <span className="photo-has-sub" style={{ color: '#B45309' }}>Il template attuale non include foto</span>
+                        ? <span className="photo-has-sub">{t('editor.photoUsedInTemplate')}</span>
+                        : <span className="photo-has-sub" style={{ color: '#B45309' }}>{t('editor.photoNotInTemplate')}</span>
                       }
                       <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => photoInputRef.current?.click()}>
-                          Cambia foto
+                          {t('editor.changePhoto')}
                         </button>
                         <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => update('photo', undefined)}>
-                          Elimina
+                          {t('editor.deletePhoto')}
                         </button>
                       </div>
                     </div>
@@ -1562,40 +1562,40 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Nome *</label>
+                  <label>{t('editor.firstName')}</label>
                   <input type="text" placeholder="Mario" value={cvData.firstName} disabled={savedProfile?.nameLocked} onChange={e => update('firstName', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Cognome *</label>
+                  <label>{t('editor.lastName')}</label>
                   <input type="text" placeholder="Rossi" value={cvData.lastName} disabled={savedProfile?.nameLocked} onChange={e => update('lastName', e.target.value)} />
                 </div>
               </div>
               {savedProfile?.nameLocked && (
                 <div className="form-hint" style={{ marginTop: -8, marginBottom: 14 }}>
-                  Il nome è collegato al tuo account e non può essere modificato qui.
+                  {t('editor.nameLockedHint')}
                 </div>
               )}
               <div className="form-group">
-                <label>Titolo professionale</label>
+                <label>{t('editor.professionalTitle')}</label>
                 <input type="text" placeholder="es. Senior Software Engineer" value={cvData.title} onChange={e => update('title', e.target.value)} />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Email *</label>
+                  <label>{t('editor.email')}</label>
                   <input type="email" placeholder="mario.rossi@email.com" value={cvData.email} onChange={e => update('email', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Telefono</label>
+                  <label>{t('editor.phone')}</label>
                   <input type="tel" placeholder="+39 333 1234567" value={cvData.phone} onChange={e => update('phone', e.target.value)} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Città</label>
+                  <label>{t('editor.city')}</label>
                   <input type="text" placeholder="Milano" value={cvData.city} onChange={e => update('city', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>LinkedIn</label>
+                  <label>{t('editor.linkedin')}</label>
                   <input type="text" placeholder="linkedin.com/in/mariorossi" value={cvData.linkedin} onChange={e => update('linkedin', e.target.value)} />
                 </div>
               </div>
@@ -1607,21 +1607,21 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   style={{ marginTop: 2 }}
                 />
                 <span>
-                  Includi la clausola sul trattamento dei dati (GDPR)
-                  <div className="form-hint" style={{ marginTop: 2 }}>Disattivala se ti candidi per posizioni fuori dall'UE — non è richiesta e può sembrare fuori contesto.</div>
+                  {t('editor.gdprClause')}
+                  <div className="form-hint" style={{ marginTop: 2 }}>{t('editor.gdprHint')}</div>
                 </span>
               </label>
               <div className="form-group">
-                <label>Profilo / Sommario professionale</label>
+                <label>{t('editor.summaryLabel')}</label>
                 <textarea rows={4} placeholder="Breve descrizione professionale..." value={cvData.summary} onChange={e => update('summary', e.target.value)} />
-                <div className="form-hint">L'AI ottimizzerà questo testo per i sistemi ATS</div>
+                <div className="form-hint">{t('editor.summaryHint')}</div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button className="ai-btn" onClick={handleOptimizeSummary} disabled={optimizing || translating}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 13, height: 13 }}>
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
                   </svg>
-                  Ottimizza profilo con AI
+                  {t('editor.optimizeProfileAI')}
                 </button>
                 {selectedLanguage !== 'IT' && (
                   <button
@@ -1629,14 +1629,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     onClick={() => void handleTranslateSummary()}
                     disabled={optimizing || translating || !cvData.summary.trim()}
                   >
-                    <Icon d={IC.globe} size={13} /> Traduci in {LANGUAGES.find(l => l.code === selectedLanguage)?.label}
+                    <Icon d={IC.globe} size={13} /> {t('editor.translateTo')} {LANGUAGES.find(l => l.code === selectedLanguage)?.label}
                   </button>
                 )}
               </div>
             </AccordionSection>
 
             {/* ESPERIENZE */}
-            <AccordionSection title="Esperienze lavorative" open={openSections.has('experiences')} onToggle={() => toggleSection('experiences')}>
+            <AccordionSection title={t('editor.sectionExperiences')} open={openSections.has('experiences')} onToggle={() => toggleSection('experiences')}>
               {overlapWarnings.length > 0 && (
                 <div style={{ background: '#FBF7EE', border: '1px solid #EAD9B0', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12 }}>
                   <div style={{ fontWeight: 700, color: '#8A6A1F', marginBottom: 5 }}>Sovrapposizione temporale rilevata</div>
@@ -1650,18 +1650,18 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               {cvData.experiences.map((exp, idx) => (
                 <div key={exp.id} className="exp-block">
                   <div className="exp-block-header">
-                    <span className="exp-block-title">Esperienza {idx + 1}</span>
+                    <span className="exp-block-title">{t('editor.experienceLabel')} {idx + 1}</span>
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                      <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta su" disabled={idx === 0} onClick={() => moveExperience(idx, -1)}>↑</button>
-                      <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title="Sposta giù" disabled={idx === cvData.experiences.length - 1} onClick={() => moveExperience(idx, 1)}>↓</button>
-                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating || rephrasingExpId === exp.id} onClick={() => handleOptimizeExp(idx)} title="Ottimizza con AI">
+                      <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title={t('editor.moveUp')} disabled={idx === 0} onClick={() => moveExperience(idx, -1)}>↑</button>
+                      <button className="btn btn-ghost btn-sm" style={{ padding: '3px 7px', fontSize: 13 }} title={t('editor.moveDown')} disabled={idx === cvData.experiences.length - 1} onClick={() => moveExperience(idx, 1)}>↓</button>
+                      <button className="ai-btn" style={{ padding: '4px 9px', fontSize: 11 }} disabled={optimizing || translating || rephrasingExpId === exp.id} onClick={() => handleOptimizeExp(idx)} title={t('editor.optimizeWithAI')}>
                         <Icon d={IC.spark} size={11} /> AI
                       </button>
                       {exp.desc?.trim() && (
                         <button
                           className="ai-btn"
                           style={{ padding: '4px 9px', fontSize: 11 }}
-                          title="Rigenera variazione"
+                          title={t('editor.regenerateVariation')}
                           disabled={optimizing || translating || rephrasingExpId != null}
                           onClick={() => void handleRephraseExp(idx)}
                         >
@@ -1672,7 +1672,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                         <button
                           className="ai-btn"
                           style={{ padding: '4px 9px', fontSize: 11 }}
-                          title={`Traduci in ${LANGUAGES.find(l => l.code === selectedLanguage)?.label}`}
+                          title={`${t('editor.translateTo')} ${LANGUAGES.find(l => l.code === selectedLanguage)?.label}`}
                           disabled={optimizing || translating || !exp.desc?.trim()}
                           onClick={() => void handleTranslateExp(idx)}
                         >
@@ -1683,32 +1683,32 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>Azienda *</label>
+                    <label>{t('editor.company')}</label>
                     <input type="text" placeholder="es. Accenture" value={exp.company} onChange={e => updateExp(exp.id, 'company', e.target.value)} />
                   </div>
                   <div className="form-row">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Ruolo *</label>
+                      <label>{t('editor.role')}</label>
                       <input type="text" placeholder="es. Project Manager" value={exp.role} onChange={e => updateExp(exp.id, 'role', e.target.value)} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Città</label>
+                      <label>{t('editor.city')}</label>
                       <input type="text" placeholder="es. Roma" value={exp.city} onChange={e => updateExp(exp.id, 'city', e.target.value)} />
                     </div>
                   </div>
                   <div className="form-row" style={{ marginTop: 12 }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Da</label>
+                      <label>{t('editor.from')}</label>
                       <input type="text" placeholder="Gen 2020" value={exp.from} onChange={e => updateExp(exp.id, 'from', e.target.value)} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>A</label>
-                      <input type="text" placeholder="Presente" value={exp.to} onChange={e => updateExp(exp.id, 'to', e.target.value)} />
+                      <label>{t('editor.to')}</label>
+                      <input type="text" placeholder={t('editor.present')} value={exp.to} onChange={e => updateExp(exp.id, 'to', e.target.value)} />
                     </div>
                   </div>
                   <div className="form-group" style={{ marginTop: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <label style={{ marginBottom: 0 }}>Descrizione</label>
+                      <label style={{ marginBottom: 0 }}>{t('editor.description')}</label>
                       <button
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer',
@@ -1719,13 +1719,13 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                         }}
                         onClick={() => void handleExpTips(idx)}
                         disabled={tipsLoadingId === exp.id}
-                        title="Suggerimenti AI per migliorare questa esperienza"
+                        title={t('editor.aiTipsTitle')}
                       >
                         {tipsLoadingId === exp.id ? '…' : <Icon d={IC.bulb} size={12} />}
-                        {openTipsId === exp.id && expTips[exp.id] ? ' Nascondi' : ' Suggerimenti'}
+                        {openTipsId === exp.id && expTips[exp.id] ? ` ${t('editor.hideTips')}` : ` ${t('editor.showTips')}`}
                       </button>
                     </div>
-                    <textarea rows={3} placeholder="Descrivi le tue responsabilità e risultati..." value={exp.desc} onChange={e => updateExp(exp.id, 'desc', e.target.value)} />
+                    <textarea rows={3} placeholder={t('editor.descPlaceholder')} value={exp.desc} onChange={e => updateExp(exp.id, 'desc', e.target.value)} />
                     {openTipsId === exp.id && (
                       <div style={{
                         marginTop: 8, padding: '10px 12px',
@@ -1735,12 +1735,12 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       }}>
                         {tipsLoadingId === exp.id ? (
                           <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '4px 0' }}>
-                            Analisi in corso…
+                            {t('editor.analyzingInProgress')}
                           </div>
                         ) : expTips[exp.id] ? (
                           <>
                             <div style={{ fontSize: 10.5, fontWeight: 700, color: '#221FB4', marginBottom: 7, letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                              Come migliorare questa esperienza
+                              {t('editor.howToImprove')}
                             </div>
                             {expTips[exp.id].map((tip, ti) => (
                               <div key={ti} style={{ display: 'flex', gap: 8, marginBottom: ti < (expTips[exp.id]?.length ?? 0) - 1 ? 6 : 0 }}>
@@ -1755,7 +1755,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                   setExpTips(prev => { const n = { ...prev }; delete n[exp.id]; return n; });
                                 }}
                               >
-                                Rigenera suggerimenti
+                                {t('editor.regenerateTips')}
                               </button>
                             </div>
                           </>
@@ -1767,7 +1767,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={addExperience}>
-                  + Aggiungi esperienza
+                  {t('editor.addExperience')}
                 </button>
                 {isAuthenticated && (
                   <button
@@ -1775,7 +1775,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                     style={{ flex: 1, color: '#2F2AE5', borderColor: 'rgba(47, 42, 229, 0.35)' }}
                     onClick={showImportPanel ? () => setShowImportPanel(false) : openImportPanel}
                   >
-                    {showImportPanel ? 'Chiudi archivio' : 'Importa dal mio archivio'}
+                    {showImportPanel ? t('editor.closeArchive') : t('editor.importFromArchive')}
                   </button>
                 )}
               </div>
@@ -1785,7 +1785,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   {/* Tab bar */}
                   <div style={{ display: 'flex', borderBottom: '1px solid var(--gray100)' }}>
                     {[
-                      { key: false, label: 'Archivio' },
+                      { key: false, label: t('editor.archiveTab') },
                       { key: true, label: t('builder.fromSaved') },
                     ].map(tab => (
                       <button
@@ -1812,15 +1812,15 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       /* ── ARCHIVIO TAB ── */
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>Le mie esperienze</span>
-                          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={onGoToArchivio}>Gestisci →</button>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>{t('editor.myExperiences')}</span>
+                          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={onGoToArchivio}>{t('editor.manage')}</button>
                         </div>
                         {importLoading ? (
-                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
+                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>{t('editor.loading')}</div>
                         ) : savedExps.length === 0 ? (
                           <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
-                            Nessuna esperienza salvata.{' '}
-                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline' }} onClick={onGoToArchivio}>Aggiungine una →</button>
+                            {t('editor.noSavedExperiences')}{' '}
+                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline' }} onClick={onGoToArchivio}>{t('editor.addOne')}</button>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1834,7 +1834,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                     </div>
                                     {(exp.startDate || exp.endDate || exp.isCurrent) && (
                                       <div style={{ fontSize: 11, color: 'var(--gray500)', marginTop: 1 }}>
-                                        {exp.startDate ?? ''}{exp.startDate ? ' → ' : ''}{exp.isCurrent ? 'Presente' : (exp.endDate ?? '')}
+                                        {exp.startDate ?? ''}{exp.startDate ? ' → ' : ''}{exp.isCurrent ? t('editor.present') : (exp.endDate ?? '')}
                                       </div>
                                     )}
                                   </div>
@@ -1843,7 +1843,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                     style={{ fontSize: 11, background: alreadyImported ? 'var(--gray100)' : '#2F2AE5', color: alreadyImported ? 'var(--gray500)' : '#fff', border: 'none', flexShrink: 0 }}
                                     onClick={() => !alreadyImported && importExperience(exp)}
                                   >
-                                    {alreadyImported ? '✓ Aggiunto' : '+ Aggiungi'}
+                                    {alreadyImported ? t('editor.added') : t('editor.add')}
                                   </button>
                                 </div>
                               );
@@ -1855,13 +1855,13 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                       /* ── DA CV SALVATI TAB ── */
                       <>
                         <div style={{ marginBottom: 10 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>I miei CV salvati</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>{t('editor.myCVs')}</span>
                         </div>
                         {savedCVsLoading ? (
-                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>Caricamento...</div>
+                          <div style={{ color: 'var(--gray500)', fontSize: 12, textAlign: 'center', padding: 16 }}>{t('editor.loading')}</div>
                         ) : savedCVsForImport.length === 0 ? (
                           <div style={{ fontSize: 12, color: 'var(--gray500)', textAlign: 'center', padding: '12px 0' }}>
-                            Nessun CV salvato. Usa "Salva" per salvare questo CV.
+                            {t('editor.noSavedCVs')}
                           </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1873,7 +1873,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                 >
                                   <div>
                                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--navy)' }}>{cv.name}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--gray500)', marginTop: 1 }}>{cv.cvData.experiences.length} esperienze</div>
+                                    <div style={{ fontSize: 10, color: 'var(--gray500)', marginTop: 1 }}>{cv.cvData.experiences.length} {t('editor.experiencesCount')}</div>
                                   </div>
                                   <span style={{ color: 'var(--gray400)', fontSize: 12 }}>{expandedImportCVId === cv.id ? '▲' : '▼'}</span>
                                 </button>
@@ -1906,7 +1906,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                                   </div>
                                 )}
                                 {expandedImportCVId === cv.id && cv.cvData.experiences.length === 0 && (
-                                  <div style={{ fontSize: 11, color: 'var(--gray500)', padding: '6px 12px' }}>Nessuna esperienza in questo CV.</div>
+                                  <div style={{ fontSize: 11, color: 'var(--gray500)', padding: '6px 12px' }}>{t('editor.noExperiencesInCV')}</div>
                                 )}
                               </div>
                             ))}
@@ -1920,33 +1920,33 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </AccordionSection>
 
             {/* FORMAZIONE */}
-            <AccordionSection title="Formazione" open={openSections.has('education')} onToggle={() => toggleSection('education')}>
+            <AccordionSection title={t('editor.sectionEducation')} open={openSections.has('education')} onToggle={() => toggleSection('education')}>
               {cvData.education.map(edu => (
                 <div key={edu.id} className="exp-block">
                   <div className="exp-block-header">
-                    <span className="exp-block-title">Titolo di studio</span>
+                    <span className="exp-block-title">{t('editor.degreeTitle')}</span>
                   </div>
                   <div className="form-group">
-                    <label>Istituto / Università *</label>
+                    <label>{t('editor.institution')}</label>
                     <input type="text" placeholder="es. Politecnico di Milano" value={edu.institution} onChange={e => updateEdu(edu.id, 'institution', e.target.value)} />
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Titolo conseguito *</label>
+                      <label>{t('editor.degreeAchieved')}</label>
                       <input type="text" placeholder="es. Laurea Magistrale in Informatica" value={edu.degree} onChange={e => updateEdu(edu.id, 'degree', e.target.value)} />
                     </div>
                     <div className="form-group">
-                      <label>Voto / Lode</label>
+                      <label>{t('editor.grade')}</label>
                       <input type="text" placeholder="es. 110/110 con lode" value={edu.grade} onChange={e => updateEdu(edu.id, 'grade', e.target.value)} />
                     </div>
                   </div>
                   <div className="form-row">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Anno inizio</label>
+                      <label>{t('editor.startYear')}</label>
                       <input type="text" placeholder="2014" value={edu.from} onChange={e => updateEdu(edu.id, 'from', e.target.value)} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Anno fine</label>
+                      <label>{t('editor.endYear')}</label>
                       <input type="text" placeholder="2016" value={edu.to} onChange={e => updateEdu(edu.id, 'to', e.target.value)} />
                     </div>
                   </div>
@@ -1955,14 +1955,14 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 4 }} onClick={() => {
                 onCVChange({ ...cvData, education: [...cvData.education, { id: Date.now().toString(), institution: '', degree: '', grade: '', from: '', to: '' }] });
               }}>
-                + Aggiungi titolo
+                {t('editor.addDegree')}
               </button>
             </AccordionSection>
 
             {/* COMPETENZE */}
-            <AccordionSection title="Competenze" open={openSections.has('skills')} onToggle={() => toggleSection('skills')}>
+            <AccordionSection title={t('editor.sectionSkills')} open={openSections.has('skills')} onToggle={() => toggleSection('skills')}>
               <div className="form-group">
-                <label>Competenze tecniche e trasversali</label>
+                <label>{t('editor.skillsLabel')}</label>
                 {cvData.skillCategories?.length ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {cvData.skillCategories.map(cat => (
@@ -2006,36 +2006,36 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                 <div className="skill-input-row" style={{ marginTop: 10 }}>
                   <input
                     type="text"
-                    placeholder="Aggiungi competenza..."
+                    placeholder={t('editor.addSkillPlaceholder')}
                     value={newSkill}
                     onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') addSkill(); }}
                     style={{ padding: '9px 12px', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 10, fontFamily: 'inherit', fontSize: 13, color: 'var(--navy)', outline: 'none', flex: 1, background: '#FDFDFB' }}
                   />
-                  <button className="btn btn-ghost btn-sm" onClick={addSkill}>Aggiungi</button>
+                  <button className="btn btn-ghost btn-sm" onClick={addSkill}>{t('editor.addBtn')}</button>
                 </div>
               </div>
               <button className="ai-btn" style={{ marginTop: 4 }} onClick={handleSuggestSkills}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 13, height: 13 }}>
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
                 </svg>
-                Suggerisci competenze con AI
+                {t('editor.suggestSkillsAI')}
               </button>
             </AccordionSection>
 
             {/* LINGUE */}
-            <AccordionSection title="Lingue" open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
+            <AccordionSection title={t('editor.sectionLanguages')} open={openSections.has('languages')} onToggle={() => toggleSection('languages')}>
               {cvData.languages.map(lang => (
                 <div key={lang.id} className="exp-block">
                   <div className="form-row">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Lingua</label>
+                      <label>{t('editor.languageLabel')}</label>
                       <input type="text" placeholder="es. Inglese" value={lang.name} onChange={e => {
                         onCVChange({ ...cvData, languages: cvData.languages.map(l => l.id === lang.id ? { ...l, name: e.target.value } : l) });
                       }} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Livello</label>
+                      <label>{t('editor.levelLabel')}</label>
                       <select value={lang.level} onChange={e => {
                         onCVChange({ ...cvData, languages: cvData.languages.map(l => l.id === lang.id ? { ...l, level: e.target.value } : l) });
                       }}>
@@ -2052,29 +2052,29 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={() => {
                 onCVChange({ ...cvData, languages: [...cvData.languages, { id: Date.now().toString(), name: '', level: 'B1 - Intermedio' }] });
               }}>
-                + Aggiungi lingua
+                {t('editor.addLanguage')}
               </button>
             </AccordionSection>
 
             {/* CERTIFICAZIONI */}
-            <AccordionSection title="Certificazioni" open={openSections.has('certifications')} onToggle={() => toggleSection('certifications')}>
+            <AccordionSection title={t('editor.sectionCertifications')} open={openSections.has('certifications')} onToggle={() => toggleSection('certifications')}>
               {(cvData.certifications ?? []).map(cert => (
                 <div key={cert.id} className="exp-block">
                   <div className="form-group">
-                    <label>Nome certificazione *</label>
+                    <label>{t('editor.certName')}</label>
                     <input type="text" placeholder="es. Google Data Analytics Professional Certificate" value={cert.name} onChange={e => {
                       onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, name: e.target.value } : c) });
                     }} />
                   </div>
                   <div className="form-row">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Ente</label>
+                      <label>{t('editor.issuer')}</label>
                       <input type="text" placeholder="es. Google" value={cert.issuer} onChange={e => {
                         onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, issuer: e.target.value } : c) });
                       }} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Anno</label>
+                      <label>{t('editor.year')}</label>
                       <input type="text" placeholder="2025" value={cert.date} onChange={e => {
                         onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).map(c => c.id === cert.id ? { ...c, date: e.target.value } : c) });
                       }} />
@@ -2083,7 +2083,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
                   <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={() => {
                     onCVChange({ ...cvData, certifications: (cvData.certifications ?? []).filter(c => c.id !== cert.id) });
                   }}>
-                    Rimuovi
+                    {t('editor.remove')}
                   </button>
                 </div>
               ))}
