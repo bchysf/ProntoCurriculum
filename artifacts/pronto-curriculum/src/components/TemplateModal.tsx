@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { CVData, TemplateType } from '../types';
 import CVPreview from './CVPreview';
+import { useT } from '../i18n/LanguageContext';
 
 // ── sample personas ─────────────────────────────────────────────────────────
 const MARIO: CVData = {
@@ -41,25 +42,25 @@ interface TemplateInfo {
   id: TemplateType;
   name: string;
   atsStars: number;
-  badge: string;
+  badgeKey: string;
   badgeBg: string;
   sample: CVData;
-  warning?: string;
+  warningKey?: string;
 }
 
 const TEMPLATES: TemplateInfo[] = [
-  { id: 'modern',        name: 'Moderno',       atsStars: 5, badge: '⭐ Più scelto',      badgeBg: '#C9A84C', sample: MARIO  },
-  { id: 'minimal',       name: 'Minimal',       atsStars: 5, badge: '✓ Max ATS',          badgeBg: '#1A6B45', sample: MARIO  },
-  { id: 'milano',        name: 'Milano',        atsStars: 5, badge: '✦ Editorial',         badgeBg: '#0B1D3A', sample: MARIO  },
-  { id: 'elegante',      name: 'Elegante',      atsStars: 5, badge: '✦ Luxury',            badgeBg: '#8B6914', sample: GIULIA },
-  { id: 'classico',      name: 'Classico',      atsStars: 5, badge: '✓ Ultra ATS',         badgeBg: '#1A6B45', sample: MARIO  },
-  { id: 'nordico',       name: 'Nordico',       atsStars: 5, badge: '🌿 Scandinavo',        badgeBg: '#1E4E34', sample: MARIO  },
-  { id: 'tecnico',       name: 'Tecnico',       atsStars: 5, badge: '💻 Tech & IT',         badgeBg: '#2B6CB0', sample: MARIO  },
-  { id: 'corporate',     name: 'Corporate',     atsStars: 5, badge: '🏢 Business',          badgeBg: '#2D3748', sample: GIULIA },
-  { id: 'compatto',      name: 'Compatto',      atsStars: 4, badge: '📄 Una pagina',        badgeBg: '#6B46C1', sample: MARIO  },
-  { id: 'professionale', name: 'Professionale', atsStars: 4, badge: '📸 Con foto',          badgeBg: '#9B2C2C', sample: GIULIA },
-  { id: 'europass',      name: 'Europass',      atsStars: 4, badge: '🇪🇺 EU Standard',     badgeBg: '#003399', sample: GIULIA },
-  { id: 'executive',     name: 'Executive',     atsStars: 3, badge: '🎨 Premium',           badgeBg: '#744210', sample: GIULIA, warning: 'Sidebar a 2 colonne — verifica ATS' },
+  { id: 'modern',        name: 'Moderno',       atsStars: 5, badgeKey: 'tplModal.badge.mostChosen', badgeBg: '#C9A84C', sample: MARIO  },
+  { id: 'minimal',       name: 'Minimal',       atsStars: 5, badgeKey: 'tplModal.badge.maxAts',      badgeBg: '#1A6B45', sample: MARIO  },
+  { id: 'milano',        name: 'Milano',        atsStars: 5, badgeKey: 'tplModal.badge.editorial',   badgeBg: '#0B1D3A', sample: MARIO  },
+  { id: 'elegante',      name: 'Elegante',      atsStars: 5, badgeKey: 'tplModal.badge.luxury',      badgeBg: '#8B6914', sample: GIULIA },
+  { id: 'classico',      name: 'Classico',      atsStars: 5, badgeKey: 'tplModal.badge.ultraAts',    badgeBg: '#1A6B45', sample: MARIO  },
+  { id: 'nordico',       name: 'Nordico',       atsStars: 5, badgeKey: 'tplModal.badge.scandi',      badgeBg: '#1E4E34', sample: MARIO  },
+  { id: 'tecnico',       name: 'Tecnico',       atsStars: 5, badgeKey: 'tplModal.badge.techIt',      badgeBg: '#2B6CB0', sample: MARIO  },
+  { id: 'corporate',     name: 'Corporate',     atsStars: 5, badgeKey: 'tplModal.badge.business',    badgeBg: '#2D3748', sample: GIULIA },
+  { id: 'compatto',      name: 'Compatto',      atsStars: 4, badgeKey: 'tplModal.badge.onePage',     badgeBg: '#6B46C1', sample: MARIO  },
+  { id: 'professionale', name: 'Professionale', atsStars: 4, badgeKey: 'tplModal.badge.withPhoto',   badgeBg: '#9B2C2C', sample: GIULIA },
+  { id: 'europass',      name: 'Europass',      atsStars: 4, badgeKey: 'tplModal.badge.euStandard',  badgeBg: '#003399', sample: GIULIA },
+  { id: 'executive',     name: 'Executive',     atsStars: 3, badgeKey: 'tplModal.badge.premium',     badgeBg: '#744210', sample: GIULIA, warningKey: 'tplModal.warning.sidebar' },
 ];
 
 interface TemplateModalProps {
@@ -82,6 +83,7 @@ const CARD_W = Math.round(595 * SCALE);   // ≈ 131
 const CARD_H = Math.round(842 * SCALE);   // ≈ 185
 
 export default function TemplateModal({ current, onSelect, onClose }: TemplateModalProps) {
+  const t = useT();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
@@ -96,10 +98,10 @@ export default function TemplateModal({ current, onSelect, onClose }: TemplateMo
     <div className="tpl-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="tpl-modal">
         <div className="tpl-modal-header">
-          <span className="tpl-modal-title">Scegli il tuo template CV</span>
-          <button className="tpl-modal-close" onClick={onClose} aria-label="Chiudi">✕</button>
+          <span className="tpl-modal-title">{t('tplModal.title')}</span>
+          <button className="tpl-modal-close" onClick={onClose} aria-label={t('tplModal.close')}>✕</button>
         </div>
-        <p className="tpl-modal-subtitle">Le anteprime mostrano un CV di esempio. Il tuo contenuto si adatterà automaticamente.</p>
+        <p className="tpl-modal-subtitle">{t('tplModal.subtitle')}</p>
 
         <div className="tpl-grid">
           {TEMPLATES.map(tpl => {
@@ -128,8 +130,8 @@ export default function TemplateModal({ current, onSelect, onClose }: TemplateMo
                     <Stars n={tpl.atsStars} />
                     <span style={{ fontSize: 9, color: '#7A756A' }}>ATS</span>
                   </div>
-                  <span className="tpl-badge" style={{ background: tpl.badgeBg }}>{tpl.badge}</span>
-                  {tpl.warning && <div className="tpl-warning">⚠ {tpl.warning}</div>}
+                  <span className="tpl-badge" style={{ background: tpl.badgeBg }}>{t(tpl.badgeKey)}</span>
+                  {tpl.warningKey && <div className="tpl-warning">⚠ {t(tpl.warningKey)}</div>}
                 </div>
               </button>
             );
@@ -137,8 +139,8 @@ export default function TemplateModal({ current, onSelect, onClose }: TemplateMo
         </div>
 
         <div className="tpl-modal-footer">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Annulla</button>
-          <span style={{ fontSize: 12, color: '#7A756A' }}>★★★★★ = Massima compatibilità ATS</span>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>{t('tplModal.cancel')}</button>
+          <span style={{ fontSize: 12, color: '#7A756A' }}>{t('tplModal.maxAtsCompat')}</span>
         </div>
       </div>
     </div>

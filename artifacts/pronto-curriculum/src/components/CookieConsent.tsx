@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { initGA4 } from "../utils/analytics";
 import type { Page } from "../types";
+import { useT } from "../i18n/LanguageContext";
 
 interface CookieConsentProps {
   onNavigate: (page: Page) => void;
 }
 
 export default function CookieConsent({ onNavigate }: CookieConsentProps) {
+  const t = useT();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function CookieConsent({ onNavigate }: CookieConsentProps) {
               gap: 8,
             }}
           >
-            <span>🍪</span> Trasparenza e rispetto della tua privacy
+            <span>🍪</span> {t('cookie.title')}
           </div>
           <p
             style={{
@@ -123,26 +125,23 @@ export default function CookieConsent({ onNavigate }: CookieConsentProps) {
               color: "#cbd5e1",
             }}
           >
-            Utilizziamo cookie tecnici essenziali per il funzionamento e cookie
-            analitici (opzionali) per migliorare l&apos;esperienza su
-            ProntoCurriculum ai sensi del D.Lgs. 196/2003 e del GDPR. Leggi la
-            nostra
+            {t('cookie.bodyPrefix')}{' '}
             <span
               className="cc-link"
               onClick={() => {
                 onNavigate("privacy" as Page);
               }}
             >
-              Informativa Privacy
+              {t('cookie.privacyPolicy')}
             </span>
-            e la
+            {t('cookie.and')}
             <span
               className="cc-link"
               onClick={() => {
                 onNavigate("cookie" as Page);
               }}
             >
-              Cookie Policy
+              {t('cookie.cookiePolicy')}
             </span>
             .
           </p>
@@ -162,14 +161,14 @@ export default function CookieConsent({ onNavigate }: CookieConsentProps) {
             className="cc-btn-outline"
             onClick={handleAcceptNecessary}
           >
-            Solo necessari
+            {t('cookie.necessaryOnly')}
           </button>
           <button
             type="button"
             className="cc-btn-gold"
             onClick={handleAcceptAll}
           >
-            Accetta tutti
+            {t('cookie.acceptAll')}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ModalType } from '../types';
+import { useT } from '../i18n/LanguageContext';
 
 interface ModalsProps {
   modal: ModalType;
@@ -23,6 +24,7 @@ interface BillingStatus {
 }
 
 export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAuthenticated, onLogin, onLoginWithEmail, onSignUpWithEmail, onRequireAuth }: ModalsProps) {
+  const t = useT();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -94,29 +96,27 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
           {isAuthenticated ? (
             <>
               <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
-              <div className="auth-title">Hai già effettuato l'accesso</div>
-              <div className="auth-sub">Puoi scaricare il tuo CV e accedere a tutte le funzioni.</div>
+              <div className="auth-title">{t('modal.alreadyLoggedIn')}</div>
+              <div className="auth-sub">{t('modal.alreadyLoggedInSub')}</div>
               <button className="btn btn-gold auth-submit" onClick={onClose}>
-                Chiudi →
+                {t('modal.close')}
               </button>
             </>
           ) : signupDone ? (
             <>
               <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
-              <div className="auth-title">Controlla la tua email</div>
-              <div className="auth-sub">Ti abbiamo inviato un link di conferma a <strong>{email}</strong>. Aprilo per attivare il tuo account.</div>
+              <div className="auth-title">{t('modal.checkYourEmail')}</div>
+              <div className="auth-sub">{t('modal.confirmLinkPrefix')} <strong>{email}</strong>. {t('modal.confirmLinkSuffix')}</div>
               <button className="btn btn-gold auth-submit" onClick={onClose}>
-                Ho capito
+                {t('modal.gotIt')}
               </button>
             </>
           ) : (
             <>
               <div className="auth-logo"><img src="/logo-icon.png" alt="ProntoCurriculum" /></div>
-              <div className="auth-title">{authTab === 'login' ? 'Bentornato' : 'Crea il tuo account'}</div>
+              <div className="auth-title">{authTab === 'login' ? t('modal.welcomeBack') : t('modal.createYourAccount')}</div>
               <div className="auth-sub">
-                {authTab === 'login'
-                  ? 'Accedi per ritrovare i tuoi CV, le candidature e l\'archivio esperienze.'
-                  : 'Crea un account per scaricare il tuo primo CV gratis, senza filigrana.'}
+                {authTab === 'login' ? t('modal.loginSub') : t('modal.signupSub')}
               </div>
 
               <button className="btn-google" onClick={() => { onClose(); onLogin(); }}>
@@ -126,51 +126,51 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
                   <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                Continua con Google
+                {t('modal.continueWithGoogle')}
               </button>
 
-              <div className="auth-divider">oppure</div>
+              <div className="auth-divider">{t('modal.or')}</div>
 
               <form onSubmit={handleEmailAuth}>
                 <div className="form-group">
-                  <label htmlFor="auth-email">Email</label>
+                  <label htmlFor="auth-email">{t('modal.email')}</label>
                   <input
                     id="auth-email"
                     type="email"
                     required
                     autoComplete="email"
-                    placeholder="nome@esempio.it"
+                    placeholder={t('modal.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="auth-password">Password</label>
+                  <label htmlFor="auth-password">{t('modal.password')}</label>
                   <input
                     id="auth-password"
                     type="password"
                     required
                     minLength={6}
                     autoComplete={authTab === 'login' ? 'current-password' : 'new-password'}
-                    placeholder={authTab === 'signup' ? 'Minimo 6 caratteri' : '••••••••'}
+                    placeholder={authTab === 'signup' ? t('modal.minChars') : '••••••••'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
                 {authError && <div className="auth-error">⚠ {authError}</div>}
                 <button type="submit" className="btn btn-gold auth-submit" disabled={authLoading}>
-                  {authLoading ? 'Attendi…' : authTab === 'login' ? 'Accedi' : 'Crea account'}
+                  {authLoading ? t('modal.pleaseWait') : authTab === 'login' ? t('modal.login') : t('modal.createAccount')}
                 </button>
               </form>
 
               <div className="auth-switch">
                 {authTab === 'login' ? (
-                  <>Non hai un account?{' '}
-                    <button type="button" onClick={() => { setAuthTab('signup'); setAuthError(null); }}>Registrati</button>
+                  <>{t('modal.noAccountYet')}{' '}
+                    <button type="button" onClick={() => { setAuthTab('signup'); setAuthError(null); }}>{t('modal.signUp')}</button>
                   </>
                 ) : (
-                  <>Hai già un account?{' '}
-                    <button type="button" onClick={() => { setAuthTab('login'); setAuthError(null); }}>Accedi</button>
+                  <>{t('modal.alreadyHaveAccount')}{' '}
+                    <button type="button" onClick={() => { setAuthTab('login'); setAuthError(null); }}>{t('modal.login')}</button>
                   </>
                 )}
               </div>
@@ -185,20 +185,20 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
           <button className="modal-close" onClick={onClose}>×</button>
           {billingStatus && !billingStatus.freeTrialUsed ? (
             <>
-              <div className="modal-title">Il tuo primo CV è gratis</div>
-              <div className="modal-sub">Crealo e scaricalo senza filigrana: la prova gratuita non è ancora stata usata.</div>
+              <div className="modal-title">{t('modal.firstCvFree')}</div>
+              <div className="modal-sub">{t('modal.firstCvFreeSub')}</div>
             </>
           ) : (
             <>
-              <div className="modal-title">Sblocca il tuo CV</div>
-              <div className="modal-sub">Hai già usato la tua prova gratuita. Ogni CV successivo costa €1,99, pagamento singolo, nessun abbonamento.</div>
+              <div className="modal-title">{t('modal.unlockYourCv')}</div>
+              <div className="modal-sub">{t('modal.freeTrialUsedSub')}</div>
             </>
           )}
           <div className="tier-cards">
             <div className="tier-card selected">
               <div className="tier-card-info">
-                <h4>📄 Un CV, un pagamento</h4>
-                <p>Download senza filigrana · rephrasing AI incluso · nessun rinnovo automatico</p>
+                <h4>{t('modal.oneCvOnePayment')}</h4>
+                <p>{t('modal.tierDesc')}</p>
               </div>
               <div className="tier-price">
                 €1,99<span style={{ fontSize: 14, fontWeight: 400 }}>/CV</span>
@@ -206,7 +206,7 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
             </div>
           </div>
           <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} disabled={checkoutLoading} onClick={() => void startCheckout()}>
-            {checkoutLoading ? 'Attendi…' : 'Procedi al pagamento →'}
+            {checkoutLoading ? t('modal.pleaseWait') : t('modal.proceedToPayment')}
           </button>
         </div>
       )}
@@ -215,10 +215,10 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
       {modal === 'success' && (
         <div className="modal-box fade-in" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-          <div className="modal-title">CV scaricato!</div>
-          <div className="modal-sub">Il tuo curriculum professionale è pronto. Buona fortuna con la ricerca lavoro!</div>
+          <div className="modal-title">{t('modal.cvDownloaded')}</div>
+          <div className="modal-sub">{t('modal.cvReadySub')}</div>
           <button className="btn btn-gold" style={{ width: '100%', marginBottom: 12 }} onClick={onClose}>
-            Perfetto →
+            {t('modal.perfect')}
           </button>
         </div>
       )}
@@ -227,7 +227,7 @@ export default function Modals({ modal, aiLoadingText, onClose, onSuccess, isAut
       {modal === 'ai-loading' && (
         <div className="modal-box fade-in" style={{ textAlign: 'center', maxWidth: 340 }}>
           <div style={{ fontSize: 40, marginBottom: 16 }} className="pulsing">✦</div>
-          <div className="modal-title" style={{ fontSize: 20 }}>AI al lavoro...</div>
+          <div className="modal-title" style={{ fontSize: 20 }}>{t('modal.aiWorking')}</div>
           <p style={{ fontSize: 14, color: 'var(--gray500)' }}>{aiLoadingText}</p>
           <div style={{ marginTop: 20, height: 4, background: 'var(--gray100)', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ height: '100%', background: 'var(--gold)', borderRadius: 2, animation: 'progress 2s ease forwards' }} />

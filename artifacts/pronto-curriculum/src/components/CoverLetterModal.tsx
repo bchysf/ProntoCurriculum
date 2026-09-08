@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CVData, TemplateType } from '../types';
 import type { SupportedLanguage } from '../utils/aiTranslate';
 import { toast } from 'sonner';
+import { useT } from '../i18n/LanguageContext';
 
 interface CoverLetterResult {
   fitScore: number | null;
@@ -21,12 +22,12 @@ interface CoverLetterModalProps {
   onClose: () => void;
 }
 
-const TONES: { id: 'human' | 'formal' | 'enthusiastic' | 'concise' | 'executive'; label: string }[] = [
-  { id: 'human', label: 'Naturale' },
-  { id: 'formal', label: 'Formale' },
-  { id: 'enthusiastic', label: 'Entusiasta' },
-  { id: 'concise', label: 'Conciso' },
-  { id: 'executive', label: 'Executive' },
+const TONES: { id: 'human' | 'formal' | 'enthusiastic' | 'concise' | 'executive'; labelKey: string }[] = [
+  { id: 'human', labelKey: 'clm.tone.human' },
+  { id: 'formal', labelKey: 'clm.tone.formal' },
+  { id: 'enthusiastic', labelKey: 'clm.tone.enthusiastic' },
+  { id: 'concise', labelKey: 'clm.tone.concise' },
+  { id: 'executive', labelKey: 'clm.tone.executive' },
 ];
 
 function fitColor(score: number | null): string {
@@ -37,6 +38,7 @@ function fitColor(score: number | null): string {
 }
 
 export default function CoverLetterModal({ cvData, template, lang, onClose }: CoverLetterModalProps) {
+  const t = useT();
   const [jobLink, setJobLink] = useState('');
   const [jobText, setJobText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -58,7 +60,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
 
   const handleGenerate = async () => {
     if (!jobLink.trim() && !jobText.trim() && !jobTitle.trim() && !companyName.trim()) {
-      toast.error('Incolla un link, un testo di annuncio, o almeno titolo/azienda.');
+      toast.error(t('clm.pasteOrTitleError'));
       return;
     }
 
@@ -74,7 +76,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
         });
         const fetchJson = await fetchRes.json();
         if (!fetchRes.ok) {
-          throw new Error(fetchJson.error || "Impossibile recuperare il testo dell'annuncio dal link.");
+          throw new Error(fetchJson.error || t('clm.fetchLinkError'));
         }
         jobDescription = fetchJson.text ?? '';
       }
@@ -93,7 +95,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
       });
       const genJson = await genRes.json();
       if (!genRes.ok || !genJson.success) {
-        throw new Error(genJson.error || 'Errore durante la generazione della lettera.');
+        throw new Error(genJson.error || t('clm.generateError'));
       }
 
       setResult(genJson.data);
@@ -113,7 +115,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
         }),
       }).catch(() => {});
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Errore imprevisto.';
+      const message = err instanceof Error ? err.message : t('clm.unexpectedError');
       toast.error(message);
     } finally {
       setLoading(false);
@@ -137,7 +139,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
           template,
         }),
       });
-      if (!res.ok) throw new Error('Errore durante il download.');
+      if (!res.ok) throw new Error(t('clm.downloadError'));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -148,7 +150,7 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Errore durante il download.';
+      const message = err instanceof Error ? err.message : t('clm.downloadError');
       toast.error(message);
     } finally {
       setDownloading(false);
@@ -159,33 +161,33 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
     <div className="clm-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="clm-modal">
         <div className="clm-header">
-          <span className="clm-title">Genera lettera di presentazione</span>
-          <button className="clm-close" onClick={onClose} aria-label="Chiudi">✕</button>
+          <span className="clm-title">{t('clm.title')}</span>
+          <button className="clm-close" onClick={onClose} aria-label={t('clm.close')}>✕</button>
         </div>
 
         {!result ? (
           <div className="clm-body">
-            <p className="clm-hint">Incolla il link dell'annuncio (o il testo) — l'AI valuta quanto la tua esperienza combacia col ruolo e scrive la lettera di conseguenza.</p>
+            <p className="clm-hint">{t('clm.hint')}</p>
             <div className="clm-field">
-              <label>Link annuncio di lavoro</label>
+              <label>{t('clm.jobLinkLabel')}</label>
               <input type="text" placeholder="https://..." value={jobLink} onChange={e => setJobLink(e.target.value)} disabled={loading} />
             </div>
             <div className="clm-field">
-              <label>Oppure incolla il testo dell'annuncio</label>
-              <textarea rows={5} placeholder="Descrizione della posizione..." value={jobText} onChange={e => setJobText(e.target.value)} disabled={loading} />
+              <label>{t('clm.orPasteText')}</label>
+              <textarea rows={5} placeholder={t('clm.positionDescPlaceholder')} value={jobText} onChange={e => setJobText(e.target.value)} disabled={loading} />
             </div>
             <div className="clm-row">
               <div className="clm-field" style={{ flex: 1 }}>
-                <label>Ruolo</label>
-                <input type="text" placeholder={cvData.title || 'es. Product Manager'} value={jobTitle} onChange={e => setJobTitle(e.target.value)} disabled={loading} />
+                <label>{t('clm.role')}</label>
+                <input type="text" placeholder={cvData.title || t('clm.rolePlaceholder')} value={jobTitle} onChange={e => setJobTitle(e.target.value)} disabled={loading} />
               </div>
               <div className="clm-field" style={{ flex: 1 }}>
-                <label>Azienda</label>
-                <input type="text" placeholder="es. Acme Srl" value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={loading} />
+                <label>{t('clm.company')}</label>
+                <input type="text" placeholder={t('clm.companyPlaceholder')} value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={loading} />
               </div>
             </div>
             <div className="clm-field">
-              <label>Tono</label>
+              <label>{t('clm.tone')}</label>
               <div className="clm-tone-row">
                 {TONES.map(tn => (
                   <button
@@ -194,13 +196,13 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
                     onClick={() => setTone(tn.id)}
                     disabled={loading}
                   >
-                    {tn.label}
+                    {t(tn.labelKey)}
                   </button>
                 ))}
               </div>
             </div>
             <button className="btn btn-ink" style={{ width: '100%', justifyContent: 'center' }} onClick={() => void handleGenerate()} disabled={loading}>
-              {loading ? 'Analisi in corso…' : 'Analizza e genera lettera'}
+              {loading ? t('clm.analyzingInProgress') : t('clm.analyzeAndGenerate')}
             </button>
           </div>
         ) : (
@@ -220,9 +222,9 @@ export default function CoverLetterModal({ cvData, template, lang, onClose }: Co
               <p style={{ whiteSpace: 'pre-line' }}>{result.signOff}</p>
             </div>
             <div className="clm-row">
-              <button className="btn btn-ghost btn-sm" onClick={() => setResult(null)}>← Rigenera</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setResult(null)}>{t('clm.regenerate')}</button>
               <button className="btn btn-ink btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => void handleDownload()} disabled={downloading}>
-                {downloading ? 'Download…' : 'Scarica in Word'}
+                {downloading ? t('clm.downloading') : t('clm.downloadWord')}
               </button>
             </div>
           </div>

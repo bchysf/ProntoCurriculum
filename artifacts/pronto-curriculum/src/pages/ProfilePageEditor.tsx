@@ -3,6 +3,7 @@ import { Page } from '../types';
 import { useAuth } from '../hooks/use-auth';
 import { Icon, IC } from '../components/StrokeIcon';
 import { toast } from 'sonner';
+import { useT } from '../i18n/LanguageContext';
 
 interface StoredExp {
   id: string;
@@ -63,19 +64,19 @@ const DEFAULT_SECTIONS: ProfileSection[] = [
   { key: 'languages', visible: true, order: 4 },
 ];
 
-const SECTION_LABELS: Record<ProfileSection['key'], string> = {
-  experiences: 'Esperienza',
-  highlights: 'In evidenza',
-  education: 'Formazione',
-  skills: 'Competenze',
-  languages: 'Lingue',
+const SECTION_LABEL_KEYS: Record<ProfileSection['key'], string> = {
+  experiences: 'ppe.sectionExperience',
+  highlights: 'ppe.sectionFeatured',
+  education: 'editor.sectionEducation',
+  skills: 'editor.sectionSkills',
+  languages: 'editor.sectionLanguages',
 };
 
-const HIGHLIGHT_TYPE_LABELS: Record<StoredHighlight['type'], string> = {
-  volunteering: 'Volontariato',
-  honor: 'Riconoscimento',
-  project: 'Progetto',
-  other: 'Altro',
+const HIGHLIGHT_TYPE_LABEL_KEYS: Record<StoredHighlight['type'], string> = {
+  volunteering: 'ppe.hlVolunteering',
+  honor: 'ppe.hlHonor',
+  project: 'ppe.hlProject',
+  other: 'ppe.hlOther',
 };
 
 const EMPTY_HIGHLIGHT_FORM = { type: 'project' as StoredHighlight['type'], title: '', description: '', date: '', link: '' };
@@ -85,6 +86,7 @@ interface ProfilePageEditorProps {
 }
 
 export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps) {
+  const t = useT();
   const { isAuthenticated, isLoading, user, login } = useAuth();
 
   const [checkingPro, setCheckingPro] = useState(true);
@@ -171,7 +173,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       const cvsData = await cvsRes.json() as { cvs?: Array<{ cvData: { title?: string; phone?: string; city?: string; linkedin?: string; summary?: string; skills?: string[]; education?: unknown[]; languages?: unknown[] } }> };
       const latest = cvsData.cvs?.[0];
       if (!latest) {
-        toast.error('Nessun CV salvato da cui sincronizzare');
+        toast.error(t('ppe.noSavedCVSync'));
         return;
       }
       const d = latest.cvData;
@@ -192,14 +194,14 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('Errore durante la sincronizzazione');
+      if (!res.ok) throw new Error(t('ppe.syncError'));
       const data = await res.json() as { profile: UserProfileSummary };
       setUserProfile(data.profile);
       if (!headline) setHeadline(data.profile.headline ?? '');
       if (!bio) setBio(data.profile.summary ?? '');
-      toast.success('Profilo sincronizzato dal tuo ultimo CV');
+      toast.success(t('ppe.syncSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante la sincronizzazione');
+      toast.error(err instanceof Error ? err.message : t('ppe.syncError'));
     } finally {
       setSyncingFromCv(false);
     }
@@ -239,13 +241,13 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       });
       if (!res.ok) {
         const d = await res.json() as { error?: string };
-        throw new Error(d.error ?? 'Errore durante il salvataggio');
+        throw new Error(d.error ?? t('ppe.saveError'));
       }
       const data = await res.json() as { profile: PublicProfile };
       setProfile(data.profile);
-      toast.success('Pagina profilo salvata');
+      toast.success(t('ppe.pageSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante il salvataggio');
+      toast.error(err instanceof Error ? err.message : t('ppe.saveError'));
     } finally {
       setSaving(false);
     }
@@ -259,11 +261,11 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field: 'headline', value: headline }),
       });
-      if (!res.ok) throw new Error('Errore AI');
+      if (!res.ok) throw new Error(t('ppe.aiError'));
       const data = await res.json() as { result: string };
       setHeadline(data.result);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore AI');
+      toast.error(err instanceof Error ? err.message : t('ppe.aiError'));
     } finally {
       setImprovingHeadline(false);
     }
@@ -281,11 +283,11 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           context: { headline, experiences: orderedSelectedForAi() },
         }),
       });
-      if (!res.ok) throw new Error('Errore AI');
+      if (!res.ok) throw new Error(t('ppe.aiError'));
       const data = await res.json() as { result: string };
       setBio(data.result);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore AI');
+      toast.error(err instanceof Error ? err.message : t('ppe.aiError'));
     } finally {
       setImprovingBio(false);
     }
@@ -312,7 +314,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
   async function handleAddExperience() {
     if (!newExp.company.trim() || !newExp.role.trim()) {
-      toast.error('Azienda e ruolo sono obbligatori');
+      toast.error(t('ppe.companyRoleRequired'));
       return;
     }
     setAddingExp(true);
@@ -329,15 +331,15 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           endDate: newExp.endDate || undefined,
         }),
       });
-      if (!res.ok) throw new Error('Errore durante il salvataggio dell\'esperienza');
+      if (!res.ok) throw new Error(t('ppe.expSaveError'));
       const data = await res.json() as { experience: StoredExp };
       setExperiences(prev => [...prev, data.experience]);
       setSelectedIds(prev => [...prev, data.experience.id]);
       setNewExp({ company: '', role: '', city: '', startDate: '', endDate: '' });
       setShowExpForm(false);
-      toast.success('Esperienza aggiunta all\'archivio');
+      toast.success(t('ppe.expAdded'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore');
+      toast.error(err instanceof Error ? err.message : t('ppe.genericError'));
     } finally {
       setAddingExp(false);
     }
@@ -345,7 +347,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
   async function handleSaveHighlight() {
     if (!hlForm.title.trim()) {
-      toast.error('Il titolo è obbligatorio');
+      toast.error(t('ppe.titleRequired'));
       return;
     }
     setSavingHl(true);
@@ -362,20 +364,20 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           link: hlForm.link || undefined,
         }),
       });
-      if (!res.ok) throw new Error('Errore durante il salvataggio');
+      if (!res.ok) throw new Error(t('ppe.saveError'));
       const data = await res.json() as { highlight: StoredHighlight };
       setHighlights(prev => [...prev, data.highlight]);
       setHlForm(EMPTY_HIGHLIGHT_FORM);
       setShowHlForm(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore');
+      toast.error(err instanceof Error ? err.message : t('ppe.genericError'));
     } finally {
       setSavingHl(false);
     }
   }
 
   async function handleDeleteHighlight(id: string) {
-    if (!confirm('Eliminare questo elemento?')) return;
+    if (!confirm(t('ppe.confirmDeleteHighlight'))) return;
     await fetch(`/api/highlights/${id}`, { method: 'DELETE', credentials: 'include' });
     setHighlights(prev => prev.filter(h => h.id !== id));
   }
@@ -391,13 +393,13 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       const res = await fetch('/api/profile-page/publish', { method: 'POST', credentials: 'include' });
       if (!res.ok) {
         const d = await res.json() as { error?: string };
-        throw new Error(d.error ?? 'Errore durante la pubblicazione');
+        throw new Error(d.error ?? t('ppe.publishError'));
       }
       const data = await res.json() as { profile: PublicProfile };
       setProfile(data.profile);
-      toast.success('Pagina pubblicata');
+      toast.success(t('ppe.pagePublished'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante la pubblicazione');
+      toast.error(err instanceof Error ? err.message : t('ppe.publishError'));
     } finally {
       setPublishing(false);
     }
@@ -407,28 +409,28 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     setPublishing(true);
     try {
       const res = await fetch('/api/profile-page/unpublish', { method: 'POST', credentials: 'include' });
-      if (!res.ok) throw new Error('Errore');
+      if (!res.ok) throw new Error(t('ppe.genericError'));
       const data = await res.json() as { profile: PublicProfile };
       setProfile(data.profile);
-      toast.success('Pagina rimossa dalla pubblicazione');
+      toast.success(t('ppe.pageUnpublished'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore');
+      toast.error(err instanceof Error ? err.message : t('ppe.genericError'));
     } finally {
       setPublishing(false);
     }
   }
 
   async function handleRegenerateSlug() {
-    if (!confirm('Il link attuale smetterà di funzionare. Continuare?')) return;
+    if (!confirm(t('ppe.confirmRegenSlug'))) return;
     setRegenerating(true);
     try {
       const res = await fetch('/api/profile-page/regenerate-slug', { method: 'POST', credentials: 'include' });
-      if (!res.ok) throw new Error('Errore');
+      if (!res.ok) throw new Error(t('ppe.genericError'));
       const data = await res.json() as { profile: PublicProfile };
       setProfile(data.profile);
-      toast.success('Nuovo link generato');
+      toast.success(t('ppe.newLinkGenerated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore');
+      toast.error(err instanceof Error ? err.message : t('ppe.genericError'));
     } finally {
       setRegenerating(false);
     }
@@ -438,7 +440,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     return (
       <div className="loading-state" style={{ minHeight: 300 }}>
         <div className="spinner" />
-        <span>Caricamento…</span>
+        <span>{t('editor.loading')}</span>
       </div>
     );
   }
@@ -446,8 +448,8 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
   if (!isAuthenticated) {
     return (
       <div className="lock-state" style={{ minHeight: '40vh' }}>
-        <h2>Accedi per creare la tua pagina profilo pubblica</h2>
-        <button className="btn btn-ink" onClick={login}>Accedi</button>
+        <h2>{t('ppe.loginPrompt')}</h2>
+        <button className="btn btn-ink" onClick={login}>{t('modal.login')}</button>
       </div>
     );
   }
@@ -456,7 +458,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     return (
       <div className="loading-state" style={{ minHeight: 300 }}>
         <div className="spinner" />
-        <span>Caricamento…</span>
+        <span>{t('editor.loading')}</span>
       </div>
     );
   }
@@ -468,13 +470,12 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           <Icon d={IC.globe} size={26} />
         </div>
         <h2 style={{ fontFamily: 'var(--f-display)', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 10 }}>
-          Pagina profilo pubblica
+          {t('ppe.title')}
         </h2>
         <p style={{ color: 'var(--ink-60)', fontSize: 14.5, lineHeight: 1.6, marginBottom: 24 }}>
-          Funzione riservata agli utenti Pro. Crea una pagina pubblica con tutte le tue esperienze,
-          progetti e riconoscimenti — un link breve e professionale da condividere con i recruiter.
+          {t('ppe.proOnlyDesc')}
         </p>
-        <button className="btn btn-ink" onClick={() => onNavigate('prezzi')}>Passa a Pro</button>
+        <button className="btn btn-ink" onClick={() => onNavigate('prezzi')}>{t('ppe.upgradeToPro')}</button>
       </div>
     );
   }
@@ -486,8 +487,8 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 24px 100px' }}>
       <div className="head">
         <div>
-          <h1>Pagina profilo pubblica</h1>
-          <p>Un link breve e condivisibile con tutte le tue esperienze — pensato per i recruiter.</p>
+          <h1>{t('ppe.title')}</h1>
+          <p>{t('ppe.pageSubtitle')}</p>
         </div>
       </div>
 
@@ -496,18 +497,18 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         <div>
           {profile?.published && profile.publicUrl ? (
             <>
-              <div style={{ fontSize: 12, color: 'var(--gray500)', marginBottom: 4 }}>La tua pagina è pubblica</div>
+              <div style={{ fontSize: 12, color: 'var(--gray500)', marginBottom: 4 }}>{t('ppe.pageIsPublic')}</div>
               <a href={profile.publicUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: 'var(--accent)' }}>{profile.publicUrl}</a>
             </>
           ) : (
-            <div style={{ fontSize: 13.5, color: 'var(--gray500)' }}>La tua pagina non è ancora pubblica.</div>
+            <div style={{ fontSize: 13.5, color: 'var(--gray500)' }}>{t('ppe.pageNotPublicYet')}</div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <select
             value={language}
             onChange={e => setLanguage(e.target.value as LangCode)}
-            title="Lingua della pagina pubblica"
+            title={t('ppe.pageLangTitle')}
             style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
           >
             {LANGUAGE_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
@@ -515,15 +516,15 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
           {profile?.published ? (
             <>
               <button className="btn btn-line btn-sm" disabled={regenerating} onClick={() => void handleRegenerateSlug()}>
-                {regenerating ? '…' : 'Rigenera link'}
+                {regenerating ? '…' : t('ppe.regenerateLink')}
               </button>
               <button className="btn btn-line btn-sm" disabled={publishing} onClick={() => void handleUnpublish()}>
-                {publishing ? '…' : 'Annulla pubblicazione'}
+                {publishing ? '…' : t('ppe.cancelPublication')}
               </button>
             </>
           ) : (
             <button className="btn btn-ink btn-sm" disabled={publishing} onClick={() => void handlePublish()}>
-              {publishing ? 'Pubblicazione…' : 'Pubblica'}
+              {publishing ? t('ppe.publishingEllipsis') : t('ppe.publish')}
             </button>
           )}
         </div>
@@ -531,7 +532,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
       {/* Photo + headline + bio */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15.5, fontWeight: 700, marginTop: 0, marginBottom: 16 }}>Foto e presentazione</h3>
+        <h3 style={{ fontSize: 15.5, fontWeight: 700, marginTop: 0, marginBottom: 16 }}>{t('ppe.photoAndIntro')}</h3>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16 }}>
           {photo ? (
             <img src={photo} alt="" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
@@ -539,63 +540,63 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
             <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--gray100)' }} />
           )}
           <label className="btn btn-line btn-sm" style={{ cursor: 'pointer' }}>
-            Carica foto
+            {t('ppe.uploadPhoto')}
             <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
           </label>
         </div>
         <div className="form-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ marginBottom: 0 }}>Titolo professionale</label>
+            <label style={{ marginBottom: 0 }}>{t('editor.professionalTitle')}</label>
             <button type="button" className="ai-btn" style={{ padding: '2px 8px', fontSize: 11 }} disabled={improvingHeadline} onClick={() => void handleImproveHeadline()}>
-              {improvingHeadline ? '…' : 'Migliora con AI'}
+              {improvingHeadline ? '…' : t('ppe.improveWithAI')}
             </button>
           </div>
-          <input type="text" placeholder="Es. Senior Product Designer" value={headline} onChange={e => setHeadline(e.target.value)} />
+          <input type="text" placeholder={t('ppe.headlinePlaceholder')} value={headline} onChange={e => setHeadline(e.target.value)} />
         </div>
         <div className="form-group" style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ marginBottom: 0 }}>Bio</label>
+            <label style={{ marginBottom: 0 }}>{t('ppe.bio')}</label>
             <button type="button" className="ai-btn" style={{ padding: '2px 8px', fontSize: 11 }} disabled={improvingBio} onClick={() => void handleImproveBio()}>
-              {improvingBio ? '…' : 'Migliora con AI'}
+              {improvingBio ? '…' : t('ppe.improveWithAI')}
             </button>
           </div>
-          <textarea rows={3} placeholder="Racconta in breve chi sei e cosa fai." value={bio} onChange={e => setBio(e.target.value)} />
+          <textarea rows={3} placeholder={t('ppe.bioPlaceholder')} value={bio} onChange={e => setBio(e.target.value)} />
         </div>
       </div>
 
       {/* Formazione / competenze / lingue — read from the general dashboard profile */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>Formazione, competenze e lingue</h3>
+          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>{t('ppe.eduSkillsLangTitle')}</h3>
           <button className="btn btn-line btn-sm" disabled={syncingFromCv} onClick={() => void handleSyncFromCv()}>
-            {syncingFromCv ? 'Sincronizzazione…' : 'Sincronizza dal tuo ultimo CV'}
+            {syncingFromCv ? t('ppe.syncingEllipsis') : t('ppe.syncFromLastCv')}
           </button>
         </div>
         <p style={{ fontSize: 12.5, color: 'var(--gray500)', marginTop: 0, marginBottom: 14 }}>
-          Questi dati vengono dal tuo profilo generale (dashboard). Modificali lì, oppure importali in un clic dal tuo ultimo CV salvato.
+          {t('ppe.eduSkillsLangDesc')}
         </p>
         {(!userProfile?.education?.length && !userProfile?.skills?.length && !userProfile?.languages?.length) ? (
           <p style={{ fontSize: 13.5, color: 'var(--gray500)' }}>
-            Nessun dato di formazione, competenze o lingue ancora presente. Sincronizzalo dal tuo ultimo CV oppure vai su{' '}
-            <a onClick={() => onNavigate('dashboard')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>Dashboard &rarr; Il tuo profilo</a>.
+            {t('ppe.noEduSkillsLangData')}{' '}
+            <a onClick={() => onNavigate('dashboard')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>{t('ppe.dashboardYourProfile')}</a>.
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {!!userProfile?.education?.length && (
               <div>
-                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Formazione ({userProfile.education.length})</b>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>{t('editor.sectionEducation')} ({userProfile.education.length})</b>
                 <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.education.map(e => e.degree || e.institution).filter(Boolean).join(' · ')}</div>
               </div>
             )}
             {!!userProfile?.skills?.length && (
               <div>
-                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Competenze ({userProfile.skills.length})</b>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>{t('editor.sectionSkills')} ({userProfile.skills.length})</b>
                 <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.skills.join(' · ')}</div>
               </div>
             )}
             {!!userProfile?.languages?.length && (
               <div>
-                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>Lingue ({userProfile.languages.length})</b>
+                <b style={{ fontSize: 12.5, color: 'var(--gray500)' }}>{t('editor.sectionLanguages')} ({userProfile.languages.length})</b>
                 <div style={{ fontSize: 13.5, marginTop: 2 }}>{userProfile.languages.map(l => l.name).filter(Boolean).join(' · ')}</div>
               </div>
             )}
@@ -606,34 +607,34 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
       {/* Experience picker */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>Esperienze da mostrare</h3>
-          <button className="btn btn-line btn-sm" onClick={() => setShowExpForm(v => !v)}>+ Nuova esperienza</button>
+          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>{t('ppe.experiencesToShow')}</h3>
+          <button className="btn btn-line btn-sm" onClick={() => setShowExpForm(v => !v)}>{t('ppe.newExperience')}</button>
         </div>
 
         {showExpForm && (
           <div style={{ background: 'var(--gray50)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
             <div className="form-row">
               <div className="form-group">
-                <label>Azienda</label>
+                <label>{t('ppe.company')}</label>
                 <input type="text" value={newExp.company} onChange={e => setNewExp(f => ({ ...f, company: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>Ruolo</label>
+                <label>{t('ppe.role')}</label>
                 <input type="text" value={newExp.role} onChange={e => setNewExp(f => ({ ...f, role: e.target.value }))} />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Città</label>
+                <label>{t('editor.city')}</label>
                 <input type="text" value={newExp.city} onChange={e => setNewExp(f => ({ ...f, city: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>Periodo</label>
-                <input type="text" placeholder="es. Mar 2020 - Presente" value={newExp.startDate} onChange={e => setNewExp(f => ({ ...f, startDate: e.target.value }))} />
+                <label>{t('ppe.period')}</label>
+                <input type="text" placeholder={t('ppe.periodPlaceholder')} value={newExp.startDate} onChange={e => setNewExp(f => ({ ...f, startDate: e.target.value }))} />
               </div>
             </div>
             <button className="btn btn-gold btn-sm" disabled={addingExp} onClick={() => void handleAddExperience()}>
-              {addingExp ? 'Salvataggio…' : 'Salva esperienza'}
+              {addingExp ? t('ppe.savingEllipsis') : t('ppe.saveExperience')}
             </button>
           </div>
         )}
@@ -645,7 +646,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
                 <input type="checkbox" checked onChange={() => toggleExperience(exp.id)} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <b style={{ fontSize: 13.5 }}>{exp.role}</b> <span style={{ color: 'var(--gray500)', fontSize: 12.5 }}>@ {exp.company}</span>
-                  {(exp.startDate || exp.isCurrent) && <span style={{ color: 'var(--gray500)', fontSize: 12 }}> · {exp.startDate ?? ''}{exp.isCurrent ? ' - Presente' : ''}</span>}
+                  {(exp.startDate || exp.isCurrent) && <span style={{ color: 'var(--gray500)', fontSize: 12 }}> · {exp.startDate ?? ''}{exp.isCurrent ? ` - ${t('editor.present')}` : ''}</span>}
                 </div>
               </label>
             ))}
@@ -653,7 +654,7 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         )}
         {orderedSelected.length > 0 && (
           <p style={{ fontSize: 11.5, color: 'var(--gray500)', marginTop: 8 }}>
-            L'ordine sulla pagina pubblica è automatico, dal più recente al meno recente.
+            {t('ppe.orderAutoNote')}
           </p>
         )}
 
@@ -671,58 +672,58 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
         )}
 
         {experiences.length === 0 && !showExpForm && (
-          <p style={{ color: 'var(--gray500)', fontSize: 13.5 }}>Nessuna esperienza nel tuo archivio ancora.</p>
+          <p style={{ color: 'var(--gray500)', fontSize: 13.5 }}>{t('ppe.noExperiencesYet')}</p>
         )}
       </div>
 
       {/* Highlights */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>In evidenza — volontariato, progetti, riconoscimenti</h3>
-          <button className="btn btn-line btn-sm" onClick={() => setShowHlForm(v => !v)}>+ Aggiungi</button>
+          <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: 0 }}>{t('ppe.highlightsTitle')}</h3>
+          <button className="btn btn-line btn-sm" onClick={() => setShowHlForm(v => !v)}>{t('editor.add')}</button>
         </div>
 
         {showHlForm && (
           <div style={{ background: 'var(--gray50)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
             <div className="form-row">
               <div className="form-group">
-                <label>Tipo</label>
+                <label>{t('ppe.type')}</label>
                 <select value={hlForm.type} onChange={e => setHlForm(f => ({ ...f, type: e.target.value as StoredHighlight['type'] }))}>
-                  {Object.entries(HIGHLIGHT_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  {Object.entries(HIGHLIGHT_TYPE_LABEL_KEYS).map(([v, k]) => <option key={v} value={v}>{t(k)}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Titolo</label>
+                <label>{t('ppe.highlightTitle')}</label>
                 <input type="text" value={hlForm.title} onChange={e => setHlForm(f => ({ ...f, title: e.target.value }))} />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Data</label>
+                <label>{t('ppe.date')}</label>
                 <input type="text" placeholder="es. 2023" value={hlForm.date} onChange={e => setHlForm(f => ({ ...f, date: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>Link (opzionale)</label>
+                <label>{t('ppe.linkOptional')}</label>
                 <input type="text" value={hlForm.link} onChange={e => setHlForm(f => ({ ...f, link: e.target.value }))} />
               </div>
             </div>
             <div className="form-group">
-              <label>Descrizione</label>
+              <label>{t('editor.description')}</label>
               <textarea rows={2} value={hlForm.description} onChange={e => setHlForm(f => ({ ...f, description: e.target.value }))} />
             </div>
             <button className="btn btn-gold btn-sm" disabled={savingHl} onClick={() => void handleSaveHighlight()}>
-              {savingHl ? 'Salvataggio…' : 'Salva'}
+              {savingHl ? t('ppe.savingEllipsis') : t('ppe.save')}
             </button>
           </div>
         )}
 
         {highlights.length === 0 ? (
-          <p style={{ color: 'var(--gray500)', fontSize: 13.5 }}>Ancora nessun elemento.</p>
+          <p style={{ color: 'var(--gray500)', fontSize: 13.5 }}>{t('ppe.noHighlightsYet')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {highlights.map(h => (
               <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1.5px solid var(--gray100)', borderRadius: 10, padding: '10px 14px' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase' }}>{HIGHLIGHT_TYPE_LABELS[h.type]}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase' }}>{t(HIGHLIGHT_TYPE_LABEL_KEYS[h.type])}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <b style={{ fontSize: 13.5 }}>{h.title}</b>
                 </div>
@@ -737,19 +738,19 @@ export default function ProfilePageEditor({ onNavigate }: ProfilePageEditorProps
 
       {/* Section visibility */}
       <div style={{ background: '#fff', border: '1.5px solid var(--gray100)', borderRadius: 12, padding: 20, marginBottom: 28 }}>
-        <h3 style={{ fontSize: 15.5, fontWeight: 700, marginTop: 0, marginBottom: 12 }}>Sezioni visibili</h3>
+        <h3 style={{ fontSize: 15.5, fontWeight: 700, marginTop: 0, marginBottom: 12 }}>{t('ppe.sectionsVisible')}</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {sections.map(s => (
             <label key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, cursor: 'pointer' }}>
               <input type="checkbox" checked={s.visible} onChange={() => toggleSectionVisible(s.key)} />
-              {SECTION_LABELS[s.key]}
+              {t(SECTION_LABEL_KEYS[s.key])}
             </label>
           ))}
         </div>
       </div>
 
       <button className="btn btn-ink" disabled={saving} onClick={() => void persist()}>
-        {saving ? 'Salvataggio…' : 'Salva modifiche'}
+        {saving ? t('ppe.savingEllipsis') : t('ppe.saveChanges')}
       </button>
     </div>
   );
