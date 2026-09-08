@@ -197,3 +197,27 @@ export function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// escapeHtml only entity-encodes — it does NOT stop a user-supplied string
+// from becoming a "javascript:" (or other dangerous-scheme) href. Any field
+// rendered as `href="${...}"` on a page fed by user input (public profile
+// links, highlight links, etc.) must go through this first: it accepts only
+// http(s) URLs, treating a bare domain as https, and returns null for
+// anything else so the caller can fall back to plain text instead of a link.
+export function sanitizeExternalUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    try {
+      url = new URL(`https://${trimmed}`);
+    } catch {
+      return null;
+    }
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  return url.href;
+}

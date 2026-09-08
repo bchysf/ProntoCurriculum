@@ -3,7 +3,7 @@
 // and chrome instead of shell.ts's renderSsrPage — that helper asserts a
 // canonical/indexable page, which this page must never do (see the noindex
 // meta + X-Robots-Tag header set by the caller).
-import { SHELL_CSS, escapeHtml } from "./shell";
+import { SHELL_CSS, escapeHtml, sanitizeExternalUrl } from "./shell";
 import type { PublicProfileSection } from "@workspace/db";
 
 export interface PublicProfileExperience {
@@ -136,11 +136,14 @@ function renderHighlights(items: PublicProfileHighlight[], ui: UiStrings): strin
   if (items.length === 0) return "";
   const cards = items
     .map(
-      (h) => `<div class="pp-highlight">
+      (h) => {
+        const safeLink = sanitizeExternalUrl(h.link);
+        return `<div class="pp-highlight">
         <span class="mono pp-item-date">${escapeHtml(ui.highlightTypes[h.type] ?? h.type)}${h.date ? ` · ${escapeHtml(h.date)}` : ""}</span>
-        <b>${h.link ? `<a href="${escapeHtml(h.link)}" target="_blank" rel="noopener nofollow noreferrer">${escapeHtml(h.title)}</a>` : escapeHtml(h.title)}</b>
+        <b>${safeLink ? `<a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener nofollow noreferrer">${escapeHtml(h.title)}</a>` : escapeHtml(h.title)}</b>
         ${h.description ? `<p class="pp-item-desc">${escapeHtml(h.description)}</p>` : ""}
-      </div>`,
+      </div>`;
+      },
     )
     .join("");
   return `<h2>${escapeHtml(ui.sections.highlights)}</h2><div class="pp-grid">${cards}</div>`;
@@ -234,8 +237,10 @@ export function renderPublicProfileHtml(data: PublicProfilePageData, currentLang
   if (data.city) contactParts.push(escapeHtml(data.city));
   if (data.email) contactParts.push(`<a href="mailto:${escapeHtml(data.email)}">${escapeHtml(data.email)}</a>`);
   if (data.phone) contactParts.push(escapeHtml(data.phone));
-  if (data.linkedin) contactParts.push(`<a href="${escapeHtml(data.linkedin)}" target="_blank" rel="noopener nofollow noreferrer">LinkedIn</a>`);
-  if (data.website) contactParts.push(`<a href="${escapeHtml(data.website)}" target="_blank" rel="noopener nofollow noreferrer">${escapeHtml(data.website.replace(/^https?:\/\//, ""))}</a>`);
+  const safeLinkedin = sanitizeExternalUrl(data.linkedin);
+  if (safeLinkedin) contactParts.push(`<a href="${escapeHtml(safeLinkedin)}" target="_blank" rel="noopener nofollow noreferrer">LinkedIn</a>`);
+  const safeWebsite = sanitizeExternalUrl(data.website);
+  if (safeWebsite) contactParts.push(`<a href="${escapeHtml(safeWebsite)}" target="_blank" rel="noopener nofollow noreferrer">${escapeHtml(safeWebsite.replace(/^https?:\/\//, ""))}</a>`);
   const contactHtml = contactParts.length ? `<div class="pp-contact">${contactParts.join('<span aria-hidden="true">·</span>')}</div>` : "";
 
   return `<!DOCTYPE html>
