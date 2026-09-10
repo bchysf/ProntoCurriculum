@@ -16,6 +16,7 @@ export type AssistantAction =
   | { type: 'update_skills'; skills: string[] }
   | { type: 'save_cv' }
   | { type: 'tailor_cv'; jobText: string }
+  | { type: 'set_font_scale'; mode: 'smaller' | 'larger' | 'fit_one_page' | 'reset' }
   | { type: 'none' };
 
 export interface CvAssistantReply {

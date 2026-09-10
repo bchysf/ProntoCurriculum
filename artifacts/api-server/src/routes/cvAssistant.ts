@@ -31,6 +31,7 @@ type AssistantAction =
   | { type: 'update_skills'; skills: string[] }
   | { type: 'save_cv' }
   | { type: 'tailor_cv'; jobText: string }
+  | { type: 'set_font_scale'; mode: 'smaller' | 'larger' | 'fit_one_page' | 'reset' }
   | { type: 'none' };
 
 function buildSystemPrompt(lang: string, hasArchive: boolean): string {
@@ -45,6 +46,7 @@ AZIONI DISPONIBILI:
 5. "save_cv" — l'utente chiede esplicitamente di salvare il CV (es. "salva questo", "salvalo", "save this").
 6. "tailor_cv" — l'utente chiede di creare/generare un CV per una specifica offerta di lavoro o ruolo, incollando o descrivendo la job description (es. "crea un cv per questo annuncio: ...", "fammi un cv per un ruolo di project manager in una startup").
 7. "none" — saluto, domanda generica, richiesta che non rientra sopra, o richiesta di modificare sezioni non gestite qui (istruzione, lingue, certificazioni, contatti) — in questo caso spiega gentilmente di usare i controlli del builder per quella sezione.
+8. "set_font_scale" — l'utente chiede di cambiare la dimensione del testo/carattere del CV, oppure di far stare tutto il CV in una sola pagina (es. "usa un carattere più piccolo", "rimpicciolisci il testo", "il font è troppo piccolo, ingrandiscilo", "fai stare tutto in una pagina", "il CV è troppo lungo, fallo entrare in una pagina", "torna alla dimensione normale"). Imposta "fontScaleMode" a uno tra: "smaller" (riduci il carattere di uno scatto), "larger" (aumenta il carattere di uno scatto), "fit_one_page" (riduci il carattere quanto basta per stare in una pagina), "reset" (torna alla dimensione di default).
 
 REGOLE ASSOLUTE:
 - Non inventare MAI fatti, aziende, ruoli, date o competenze che l'utente non ha menzionato.
@@ -59,12 +61,13 @@ REGOLE ASSOLUTE:
 Restituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):
 {
   "reply": "risposta conversazionale breve, nella stessa lingua del messaggio dell'utente",
-  "action": "add_experience" | "search_archive" | "update_summary" | "update_skills" | "save_cv" | "tailor_cv" | "none",
+  "action": "add_experience" | "search_archive" | "update_summary" | "update_skills" | "save_cv" | "tailor_cv" | "set_font_scale" | "none",
   "experiences": [ { "company": "", "role": "", "city": "", "from": "", "to": "", "desc": "" } ] | null,
   "searchQuery": "parole chiave, o \"*\" per tutto l'archivio" | null,
   "summary": "nuovo sommario" | null,
   "skills": ["skill1", "skill2"] | null,
-  "jobText": "testo della job description o del ruolo descritto" | null
+  "jobText": "testo della job description o del ruolo descritto" | null,
+  "fontScaleMode": "smaller" | "larger" | "fit_one_page" | "reset" | null
 }`;
 }
 
@@ -119,6 +122,7 @@ ${archiveList}`;
       summary?: string | null;
       skills?: string[] | null;
       jobText?: string | null;
+      fontScaleMode?: string | null;
     };
 
     const toStructuredExperiences = (list: ChatExperience[] | null | undefined) =>
@@ -181,6 +185,11 @@ ${archiveList}`;
         break;
       case 'tailor_cv':
         if (parsed.jobText?.trim()) action = { type: 'tailor_cv', jobText: parsed.jobText.trim() };
+        break;
+      case 'set_font_scale':
+        if (parsed.fontScaleMode === 'smaller' || parsed.fontScaleMode === 'larger' || parsed.fontScaleMode === 'fit_one_page' || parsed.fontScaleMode === 'reset') {
+          action = { type: 'set_font_scale', mode: parsed.fontScaleMode };
+        }
         break;
       default:
         action = { type: 'none' };

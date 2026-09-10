@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { CVData, TemplateType } from '../types';
 
 export type CvLang = 'IT' | 'EN' | 'FR' | 'DE' | 'ES' | 'PT';
@@ -88,6 +89,10 @@ interface CVPreviewProps {
   // (admin, or once the free trial/a credit covers this CV) rather than the
   // watermarked-by-default state before that.
   showWatermark?: boolean;
+  // Multiplier for the CV's font size / line spacing (1 = 100%). Applied via
+  // CSS zoom on the root .cv-doc element so it scales text, spacing and
+  // layout together — and survives into PDF export, which clones this node.
+  fontScale?: number;
 }
 
 function RenderDesc({ text, className }: { text: string; className: string }) {
@@ -108,8 +113,10 @@ function RenderDesc({ text, className }: { text: string; className: string }) {
   return <div className={className}>{text}</div>;
 }
 
-export default function CVPreview({ cvData, template, lang = 'IT', showWatermark = true }: CVPreviewProps) {
+export default function CVPreview({ cvData, template, lang = 'IT', showWatermark = true, fontScale = 1 }: CVPreviewProps) {
   const t = CV_LABELS[lang] ?? CV_LABELS.IT;
+  // Merges the font-scale zoom into a template's own root style, if any.
+  const docStyle = (extra?: CSSProperties): CSSProperties => ({ ...extra, zoom: fontScale });
   const showPrivacyClause = cvData.includePrivacyClause !== false;
   const name = [cvData.firstName, cvData.lastName].filter(Boolean).join(' ') || t.namePlaceholder;
   const effectiveSkills = cvData.skillCategories?.length
@@ -120,7 +127,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
 
   if (template === 'executive') {
     return (
-      <div className="cv-doc cv-executive">
+      <div className="cv-doc cv-executive" style={docStyle()}>
         <div className="cve-sidebar">
           <div className="cve-photo-wrap">
             {hasPhoto
@@ -222,7 +229,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
 
   if (template === 'europass' || template === 'europass_pubblico') {
     return (
-      <div className={`cv-doc cv-europass ${template === 'europass_pubblico' ? 'cv-pubblico-mode' : ''}`} style={template === 'europass_pubblico' ? { padding: '24px 32px', fontSize: '95%' } : {}}>
+      <div className={`cv-doc cv-europass ${template === 'europass_pubblico' ? 'cv-pubblico-mode' : ''}`} style={docStyle(template === 'europass_pubblico' ? { padding: '24px 32px', fontSize: '95%' } : {})}>
         <div className="cveu-top-bar">
           <div className="cveu-eu-logo">
             <span className="cveu-stars">★ ★ ★ ★ ★</span>
@@ -319,7 +326,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
 
   if (template === 'professionale') {
     return (
-      <div className="cv-doc cv-professionale">
+      <div className="cv-doc cv-professionale" style={docStyle()}>
         <div className="cvp-header">
           <div className="cvp-header-left">
             <div className="cvp-name">{name}</div>
@@ -437,7 +444,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
     const tagClass = template === 'nordico' ? 'cv-nordico-tag' : 'cv-tecnico-tag';
     const tagsClass = template === 'nordico' ? 'cv-nordico-tags' : 'cv-tecnico-tags';
     return (
-      <div className={`cv-doc template-${template}`}>
+      <div className={`cv-doc template-${template}`} style={docStyle()}>
         <div className="cv-header">
           <div className="cv-name">{name}</div>
           <div className="cv-title">{cvData.title || t.titlePlaceholder}</div>
@@ -555,7 +562,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
   // ── Classico template ────────────────────────────────────────────────────────
   if (template === 'classico') {
     return (
-      <div className="cv-doc template-classico">
+      <div className="cv-doc template-classico" style={docStyle()}>
         <div className="cv-header">
           <div className="cv-name">{name}</div>
           <div className="cv-title">{cvData.title || t.titlePlaceholder}</div>
@@ -661,7 +668,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
   if (template === 'corporate') {
     const dateRange = (from?: string, to?: string) => (from && to ? `${from} – ${to}` : from || to || '');
     return (
-      <div className="cv-doc cv-corp">
+      <div className="cv-doc cv-corp" style={docStyle()}>
         <div className="cvc-header">
           <div className="cvc-name">{name}</div>
           <div className="cvc-title">{cvData.title || t.titlePlaceholder}</div>
@@ -772,7 +779,7 @@ export default function CVPreview({ cvData, template, lang = 'IT', showWatermark
   const showSkillTags = template !== 'elegante' && template !== 'minimal';
 
   return (
-    <div className={templateClass}>
+    <div className={templateClass} style={docStyle()}>
       <div className="cv-header">
         {PHOTO_TEMPLATES.includes(template) && hasPhoto && (
           <img src={cvData.photo} alt="foto" className="cv-header-photo" />

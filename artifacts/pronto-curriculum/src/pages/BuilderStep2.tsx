@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CVData, TemplateType, ModalType, SavedCV, Page } from '../types';
 import { downloadCVAsPDF, previewCVAsPDF } from '../utils/downloadPDF';
+import { sortExperiencesChronologically } from '../utils/sortExperiences';
 import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { EntitlementError } from '../utils/entitlement';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
@@ -17,6 +18,13 @@ import { useAuth } from '../hooks/use-auth';
 import { isDefaultCvData } from '../utils/defaultCvData';
 import { useT } from '../i18n/LanguageContext';
 import { toast } from 'sonner';
+
+export const FONT_SCALE_MIN = 0.75;
+export const FONT_SCALE_MAX = 1.15;
+export const FONT_SCALE_STEP = 0.05;
+// Small enough to noticeably help a CV that's one paragraph over the edge,
+// without asking the user to guess a number.
+export const FONT_SCALE_FIT_ONE_PAGE = 0.85;
 
 interface StoredExp {
   id: string;
@@ -242,6 +250,11 @@ const RB_CSS = `
 .rb-tpl-pill em { font-style: normal; color: #BE9CFF; }
 .rb-magnify-chip { position: absolute; top: 14px; left: 16px; z-index: 10; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #fff; border: 1px solid rgba(20,23,31,.1); border-radius: 10px; cursor: pointer; color: #565B66; box-shadow: 0 4px 14px rgba(20,23,31,.08); }
 .rb-magnify-chip:hover { border-color: var(--gold, #2F2AE5); color: var(--gold, #2F2AE5); }
+.rb-fontsize-chip { position: absolute; top: 58px; right: 16px; z-index: 10; display: flex; align-items: center; gap: 2px; background: #fff; border: 1px solid rgba(20,23,31,.1); border-radius: 10px; box-shadow: 0 4px 14px rgba(20,23,31,.08); padding: 3px; }
+.rb-fontsize-chip button { border: none; background: #F1F2F6; color: #14171F; font-family: inherit; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.rb-fontsize-chip button:hover:not(:disabled) { background: #E4E5EC; }
+.rb-fontsize-chip button:disabled { opacity: .4; cursor: default; }
+.rb-fontsize-chip span { font-size: 11.5px; font-weight: 700; color: #565B66; min-width: 32px; text-align: center; }
 .cv-sheet { cursor: zoom-in; }
 .rb-magnify-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(20,23,31,.72); display: flex; flex-direction: column; align-items: center; }
 .rb-magnify-bar { flex-shrink: 0; display: flex; align-items: center; gap: 10px; margin: 18px 0 6px; background: #fff; border-radius: 99px; padding: 7px 8px 7px 14px; box-shadow: 0 10px 26px rgba(20,23,31,.3); }
@@ -501,6 +514,15 @@ function AIAssistantPanel({
         case 'tailor_cv':
           onTailorFromText(action.jobText);
           break;
+        case 'set_font_scale': {
+          const current = cvData.fontScale ?? 1;
+          const next = action.mode === 'smaller' ? Math.max(FONT_SCALE_MIN, +(current - FONT_SCALE_STEP).toFixed(2))
+            : action.mode === 'larger' ? Math.min(FONT_SCALE_MAX, +(current + FONT_SCALE_STEP).toFixed(2))
+            : action.mode === 'fit_one_page' ? Math.min(current, FONT_SCALE_FIT_ONE_PAGE)
+            : 1;
+          onCVChange({ ...cvData, fontScale: next });
+          break;
+        }
         case 'none':
           break;
       }
@@ -1063,7 +1085,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       onCVChange({
         ...cvData,
         summary: result.summary || cvData.summary,
-        experiences: updatedExperiences,
+        experiences: sortExperiencesChronologically(updatedExperiences),
         skills: result.skillCategories?.flatMap(c => c.skills) ?? cvData.skills,
         skillCategories: result.skillCategories?.length ? result.skillCategories : cvData.skillCategories,
       });
@@ -1088,6 +1110,12 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
 
   const update = useCallback((field: keyof CVData, value: unknown) => {
     onCVChange({ ...cvData, [field]: value });
+  }, [cvData, onCVChange]);
+
+  const fontScale = cvData.fontScale ?? 1;
+  const setFontScale = useCallback((value: number) => {
+    const clamped = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, +value.toFixed(2)));
+    onCVChange({ ...cvData, fontScale: clamped });
   }, [cvData, onCVChange]);
 
   const updateExp = (id: string, field: string, value: string) => {
@@ -2106,6 +2134,11 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             <button className="rb-magnify-chip" onClick={() => setMagnifyOpen(true)} title={t('editor.magnify')} aria-label={t('editor.magnify')}>
               <Icon d={IC.search} size={15} />
             </button>
+            <div className="rb-fontsize-chip" title={t('editor.fontSize')}>
+              <button onClick={() => setFontScale(fontScale - FONT_SCALE_STEP)} disabled={fontScale <= FONT_SCALE_MIN} aria-label={t('editor.fontSizeSmaller')}>A−</button>
+              <span>{Math.round(fontScale * 100)}%</span>
+              <button onClick={() => setFontScale(fontScale + FONT_SCALE_STEP)} disabled={fontScale >= FONT_SCALE_MAX} aria-label={t('editor.fontSizeLarger')}>A+</button>
+            </div>
             <button className="rb-ats-chip" onClick={() => setRbTab('ats')} title={t('editor.openFullATS')}>
               <span className="lbl">ATS</span>
               <span className="track"><i style={{ width: `${ats.total}%`, background: atsColor }} /></span>
@@ -2113,7 +2146,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
             </button>
             <div className="rb-prev-scroll" ref={previewRef}>
               <div className="cv-sheet" style={{ zoom: cvScale }} onClick={() => setMagnifyOpen(true)} title={t('editor.magnify')}>
-                <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} />
+                <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} fontScale={fontScale} />
               </div>
             </div>
             <button className="rb-tpl-pill" onClick={() => setRbTab('custom')}>
@@ -2132,7 +2165,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               </div>
               <div className="rb-magnify-scroll" onClick={e => e.stopPropagation()}>
                 <div className="cv-sheet" style={{ zoom: magnifyScale }}>
-                  <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} />
+                  <CVPreview cvData={cvData} template={selectedTemplate} lang={selectedLanguage} showWatermark={!canHideWatermark} fontScale={fontScale} />
                 </div>
               </div>
             </div>

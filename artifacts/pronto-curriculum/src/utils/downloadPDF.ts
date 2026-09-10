@@ -360,15 +360,19 @@ export async function downloadCVAsPDF(
   const PAGE_H = 297;
   const BOTTOM_MARGIN = 15;
 
-  const { finalY } = await buildPDF(cvData, template, lang, { measureOnly: true });
+  // The user's own font-size choice from the editor is the starting scale;
+  // we only shrink further from there (never enlarge past it) to fit one page.
+  const baseScale = cvData.fontScale ?? 1;
+
+  const { finalY } = await buildPDF(cvData, template, lang, { scale: baseScale, measureOnly: true });
 
   // Shrink font size and spacing just enough to fit one page — but not below
   // MIN_FIT_SCALE, past which we let the CV spill onto a genuine second page
   // rather than making the text unreadably small.
   const available = PAGE_H - BOTTOM_MARGIN;
   const scale = finalY > available
-    ? Math.max(MIN_FIT_SCALE, Math.min(1, available / finalY))
-    : 1;
+    ? Math.max(MIN_FIT_SCALE, Math.min(baseScale, baseScale * (available / finalY)))
+    : baseScale;
 
   const { doc } = await buildPDF(cvData, template, lang, { scale });
   const filename = name

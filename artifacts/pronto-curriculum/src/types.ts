@@ -65,6 +65,9 @@ export interface CVData {
   // Set false for candidates applying outside the EU, where a GDPR
   // authorization clause is irrelevant and reads as boilerplate.
   includePrivacyClause?: boolean;
+  // Multiplier applied to the CV's font size (and proportionally to line
+  // spacing) in the live preview and PDF export. Undefined = 1 (100%).
+  fontScale?: number;
 }
 
 export interface CoverLetterData {
