@@ -57,6 +57,7 @@ router.use(
     "/jobs/suggest-roles",
     "/jobs/salary",
     "/cv-assistant/chat",
+    "/cv-assistant/review",
     "/cover-letter/generate",
   ],
   aiRateLimiterAnon,

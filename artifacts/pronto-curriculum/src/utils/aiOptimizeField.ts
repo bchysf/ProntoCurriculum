@@ -8,9 +8,14 @@ export async function aiOptimizeSummary(cvData: CVData, lang = 'IT'): Promise<st
       field: 'summary',
       lang,
       value: cvData.summary,
+      // Everything the summary may draw on — the server only allows claims
+      // that are backed by this material.
       context: {
         title: cvData.title,
-        experiences: cvData.experiences.map(e => ({ role: e.role, company: e.company, desc: e.desc })),
+        experiences: cvData.experiences.map(e => ({ id: e.id, role: e.role, company: e.company, from: e.from, to: e.to, desc: e.desc })),
+        education: cvData.education.map(e => ({ degree: e.degree, institution: e.institution, grade: e.grade, from: e.from, to: e.to })),
+        certifications: (cvData.certifications ?? []).map(c => ({ name: c.name, issuer: c.issuer, date: c.date })),
+        skills: [...new Set([...(cvData.skillCategories ?? []).flatMap(c => c.skills), ...cvData.skills])],
       },
     }),
   });

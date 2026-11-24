@@ -6,12 +6,13 @@ import { downloadCVAsDOCX } from '../utils/downloadDOCX';
 import { EntitlementError } from '../utils/entitlement';
 import { aiOptimizeCV } from '../utils/aiOptimizeCV';
 import { aiOptimizeSummary, aiOptimizeExp, aiRephraseExp, aiExpTips, aiApplyTip } from '../utils/aiOptimizeField';
-import { aiCvAssistantChat, experienceInputToExperience } from '../utils/aiCvAssistant';
+import { aiCvAssistantChat, applyCvEdits, experienceInputToExperience } from '../utils/aiCvAssistant';
 import { aiTranslateCV, aiTranslateField, LANGUAGES, type SupportedLanguage } from '../utils/aiTranslate';
 import { translateDateLabel } from '../utils/dateI18n';
 import CVPreview from '../components/CVPreview';
 import TemplateModal from '../components/TemplateModal';
 import CoverLetterModal from '../components/CoverLetterModal';
+import CvReviewModal from '../components/CvReviewModal';
 import { Icon, IC } from '../components/StrokeIcon';
 import { CountrySelect, FlagImg, JOB_COUNTRIES } from '../components/CountrySelect';
 import { useAuth } from '../hooks/use-auth';
@@ -440,7 +441,7 @@ function AccordionSection({
 
 function AIAssistantPanel({
   experiences, expTips, analyzing, onAnalyzeAll, onApplyTip, applyingTipKey,
-  cvData, onCVChange, lang, onSaveCV, onTailorFromText,
+  cvData, onCVChange, lang, onSaveCV, onTailorFromText, onReviewCV,
 }: {
   experiences: { id: string; role: string; company: string }[];
   expTips: Record<string, string[]>;
@@ -453,6 +454,7 @@ function AIAssistantPanel({
   lang: SupportedLanguage;
   onSaveCV: () => void;
   onTailorFromText: (jobText: string) => void;
+  onReviewCV: (country: string | null, autoRun: boolean) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState(true);
@@ -463,7 +465,10 @@ function AIAssistantPanel({
   }));
   const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
 
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
+  // before/after snapshots let a reply that changed the CV offer Undo — only
+  // while the CV is still exactly the state that reply produced, so undoing
+  // can never silently discard edits made afterwards.
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; text: string; before?: CVData; after?: CVData }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -475,38 +480,23 @@ function AIAssistantPanel({
   const sendChat = async () => {
     const message = chatInput.trim();
     if (!message || chatSending) return;
+    const history = chatMessages.map(({ role, text }) => ({ role, text }));
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', text: message }]);
     setChatSending(true);
     try {
-      const { reply, action } = await aiCvAssistantChat(cvData, message, lang);
+      const { reply, action } = await aiCvAssistantChat(cvData, message, history, lang);
+      let next: CVData | null = null;
       switch (action.type) {
-        case 'add_experience':
-          // Free-text description of a side thing (volunteering, freelance) —
-          // stays secondary, matching what the rest of the builder calls
-          // "additional experience".
-          if (action.experiences.length) {
-            onCVChange({
-              ...cvData,
-              additionalExperiences: [...(cvData.additionalExperiences ?? []), ...action.experiences.map(experienceInputToExperience)],
-            });
-          }
+        case 'edit_cv':
+          next = applyCvEdits(cvData, action.edits);
           break;
         case 'search_archive':
           // Pulled from the saved Experience Archive — these are real past
           // jobs, so they belong in the main work history, not "additional".
           if (action.experiences.length) {
-            onCVChange({
-              ...cvData,
-              experiences: [...cvData.experiences, ...action.experiences.map(experienceInputToExperience)],
-            });
+            next = { ...cvData, experiences: [...cvData.experiences, ...action.experiences.map(experienceInputToExperience)] };
           }
-          break;
-        case 'update_summary':
-          onCVChange({ ...cvData, summary: action.summary });
-          break;
-        case 'update_skills':
-          onCVChange({ ...cvData, skills: [...new Set([...cvData.skills, ...action.skills])] });
           break;
         case 'save_cv':
           onSaveCV();
@@ -516,17 +506,21 @@ function AIAssistantPanel({
           break;
         case 'set_font_scale': {
           const current = cvData.fontScale ?? 1;
-          const next = action.mode === 'smaller' ? Math.max(FONT_SCALE_MIN, +(current - FONT_SCALE_STEP).toFixed(2))
+          const scale = action.mode === 'smaller' ? Math.max(FONT_SCALE_MIN, +(current - FONT_SCALE_STEP).toFixed(2))
             : action.mode === 'larger' ? Math.min(FONT_SCALE_MAX, +(current + FONT_SCALE_STEP).toFixed(2))
             : action.mode === 'fit_one_page' ? Math.min(current, FONT_SCALE_FIT_ONE_PAGE)
             : 1;
-          onCVChange({ ...cvData, fontScale: next });
+          next = { ...cvData, fontScale: scale };
           break;
         }
+        case 'review_cv':
+          onReviewCV(action.country, true);
+          break;
         case 'none':
           break;
       }
-      setChatMessages(prev => [...prev, { role: 'assistant', text: reply || t('ai.done') }]);
+      if (next) onCVChange(next);
+      setChatMessages(prev => [...prev, { role: 'assistant', text: reply || t('ai.done'), ...(next ? { before: cvData, after: next } : {}) }]);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : t('ai.chatError');
       setChatMessages(prev => [...prev, { role: 'assistant', text: errMsg }]);
@@ -583,6 +577,10 @@ function AIAssistantPanel({
         <div className="ai-float-body">
           <p className="ai-float-sub">{t('ai.sub')}</p>
 
+          <button className="btn btn-line btn-sm" style={{ width: '100%', justifyContent: 'center', marginBottom: 12 }} onClick={() => onReviewCV(null, false)}>
+            <Icon d={IC.check} size={13} /> {t('ai.reviewCv')}
+          </button>
+
           {named.length === 0 ? (
             <div className="ai-panel-empty">{t('ai.addExpHint')}</div>
           ) : withTips.length === 0 ? (
@@ -631,7 +629,20 @@ function AIAssistantPanel({
             {chatMessages.length > 0 && (
               <div className="ai-chat-log">
                 {chatMessages.map((m, i) => (
-                  <div key={i} className={`ai-chat-msg ${m.role}`}>{m.text}</div>
+                  <div key={i} className={`ai-chat-msg ${m.role}`}>
+                    {m.text}
+                    {m.before && m.after === cvData && (
+                      <button
+                        className="ai-chat-undo"
+                        onClick={() => {
+                          onCVChange(m.before!);
+                          setChatMessages(prev => prev.map((x, j) => (j === i ? { ...x, before: undefined, after: undefined } : x)));
+                        }}
+                      >
+                        ↺ {t('review.undo')}
+                      </button>
+                    )}
+                  </div>
                 ))}
                 {chatSending && <div className="ai-chat-msg assistant ai-chat-typing">…</div>}
                 <div ref={chatEndRef} />
@@ -761,6 +772,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
   const [localModal, setModal] = useState<null | 'ai-loading-local'>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false);
+  const [reviewModal, setReviewModal] = useState<{ country: string | null; autoRun: boolean } | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [showImportPanel, setShowImportPanel] = useState(false);
@@ -1084,8 +1096,10 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
       });
       onCVChange({
         ...cvData,
+        title: result.title?.trim() || cvData.title,
         summary: result.summary || cvData.summary,
         experiences: sortExperiencesChronologically(updatedExperiences),
+        education: sortExperiencesChronologically(cvData.education),
         skills: result.skillCategories?.flatMap(c => c.skills) ?? cvData.skills,
         skillCategories: result.skillCategories?.length ? result.skillCategories : cvData.skillCategories,
       });
@@ -2186,6 +2200,7 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
               sessionStorage.setItem('pc_pending_job', JSON.stringify({ description: jobText }));
               onNavigate('tailor');
             }}
+            onReviewCV={(country, autoRun) => setReviewModal({ country, autoRun })}
           />
         </div>
         )}
@@ -2372,6 +2387,17 @@ export default function BuilderStep2({ cvData, onCVChange, selectedTemplate, onT
           template={selectedTemplate}
           lang={selectedLanguage}
           onClose={() => setShowCoverLetterModal(false)}
+        />
+      )}
+
+      {reviewModal && (
+        <CvReviewModal
+          cvData={cvData}
+          cvLang={selectedLanguage}
+          initialCountry={reviewModal.country}
+          autoRun={reviewModal.autoRun}
+          onCVChange={onCVChange}
+          onClose={() => setReviewModal(null)}
         />
       )}
     </>

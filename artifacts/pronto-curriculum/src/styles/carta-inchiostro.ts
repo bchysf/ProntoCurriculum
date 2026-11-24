@@ -251,6 +251,7 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .ai-chat-msg { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 10px; max-width: 92%; }
 .dv3 .ai-chat-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
 .dv3 .ai-chat-msg.assistant { align-self: flex-start; background: var(--tint); color: var(--ink); border-bottom-left-radius: 3px; }
+.dv3 .ai-chat-undo { display: block; margin-top: 5px; border: none; background: none; padding: 0; font-family: inherit; font-size: 11px; font-weight: 700; color: var(--accent); cursor: pointer; }
 .dv3 .ai-chat-msg.ai-chat-typing { color: var(--ink-40); font-weight: 700; letter-spacing: 1px; }
 .dv3 .ai-chat-input-row { display: flex; gap: 6px; }
 .dv3 .ai-chat-input-row input { flex: 1; padding: 8px 10px; border: 1px solid rgba(20,23,31,.12); border-radius: 9px; font-family: inherit; font-size: 12.5px; color: var(--ink); outline: none; background: #fff; }
@@ -278,6 +279,27 @@ export const CARTA_INCHIOSTRO_CSS = `
 .dv3 .clm-fit-note { font-size: 12.5px; color: var(--ink-60); line-height: 1.4; }
 .dv3 .clm-letter { display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.6; color: var(--ink); background: #FDFDFB; border: 1px solid var(--hair-soft); border-radius: 10px; padding: 16px; }
 .dv3 .clm-letter p { margin: 0; }
+
+/* CV REVIEW modal (reuses .clm-* shell) */
+.dv3 .crv-modal { width: min(640px, 100%); }
+.dv3 .crv-form { flex-wrap: wrap; align-items: flex-end; }
+.dv3 .crv-list { display: flex; flex-direction: column; gap: 10px; }
+.dv3 .crv-item { border: 1px solid var(--hair-soft); border-radius: 12px; padding: 12px 14px; background: #FDFDFB; display: flex; flex-direction: column; gap: 6px; }
+.dv3 .crv-item.applied { opacity: .6; }
+.dv3 .crv-item-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink); }
+.dv3 .crv-sev { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border: 1px solid; border-radius: 99px; padding: 2px 8px; flex-shrink: 0; }
+.dv3 .crv-detail { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-60); }
+.dv3 .crv-norm { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-60); background: var(--tint); border-radius: 8px; padding: 7px 9px; }
+.dv3 .crv-norm span { font-weight: 700; color: var(--accent); }
+.dv3 .crv-fix { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); display: flex; gap: 6px; align-items: flex-start; }
+.dv3 .crv-fix svg { margin-top: 3px; flex-shrink: 0; color: var(--accent); }
+.dv3 .crv-change { border-top: 1px dashed var(--hair-soft); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.dv3 .crv-check { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.dv3 .crv-check input { margin-top: 2px; accent-color: var(--accent); }
+.dv3 .crv-toggle { align-self: flex-start; border: none; background: none; padding: 0; font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.dv3 .crv-preview { white-space: pre-line; font-size: 12px; line-height: 1.5; color: var(--ink); background: #fff; border: 1px solid var(--hair-soft); border-radius: 8px; padding: 8px 10px; }
+.dv3 .crv-advice { border-top: 1px dashed var(--hair-soft); padding-top: 8px; font-size: 11.5px; color: var(--ink-40); font-style: italic; }
+.dv3 .crv-foot { position: sticky; bottom: 0; background: #fff; padding: 10px 0 4px; display: flex; gap: 8px; border-top: 1px solid var(--hair-soft); }
 
 @media (max-width: 1080px) { .dv3 .cols { grid-template-columns: 1fr; } .dv3 .stats { grid-template-columns: repeat(2, 1fr); } }
 

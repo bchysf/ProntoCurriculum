@@ -1,6 +1,29 @@
 import { Router, type IRouter } from 'express';
 import { generateText } from '../lib/ai';
 import { sendEmail, getCvReadyEmailHtml } from '../lib/email';
+import {
+  LANG_NAMES as STD_LANG_NAMES,
+  buildGoldStandardGuide,
+  buildAllowedNumbers,
+  bulletCapFor,
+  cleanSkillCategories,
+  findCliches,
+  hasFirstPerson,
+  inventedNumbers,
+  joinBullets,
+  sortReverseChronological,
+  splitBullets,
+  metricsFirst,
+  unsupportedSentences,
+  paddingStart,
+  sourceOverlap,
+  buildSourceStems,
+  totalYearsOfExperience,
+  cumulativeYears,
+  wordCount,
+  type OptimizeFacts,
+  type OptimizeInputExperience,
+} from '../lib/cvStandard';
 
 const router: IRouter = Router();
 
@@ -13,162 +36,342 @@ const LANG_NAMES: Record<string, string> = {
   PT: 'portoghese (Português)',
 };
 
+// Single-field rewrites (summary, one experience) share the full-CV standard.
 function buildMasterPrompt(lang: string): string {
-  const langName = LANG_NAMES[lang] ?? 'italiano';
-  return `Sei il miglior CV writer al mondo, ex HR Director con 20 anni di esperienza in recruiting per aziende Fortune 500. Il tuo unico obiettivo è che il CV che produci batta il 99% dei CV che un recruiter vedrà quella settimana. Non stai "migliorando" il testo — lo stai riscrivendo da zero al livello di un candidato che verrebbe assunto subito. Mediocre non è un'opzione: ogni frase deve guadagnarsi il posto nel documento.
-
-Il CV che scrivi deve funzionare su DUE livelli contemporaneamente:
-1. MACCHINA (ATS): struttura prevedibile, sezioni standard, terminologia allineata al ruolo/settore, testo pulito senza artefatti di formattazione.
-2. UMANO (recruiter): scansione rapida in 6 secondi, gerarchia visiva netta, risultati quantificati, zero muri di testo.
-Ogni giorno il recruiter riceve 1000 CV per 10 posizioni. In 6 secondi decide: shortlist o cestino. Hai allenato questo istinto per anni.
-
-HAI VISTO DI TUTTO — E SAI ESATTAMENTE COSA NON FUNZIONA:
-- CV con mansioni elencate invece di risultati → cestino immediato
-- Summary vaghe ("professionista dinamico e proattivo") → cestino immediato
-- Skill inventate, eccessivamente generiche, o ripetute più volte per "riempire" le keyword → red flag (il keyword-stuffing non inganna né l'ATS né il recruiter)
-- Lingue elencate due volte (nella sezione skill E nella sezione lingue) → sciatteria → cestino
-- Competenze riempitive senza proof → cestino
-- Muri di testo, bullet lunghi 3-4 righe → nessuno li legge
-
-COSA TI FA FERMARE E LEGGERE:
-- Numeri reali: "ridotto costi del 20%", "gestito team di 20", "scala da 2 a 50 FTE"
-- Posizionamento netto: capisci chi è questa persona in 10 parole
-- Bullet concisi (10-25 parole): azione forte + metodo/strumento + risultato
-- Profilo che risponde a: chi sei, cosa sai fare, che valore porti
-
-IL CV PERFETTO CHE SHORTLISTI:
-
-1. SUMMARY — non è un'autobiografia, è la risposta a "perché dedicarti i prossimi 30 secondi":
-   Formula: [identità professionale] + [anni/livello di esperienza] + [specializzazione] + [2-3 capacità rilevanti] + [valore/risultato specifico].
-   Lunghezza target: 40-70 parole, 2-4 frasi dense. Zero aggettivi vuoti, solo posizionamento e prova.
-
-2. ESPERIENZE — l'allocazione dei bullet segue RILEVANZA e POSIZIONE cronologica, non equità storica:
-   - Esperienza più recente / attuale (prima della lista): 4-6 bullet se il contenuto originale lo consente.
-   - Esperienza precedente importante (seconda posizione): 3-5 bullet.
-   - Esperienze più vecchie o meno rilevanti (terza posizione in poi): 1-3 bullet.
-   - MA questo è un tetto massimo, non un obbligo: se il testo originale di una specifica esperienza offre poco materiale reale, scrivi meno bullet (anche 1 solo, ma impeccabile) piuttosto che riempire con contenuto debole. Non forzare mai un bullet che non è supportato dal testo originale.
-   - Ogni bullet segue la formula: AZIONE (verbo forte) + COSA hai fatto + COME/con quale metodo o strumento + RISULTATO misurabile. Esempio di struttura: "Ridotto il tempo di reportistica mensile del 40% automatizzando i flussi Excel/Power Query."
-   - Lunghezza bullet: 10-25 parole. Mai 3-4 righe.
-   - Mai mansioni ("responsabile di", "si occupava di"), solo risultati e azioni concrete. Numeri ovunque siano presenti nel testo originale.
-   - Non ogni bullet deve avere un numero: se il testo originale non contiene una metrica ma descrive un'azione specifica con metodo e contesto chiari, quel bullet è comunque valido — è meglio di un numero inventato.
-
-3. COMPETENZE — competenze reali e verificabili, organizzate per area, target totale 10-15 skill in tutto (somma di tutte le categorie):
-   - Solo competenze specifiche e concrete (strumenti, tecnologie, metodologie, aree di competenza) — mai soft skill generiche isolate ("comunicazione", "teamwork", "problem solving") a meno che non siano già affiancate da una prova nelle esperienze.
-   - Ogni skill compare UNA SOLA VOLTA — mai ripetuta in categorie diverse o duplicata per enfasi (keyword-stuffing).
-   - MAI lingue qui — le lingue hanno la loro sezione separata.
-
-4. LINGUE: Sezione separata, già compilata dall'utente. Non toccarla. Non duplicarla nelle competenze.
-
-5. CERTIFICAZIONI: Sezione separata, già compilata dall'utente (se presente). Non toccarla, non inventarne di nuove.
-
-ALLINEAMENTO SEMANTICO (non keyword-matching superficiale):
-Il tuo obiettivo non è infilare parole chiave a caso — è creare corrispondenza semantica reale tra ciò che il candidato ha fatto e la terminologia standard del suo settore/ruolo. Se un'esperienza descrive attività che nel settore si chiamano con un termine tecnico preciso, usa quel termine invece di un sinonimo vago — ma solo se riflette fedelmente ciò che è scritto nel testo originale. Esempio: se il testo dice "ho gestito i clienti tramite il software aziendale" e da altre parti del CV emerge che il software è un CRM, scrivi "gestione clienti tramite CRM" — non inventare il nome di uno strumento specifico se non è mai citato.
-
-LINGUA DI OUTPUT OBBLIGATORIA: ${langName}.
-Tutto il testo che generi — summary, descrizioni esperienze, nomi delle categorie skill, nomi delle singole skill — deve essere ESCLUSIVAMENTE in ${langName}.
-Regola assoluta: zero parole in altre lingue, salvo termini tecnici universalmente accettati (es. React, TypeScript, Kubernetes, Scrum, KPI, P&L, SaaS, CRM, ERP).
-Soft skill e titoli di categoria devono essere scritti nella lingua scelta.
-
-ERRORI CHE NON FAI MAI:
-1. Non scrivi mai in prima persona. VIETATO: "Ho", "Sono", "Ho gestito", "Ho costruito".
-2. Non scrivi blocchi di testo. Bullet con "• ", nel numero e nella lunghezza indicati sopra — mai di più di quelli giustificati dal contenuto originale.
-3. Non usi mai: "ho partecipato", "ho contribuito", "sono stato coinvolto". Parole da junior.
-4. Non scrivi: "dinamico", "proattivo", "team player" senza dati o fatti concreti a supporto.
-5. Non metti lingue (Inglese, Italiano, Francese ecc.) nelle skill — esistono già nella sezione lingue.
-6. Non ripeti la stessa skill/keyword più volte per "rinforzarla" agli occhi dell'ATS — è keyword-stuffing, un ATS moderno non lo premia e un recruiter lo penalizza.
-7. VIETATO ASSOLUTO — REGOLA PIÙ IMPORTANTE DI TUTTE: non scrivere MAI una percentuale, cifra, importo o metrica che non sia esplicitamente scritta nel testo originale del CV. Questo vale anche se sembra "plausibile" o "ragionevole" per quel tipo di ruolo — non lo è, è un dato inventato su una persona reale. Se il testo originale non contiene un numero preciso ma vuoi comunicare impatto, usa una formulazione qualitativa forte ("riduzione significativa", "miglioramento misurabile", "crescita costante") — MAI un numero specifico che non hai letto nel testo originale. Inventare un numero non è "ottimizzare", è mentire per conto del candidato: se in un colloquio gli chiedono di spiegare quel "30%" che non può giustificare, perde l'offerta ed è colpa tua. Prima di scrivere qualsiasi cifra, verifica che sia letteralmente presente nel testo originale fornito.
-
-STILE OBBLIGATORIO — FORMA IMPERSONALE:
-Tutte le descrizioni: participio passato o sostantivo d'azione senza soggetto.
-- "Ridisegnati i processi operativi, tagliando il 30% delle inefficienze."
-- "Gestiti 20 dipendenti, coordinata supply chain con riduzione costi del 20%."
-- "Lanciata piattaforma da zero, raggiunto breakeven in 8 mesi."
-
-ESEMPIO DI STANDARD QUALITATIVO — SOLO PER CAPIRE IL LIVELLO, NON PER I CONTENUTI:
-⚠️ ATTENZIONE: qualsiasi numero, ruolo o dettaglio in questo esempio è INVENTATO a scopo puramente illustrativo dello STILE. Non riutilizzarli MAI, nemmeno se il CV che stai riscrivendo sembra simile — copiali sarebbe un errore grave, equivalente a inventare fatti falsi su una persona reale.
-Esempio di testo debole (frasi vaghe, zero prove): "Mi sono occupato di varie attività organizzative e ho collaborato con il team per il raggiungimento degli obiettivi aziendali."
-Esempio di testo forte allo stesso livello di dettaglio ORIGINALE (senza inventare numeri assenti): "• Coordinate le attività operative del team, allineando le priorità settimanali con gli obiettivi aziendali"
-Esempio di bullet con dato reale presente nell'originale: "• Ridotto il tempo di reportistica mensile del 40% automatizzando i flussi Excel/Power Query, eliminando la preparazione manuale ripetitiva"
-La differenza è la specificità dell'azione e del contesto, non l'aggiunta di numeri inventati. Se il testo originale CONTIENE già numeri, scala o portata (quante persone, quanti soldi, quanto tempo, quanto spesso) usali sempre e mettili in evidenza. Se il testo originale NON contiene alcun dato quantificabile, non inventarlo: migliora la specificità dell'azione e del risultato con verbi forti, restando rigorosamente fedele solo ai fatti presenti nell'originale.
-
-PULIZIA OBBLIGATORIA:
-- Non includere MAI "Presente" o "Present" come testo isolato nei campi.
-- Non generare artefatti di formattazione o date orfane.`;
+  return buildGoldStandardGuide(STD_LANG_NAMES[lang] ? lang : 'IT');
 }
 
-interface OptimizedCvResult {
-  summary?: string;
-  experiences?: Array<{ id?: string; desc?: string }>;
-  skillCategories?: Array<{ name?: string; skills?: string[] }>;
+interface RawOptimizeOutput {
+  title?: unknown;
+  summary?: unknown;
+  experiences?: Array<{ id?: unknown; desc?: unknown }>;
+  skillCategories?: unknown;
 }
 
-// Structural score against the gold-standard spec (summary length, skill count,
-// bullet presence/metrics) — reflects what was actually generated, not a guess.
-function computeStructuralAtsScore(result: OptimizedCvResult): number {
-  let score = 40; // baseline: standard sections, clean text, single column (guaranteed by our templates)
+interface OptimizeResultOut {
+  title?: string;
+  summary: string;
+  experiences: Array<{ id: string; desc: string }>;
+  skillCategories: Array<{ name: string; skills: string[] }>;
+  atsScore: number;
+}
 
-  const summaryWords = (result.summary ?? '').trim().split(/\s+/).filter(Boolean).length;
-  if (summaryWords >= 40 && summaryWords <= 70) score += 15;
-  else if (summaryWords > 0) score += 7;
+function str(v: unknown, max = 4000): string {
+  return typeof v === 'string' ? v.trim().slice(0, max) : '';
+}
 
-  const totalSkills = (result.skillCategories ?? []).reduce((n, c) => n + (c.skills?.length ?? 0), 0);
-  if (totalSkills >= 10 && totalSkills <= 15) score += 15;
-  else if (totalSkills > 0) score += 7;
-
-  const experiences = result.experiences ?? [];
-  const withBullets = experiences.filter(e => (e.desc ?? '').includes('•'));
-  const withMetrics = experiences.filter(e => /\d/.test(e.desc ?? ''));
-  if (experiences.length > 0) {
-    score += Math.round((withBullets.length / experiences.length) * 15);
-    score += Math.round((withMetrics.length / experiences.length) * 15);
+function parseModelJson(raw: string): RawOptimizeOutput | null {
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    return JSON.parse(cleaned) as RawOptimizeOutput;
+  } catch {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end <= start) return null;
+    try { return JSON.parse(cleaned.slice(start, end + 1)) as RawOptimizeOutput; } catch { return null; }
   }
+}
 
+// Structural score against the gold standard, computed from what was actually
+// produced (used for the "CV ready" email subject).
+function computeStructuralAtsScore(r: OptimizeResultOut): number {
+  let score = 40;
+  const sw = wordCount(r.summary);
+  score += sw >= 40 && sw <= 80 ? 15 : sw > 0 ? 7 : 0;
+  const totalSkills = r.skillCategories.reduce((n, c) => n + c.skills.length, 0);
+  score += totalSkills >= 9 && totalSkills <= 15 ? 15 : totalSkills > 0 ? 7 : 0;
+  const exps = r.experiences.filter(e => e.desc);
+  if (exps.length) {
+    score += Math.round((exps.filter(e => e.desc.includes('•')).length / exps.length) * 15);
+    score += Math.round((exps.filter(e => /\d/.test(e.desc)).length / exps.length) * 15);
+  }
   return Math.max(0, Math.min(100, score));
 }
 
-router.post('/optimize-cv', async (req, res) => {
-  const { cvData, lang = 'IT' } = req.body as { cvData?: Record<string, unknown>; lang?: string };
+interface Assessment {
+  result: OptimizeResultOut;
+  issues: string[];
+  // Bullets still carrying invented numbers, per experience id.
+  badBullets: Map<string, Set<number>>;
+  // Bullets whose tail adds claims not in the source: id → bullet index → cut position.
+  padded: Map<string, Map<number, number>>;
+  summaryBadNumbers: string[];
+}
 
-  if (!cvData) {
+function assess(
+  out: RawOptimizeOutput,
+  ctx: {
+    lang: string;
+    exps: OptimizeInputExperience[];
+    facts: OptimizeFacts;
+    allowed: Set<string>;
+    sourceStems: Set<string>;
+    original: { title: string; summary: string; skillCategories: Array<{ name: string; skills: string[] }> };
+    cvLanguages: string[];
+  },
+): Assessment {
+  const { lang, exps, facts, allowed, sourceStems, original, cvLanguages } = ctx;
+  const padded = new Map<string, Map<number, number>>();
+  // Skip the padding check when the output is a translation of the source.
+  const checkPadding = sourceOverlap((out.experiences ?? []).map(e => str(e?.desc)), sourceStems) >= 0.35;
+  const issues: string[] = [];
+  const badBullets = new Map<string, Set<number>>();
+
+  // Title
+  let title = str(out.title, 80).replace(/^["'“]+|["'”]+$/g, '');
+  if (!title || wordCount(title) > 7) title = original.title;
+
+  // Summary
+  const summary = str(out.summary, 1200).replace(/\s*\n+\s*/g, ' ');
+  const sw = wordCount(summary);
+  const summaryBadNumbers = inventedNumbers(summary, allowed);
+  if (!summary) issues.push('summary: missing.');
+  else {
+    if (sw < 35 || sw > 85) issues.push(`summary: ${sw} words — must be 45–75 words in 3–4 sentences.`);
+    const sentences = summary.split(/(?<=[.!?])\s+/).filter(Boolean).length;
+    if (sentences > 4) issues.push(`summary: ${sentences} sentences — use 3–4; keep identity, core expertise and the strongest proof point, drop duty lists.`);
+    if (summaryBadNumbers.length) issues.push(`summary: contains numbers not present in the source (${summaryBadNumbers.join(', ')}) — remove them.`);
+    if (hasFirstPerson(summary, lang)) issues.push('summary: uses first person — rewrite impersonally.');
+    const c = findCliches(summary, lang);
+    if (c.length) issues.push(`summary: clichés/filler (${c.join(', ')}) — replace with concrete content.`);
+  }
+
+  // Experiences
+  const byId = new Map<string, string>();
+  for (const e of out.experiences ?? []) {
+    const id = str(e?.id, 100);
+    if (id) byId.set(id, str(e?.desc));
+  }
+  const experiences = exps.map(src => {
+    const produced = byId.get(src.id);
+    if (!src.desc.trim()) return { id: src.id, desc: src.desc };
+    if (produced === undefined || !produced.trim()) {
+      issues.push(`experience ${src.id} (${src.role} @ ${src.company}): missing from your output.`);
+      return { id: src.id, desc: src.desc };
+    }
+    const cap = facts.bulletCaps[src.id] ?? 3;
+    let bullets = splitBullets(produced);
+    if (bullets.length > cap) {
+      issues.push(`experience ${src.id}: ${bullets.length} bullets, maximum is ${cap} — keep only the strongest.`);
+      bullets = bullets.slice(0, cap);
+    }
+    const firstWords = new Map<string, number>();
+    bullets.forEach((b, i) => {
+      const bad = inventedNumbers(b, allowed);
+      if (bad.length) {
+        issues.push(`experience ${src.id}, bullet ${i + 1}: numbers not in the source (${bad.join(', ')}) — remove them or use the real figure.`);
+        if (!badBullets.has(src.id)) badBullets.set(src.id, new Set());
+        badBullets.get(src.id)!.add(i);
+      }
+      const pad = checkPadding ? paddingStart(b, sourceStems) : -1;
+      if (pad >= 0) {
+        issues.push(`experience ${src.id}, bullet ${i + 1}: the clause "${b.slice(pad).replace(/^[,;s—–]+/, "")}" states something the source never says — remove it or replace it with a fact from the source.`);
+        if (!padded.has(src.id)) padded.set(src.id, new Map());
+        padded.get(src.id)!.set(i, pad);
+      }
+      const wc = wordCount(b);
+      if (wc > 30) issues.push(`experience ${src.id}, bullet ${i + 1}: ${wc} words — cut to 12–25.`);
+      if (hasFirstPerson(b, lang)) issues.push(`experience ${src.id}, bullet ${i + 1}: first person — rewrite impersonally.`);
+      const c = findCliches(b, lang);
+      if (c.length) issues.push(`experience ${src.id}, bullet ${i + 1}: weak/duty phrasing (${c.join(', ')}) — lead with an action and result.`);
+      const fw = b.split(/\s+/)[0]?.toLowerCase().replace(/[^\p{L}]/gu, '') ?? '';
+      if (fw) firstWords.set(fw, (firstWords.get(fw) ?? 0) + 1);
+    });
+    for (const [w, n] of firstWords) {
+      if (n > 1) issues.push(`experience ${src.id}: ${n} bullets start with "${w}" — vary the action verbs.`);
+    }
+    return { id: src.id, desc: joinBullets(bullets) };
+  });
+
+  // Skills
+  let skillCategories = cleanSkillCategories(out.skillCategories, cvLanguages);
+  const totalSkills = skillCategories.reduce((n, c) => n + c.skills.length, 0);
+  if (!skillCategories.length) {
+    issues.push('skillCategories: missing or empty.');
+    skillCategories = original.skillCategories;
+  } else if (totalSkills < 8) {
+    issues.push(`skillCategories: only ${totalSkills} skills — aim for 9–15 evidenced hard skills.`);
+  }
+
+  const result: OptimizeResultOut = {
+    title,
+    summary: summary || original.summary,
+    experiences,
+    skillCategories,
+    atsScore: 0,
+  };
+  return { result, issues, badBullets, padded, summaryBadNumbers };
+}
+
+// Last line of defence after the repair pass: anything still carrying an
+// invented number is removed rather than shipped.
+function enforceTruth(a: Assessment, exps: OptimizeInputExperience[], originalSummary: string): OptimizeResultOut {
+  const r = a.result;
+  const experiences = r.experiences.map(e => {
+    const bad = a.badBullets.get(e.id);
+    const pads = a.padded.get(e.id);
+    if (!bad?.size && !pads?.size) return e;
+    // Padding is cut off at the clause boundary (the true part stays);
+    // bullets with invented numbers are dropped entirely.
+    const kept = splitBullets(e.desc)
+      .map((b, i) => {
+        const cut = pads?.get(i);
+        return cut === undefined ? b : b.slice(0, cut).replace(/[\s,;—–]+$/, '') + '.';
+      })
+      .filter((_, i) => !bad?.has(i));
+    const src = exps.find(x => x.id === e.id);
+    return { id: e.id, desc: kept.length ? joinBullets(kept) : (src?.desc ?? '') };
+  });
+  let summary = r.summary;
+  if (a.summaryBadNumbers.length) {
+    const sentences = summary.split(/(?<=[.!?])\s+/);
+    const kept = sentences.filter(s => !a.summaryBadNumbers.some(n => s.includes(n)));
+    summary = kept.length >= 2 ? kept.join(' ') : originalSummary || kept.join(' ');
+  }
+  return {
+    ...r,
+    summary,
+    experiences: experiences.map(e => (e.desc.includes("•") ? { ...e, desc: joinBullets(metricsFirst(splitBullets(e.desc))) } : e)),
+  };
+}
+
+router.post('/optimize-cv', async (req, res) => {
+  const { cvData, lang: rawLang = 'IT' } = req.body as { cvData?: Record<string, unknown>; lang?: string };
+
+  if (!cvData || typeof cvData !== 'object') {
     res.status(400).json({ error: 'CV data mancante' });
     return;
   }
+  const lang = STD_LANG_NAMES[rawLang] ? rawLang : 'IT';
 
-  const langName = LANG_NAMES[lang] ?? 'italiano';
-  const cvText = JSON.stringify(cvData, null, 2).slice(0, 7000);
+  // Lean, PII-free source: no photo (base64 would eat the whole context),
+  // no contacts. Experiences in reverse-chronological order, which is also
+  // the order the frontend renders them in.
+  const asList = (v: unknown) => (Array.isArray(v) ? v : []) as Array<Record<string, unknown>>;
+  const exps: OptimizeInputExperience[] = sortReverseChronological(
+    asList(cvData.experiences).map(e => ({
+      id: str(e.id, 100),
+      role: str(e.role, 150),
+      company: str(e.company, 150),
+      city: str(e.city, 100),
+      from: str(e.from, 40),
+      to: str(e.to, 40),
+      desc: str(e.desc, 2500),
+    })).filter(e => e.id && (e.role || e.company || e.desc)),
+  );
 
-  const existingLanguages = (
-    (cvData.languages as Array<{ name?: string }> | undefined) ?? []
-  )
-    .map((l) => l.name)
-    .filter(Boolean)
-    .join(', ');
-  const languageExclusionNote = existingLanguages
-    ? `\nLINGUE GIÀ PRESENTI NEL CV (NON inserire nelle skill): ${existingLanguages}.`
-    : '';
+  const cvLanguages = asList(cvData.languages).map(l => str(l.name, 60)).filter(Boolean);
+  const originalSkillCategories = cleanSkillCategories(cvData.skillCategories, []);
+  const original = {
+    title: str(cvData.title, 120),
+    summary: str(cvData.summary, 2000),
+    skillCategories: originalSkillCategories,
+  };
 
-  const systemContent = `${buildMasterPrompt(lang)}\n\nAnalizza il CV e riscrivi il contenuto come farebbe l'HR manager che lo shortlisterebbe tra 1000 candidati:\n\nSUMMARY — il posizionamento che fa fermare il recruiter:\n- Formula: identità professionale + anni/livello di esperienza + specializzazione + 2-3 capacità rilevanti + valore/risultato specifico preso dal CV originale.\n- Lunghezza target: 40-70 parole (2-4 frasi dense). Zero banalità, zero aggettivi vuoti. Tutto in ${langName}.\n\nEXPERIENCES — solo risultati, mai mansioni, numero di bullet allocato per RILEVANZA e POSIZIONE nell'array (la prima esperienza nell'array è la più recente/rilevante):\n- Esperienza in posizione 1 (più recente): fino a 4-6 bullet, se il testo originale offre abbastanza materiale.\n- Esperienza in posizione 2: fino a 3-5 bullet.\n- Esperienze dalla posizione 3 in poi: fino a 1-3 bullet.\n- Questi numeri sono un TETTO MASSIMO, non un obbligo: se un'esperienza specifica ha poco materiale reale, scrivi meno bullet (anche 1 solo, ma impeccabile) piuttosto che riempire con contenuto debole o ripetitivo.\n- Ogni bullet segue la formula AZIONE + COSA + COME/con quale metodo o strumento + RISULTATO, lungo 10-25 parole, e inizia con "• ".\n- Se esistono numeri nel testo originale (%, €, n. persone, mesi) usali obbligatoriamente. Se non esistono, non inventarli: punta sulla specificità dell'azione.\n- OGNI bullet è separato dal successivo da un vero carattere newline (\\n) dentro la stringa JSON — MAI bullet concatenati sulla stessa riga con virgole. Esempio di formato corretto per due bullet: "• Primo risultato con dato numerico\\n• Secondo risultato con dato numerico"\n- Tutto in ${langName}.\n\nSKILL CATEGORIES — competenze reali, pertinenti, verificabili, target 10-15 skill TOTALI (somma di tutte le categorie):\n- 2-4 categorie pertinenti al profilo (es: Operazioni, Leadership, Digitale, Commerciale)\n- Distribuisci le skill tra le categorie in modo che il totale sia 10-15, non di più\n- Solo skill reali e specifiche che emergono dalle esperienze, NON skill inventate, generiche o duplicate tra categorie diverse (niente keyword-stuffing)\n- ASSOLUTAMENTE VIETATO: includere lingue parlate (${existingLanguages || 'italiano, inglese, francese ecc.'}) — le lingue hanno già la loro sezione separata nel CV${languageExclusionNote}\n- Nomi categorie in ${langName}, skill in ${langName} salvo termini tecnici universali\n\nRestituisci SOLO questo JSON (zero testo prima o dopo, zero markdown):\n{\n  "summary": "profilo riscritto in ${langName}, 40-70 parole",\n  "experiences": [\n    { "id": "id originale invariata", "desc": "descrizione riscritta in ${langName}, max 500 caratteri, numero di bullet allocato per posizione/rilevanza come indicato sopra (1-6)" }\n  ],\n  "skillCategories": [\n    { "name": "nome categoria in ${langName}", "skills": ["skill1", "skill2", "skill3"] }\n  ]\n}\n\nVINCOLI ASSOLUTI: mantieni le id originali delle esperienze, nello stesso ordine in cui appaiono nell'input (l'ordine determina l'allocazione dei bullet). Non inventare fatti o numeri assenti nel CV. Il totale delle skill in tutte le skillCategories deve essere tra 10 e 15.`;
+  const facts: OptimizeFacts = {
+    yearsOfExperience: totalYearsOfExperience(exps),
+    yearsByRecentRoles: cumulativeYears(exps),
+    currentRole: exps[0] && /presente|present|attuale|current|aujourd|heute|actualidad|atualidade|oggi|derzeit|em curso/i.test(exps[0].to) ? exps[0].role : null,
+    bulletCaps: Object.fromEntries(exps.map((e, i) => [e.id, bulletCapFor(i, e.desc)])),
+  };
 
-  const userContent = `Ottimizza questo CV come farebbe l'HR manager che deve scegliere 10 persone su 1000. Sii spietato: solo impatto misurabile, niente mansioni, niente lingue nelle competenze.\n\n${cvText}`;
+  const source = {
+    title: original.title,
+    summary: original.summary,
+    experiences: exps,
+    education: sortReverseChronological(asList(cvData.education).map(e => ({
+      degree: str(e.degree, 200), institution: str(e.institution, 200), grade: str(e.grade, 50), from: str(e.from, 40), to: str(e.to, 40),
+    }))),
+    certifications: asList(cvData.certifications).map(c => ({ name: str(c.name, 200), issuer: str(c.issuer, 150), date: str(c.date, 40) })),
+    otherExperiences: asList(cvData.additionalExperiences).map(e => ({ role: str(e.role, 150), company: str(e.company, 150), desc: str(e.desc, 600) })),
+    existingSkills: [...new Set([
+      ...asList(cvData.skillCategories).flatMap(c => (Array.isArray(c.skills) ? c.skills : []).map(s => str(s, 60))),
+      ...(Array.isArray(cvData.skills) ? cvData.skills : []).map(s => str(s, 60)),
+    ].filter(Boolean))],
+    languages: cvLanguages,
+  };
+  const sourceJson = JSON.stringify(source, null, 1);
+  const allowed = buildAllowedNumbers(sourceJson, facts);
+  const langName = STD_LANG_NAMES[lang];
+
+  const outputSpec = `Return ONLY a JSON object with exactly this shape:
+{
+  "title": "standard role title in ${langName}",
+  "summary": "45–75 words, 3–4 sentences, in ${langName}",
+  "experiences": [ { "id": "<original id, unchanged>", "desc": "• bullet\\n• bullet" } ],
+  "skillCategories": [ { "name": "category in ${langName}", "skills": ["skill", "skill"] } ]
+}
+Include every experience id from the input, in the same order.`;
+
+  const prompt = `${buildGoldStandardGuide(lang)}
+
+━━ FACTS (computed from the CV — you may use these numbers) ━━
+${JSON.stringify({
+    yearsByRecentRoles: facts.yearsByRecentRoles,
+    currentRole: facts.currentRole ?? 'none',
+    bulletCaps: facts.bulletCaps,
+  }, null, 1)}
+
+━━ CANDIDATE CV (source of truth) ━━
+${sourceJson}
+
+${outputSpec}`;
 
   try {
-    const raw = await generateText(systemContent + '\n\n' + userContent, { temperature: 0.5, maxTokens: 3000 });
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    const parsed = JSON.parse(jsonStr) as OptimizedCvResult;
-    const atsScore = computeStructuralAtsScore(parsed);
+    let raw = await generateText(prompt, { temperature: 0.4, maxTokens: 8000, json: true });
+    let parsed = parseModelJson(raw);
+    if (!parsed) {
+      raw = await generateText(prompt, { temperature: 0.3, maxTokens: 8000, json: true });
+      parsed = parseModelJson(raw);
+    }
+    if (!parsed) throw new Error('Model returned invalid JSON twice');
+
+    const ctx = { lang, exps, facts, allowed, sourceStems: buildSourceStems(sourceJson), original, cvLanguages };
+    let assessment = assess(parsed, ctx);
+
+    // One targeted repair pass: the model gets its own draft plus the exact
+    // rule violations found by code, and fixes only those.
+    if (assessment.issues.length) {
+      req.log.info({ issues: assessment.issues }, 'optimize-cv: repairing draft');
+      const repairPrompt = `${buildGoldStandardGuide(lang)}
+
+━━ FACTS ━━
+${JSON.stringify({ yearsByRecentRoles: facts.yearsByRecentRoles, bulletCaps: facts.bulletCaps }, null, 1)}
+
+━━ CANDIDATE CV (source of truth) ━━
+${sourceJson}
+
+━━ YOUR DRAFT ━━
+${JSON.stringify(parsed, null, 1)}
+
+━━ PROBLEMS FOUND IN YOUR DRAFT (fix every one; keep everything else as good as it is) ━━
+${assessment.issues.map(i => `- ${i}`).join('\n')}
+
+${outputSpec}`;
+      const repairedRaw = await generateText(repairPrompt, { temperature: 0.2, maxTokens: 8000, json: true }).catch(() => '');
+      const repaired = repairedRaw ? parseModelJson(repairedRaw) : null;
+      if (repaired) {
+        const second = assess(repaired, ctx);
+        // Keep the repair only if it actually reduced the problems.
+        if (second.issues.length <= assessment.issues.length) assessment = second;
+      }
+    }
+
+    const result = enforceTruth(assessment, exps, original.summary);
+    result.atsScore = computeStructuralAtsScore(result);
 
     const user = (req as { user?: { email?: string; firstName?: string } }).user;
     if (user?.email) {
       sendEmail({
         to: user.email,
-        subject: `✨ Il tuo CV è pronto e ottimizzato (Punteggio ATS stimato: ${atsScore}/100)`,
-        html: getCvReadyEmailHtml(String(cvData.title || 'Curriculum Executive PA 2026'), atsScore),
+        subject: `✨ Il tuo CV è pronto e ottimizzato (Punteggio ATS stimato: ${result.atsScore}/100)`,
+        html: getCvReadyEmailHtml(String(cvData.title || 'Curriculum'), result.atsScore),
       }).catch(err => {
         req.log.error({ err }, 'Background cv-ready email failed');
       });
     }
 
-    res.json(parsed);
+    res.json(result);
   } catch (err) {
     req.log.error({ err }, 'optimize-cv error');
     res.status(500).json({ error: "Errore durante l'ottimizzazione del CV" });
@@ -184,7 +387,7 @@ router.post('/optimize-field', async (req, res) => {
     mode?: string;
   };
 
-  if (!field || (!value && field !== 'exp-tips' && field !== 'exp-role' && field !== 'exp-skills')) {
+  if (!field || (!value && field !== 'summary' && field !== 'exp-tips' && field !== 'exp-role' && field !== 'exp-skills')) {
     res.status(400).json({ error: 'Parametri mancanti' });
     return;
   }
@@ -253,11 +456,98 @@ router.post('/optimize-field', async (req, res) => {
       return;
     }
 
+    if (field === 'summary') {
+      const stdLang = STD_LANG_NAMES[lang] ? lang : 'IT';
+      const asList = (v: unknown) => (Array.isArray(v) ? v : []) as Array<Record<string, unknown>>;
+      const exps = sortReverseChronological(asList(context?.experiences).map((e, i) => ({
+        id: str(e.id, 100) || `x${i}`,
+        role: str(e.role, 150),
+        company: str(e.company, 150),
+        from: str(e.from, 40),
+        to: str(e.to, 40),
+        desc: str(e.desc, 1500),
+      })).filter(e => e.role || e.company || e.desc));
+      const source = {
+        title: str(context?.title, 120),
+        currentSummary: str(value, 2000),
+        experiences: exps,
+        education: asList(context?.education).map(e => ({ degree: str(e.degree, 200), institution: str(e.institution, 200), grade: str(e.grade, 50) })),
+        certifications: asList(context?.certifications).map(c => ({ name: str(c.name, 200), issuer: str(c.issuer, 150) })),
+        skills: (Array.isArray(context?.skills) ? context.skills as unknown[] : []).map(s => str(s, 60)).filter(Boolean).slice(0, 40),
+      };
+      const facts: OptimizeFacts = {
+        yearsOfExperience: totalYearsOfExperience(exps),
+        yearsByRecentRoles: cumulativeYears(exps),
+        currentRole: null,
+        bulletCaps: {},
+      };
+      const sourceJson = JSON.stringify(source, null, 1);
+      const allowed = buildAllowedNumbers(sourceJson, facts);
+      const sourceStems = buildSourceStems(sourceJson);
+      // Thin material = nothing beyond a title and a few words. The summary
+      // must then stay short instead of inventing a career to fill 70 words.
+      const materialWords = wordCount([...exps.map(e => e.desc), ...source.skills, ...source.certifications.map(c => c.name)].join(' '));
+      const thin = materialWords < 25;
+
+      const basePrompt = `${buildGoldStandardGuide(stdLang)}
+
+TASK: write ONLY the PROFESSIONAL SUMMARY section for this CV, following section 2 of the standard above. Plain text, one paragraph, no quotes, no JSON, no heading.
+${thin
+  ? `The CV contains very little material. Write 1–2 short sentences (15–35 words) using ONLY the title and the facts below. Do NOT name any skill, task, tool, sector or achievement that is not literally in the CV — an honest short summary is far better than an invented one. The current summary's self-descriptions ("dinamico", "proattivo"…) are not facts: drop them.${exps.length ? "" : " The CV lists NO work experience: do not claim any experience, seniority or track record (no \"esperienza consolidata\", no \"proven\") — present the candidate by title and education/certifications only."}`
+  : 'Use only facts present in the CV below; the current summary is a draft to improve, not a source of new claims beyond what the experiences support.'}
+
+━━ FACTS (computed — you may use these numbers) ━━
+${JSON.stringify({ yearsByRecentRoles: facts.yearsByRecentRoles }, null, 1)}
+
+━━ CANDIDATE CV (source of truth) ━━
+${sourceJson}`;
+
+      const clean = (t: string) => t.trim().replace(/^["'“]+|["'”]+$/g, '').replace(/\s*\n+\s*/g, ' ');
+      const problems = (t: string): string[] => {
+        const p: string[] = [];
+        const nums = inventedNumbers(t, allowed);
+        if (nums.length) p.push(`numbers not in the CV (${nums.join(', ')}) — remove them.`);
+        if (hasFirstPerson(t, stdLang)) p.push('first person — rewrite impersonally.');
+        const c = findCliches(t, stdLang);
+        if (c.length) p.push(`clichés (${c.join(', ')}) — remove them.`);
+        for (const s of unsupportedSentences(t, sourceStems)) p.push(`"${s}" claims things the CV never mentions — remove or replace with a real fact.`);
+        const wc = wordCount(t);
+        if (!thin && wc > 85) p.push(`${wc} words — cut to 45–75.`);
+        if (thin && wc > 45) p.push(`${wc} words — with this little material keep it under 35 words.`);
+        return p;
+      };
+
+      let summary = clean(await generateText(basePrompt, { temperature: 0.4, maxTokens: 3000 }));
+      let issues = problems(summary);
+      if (issues.length) {
+        const repaired = clean(await generateText(`${basePrompt}
+
+━━ YOUR DRAFT ━━
+${summary}
+
+━━ PROBLEMS (fix every one) ━━
+${issues.map(i => `- ${i}`).join('\n')}
+
+Return ONLY the corrected summary text.`, { temperature: 0.2, maxTokens: 3000 }).catch(() => ''));
+        if (repaired && problems(repaired).length <= issues.length) {
+          summary = repaired;
+          issues = problems(repaired);
+        }
+      }
+      // Whatever is still unbacked after the repair is removed, not shipped.
+      if (issues.length) {
+        const bad = new Set(unsupportedSentences(summary, sourceStems));
+        const nums = inventedNumbers(summary, allowed);
+        const kept = summary.split(/(?<=[.!?])\s+/).filter((s, i) => i === 0 || (!bad.has(s) && !nums.some(n => s.includes(n))));
+        summary = kept.join(' ');
+      }
+      res.json({ result: summary || (value ?? '') });
+      return;
+    }
+
     let prompt: string;
 
-    if (field === 'summary') {
-      prompt = `${buildMasterPrompt(lang)}\n\nRiscrivi il profilo professionale in ${langName}. Sii assertivo e sintetico.\nFormula: identità professionale + anni/livello di esperienza + specializzazione + 2-3 capacità rilevanti + valore/risultato specifico.\nLunghezza target: 40-70 parole (2-4 frasi dense). Nessuna banalità, posizionamento strategico chiaro.\nTutto il testo deve essere in ${langName}.\nRestituisci SOLO il testo riscritto. Niente JSON, niente virgolette esterne, niente spiegazioni.\n\nTitolo professionale: ${(context?.title as string) ?? 'non specificato'}\nProfilo attuale (da migliorare radicalmente): "${value}"\n${context?.experiences ? `Esperienze reali: ${JSON.stringify(context.experiences).slice(0, 800)}` : ''}\n\nRiscrivi con massimo impatto in ${langName}. Taglia tutto ciò che non è essenziale.`;
-    } else if (mode === 'rephrase') {
+    if (mode === 'rephrase') {
       prompt = `${buildMasterPrompt(lang)}\n\nQuesta descrizione di esperienza è già stata ottimizzata. Scrivi una VARIAZIONE in ${langName}:\n- Usa parole diverse, diversa enfasi, diverso ordine dei bullet\n- Mantieni gli stessi fatti, numeri e risultati — non inventarne di nuovi\n- Stesso livello di impatto, stesso stile impersonale\n- Max 2-3 bullet con "• ", ognuno 10-25 parole, formula AZIONE + COSA + COME + RISULTATO\nRestituisci SOLO il testo alternativo. Niente JSON, niente virgolette esterne.\n\nRuolo: ${(context?.role as string) ?? 'non specificato'} presso ${(context?.company as string) ?? 'azienda'}\nVersione attuale (da variare): "${value ?? ''}"\n\nScrivi una variazione diversa ma ugualmente efficace in ${langName}.`;
     } else if (mode === 'apply-tip') {
       const tip = (context?.tip as string) ?? '';
