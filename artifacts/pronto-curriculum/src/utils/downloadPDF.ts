@@ -40,19 +40,24 @@ const SPECS: Record<string, TemplateSpec> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Below this scale, shrinking further hurts readability more than it helps —
-// beyond this floor we let the CV spill onto a genuine second page instead.
-const MIN_FIT_SCALE = 0.8;
+// Fitting to one page tightens the layout in two stages: first whitespace and
+// leading (`tightness` 0 → 1), and only if that is not enough, the font
+// (down to MIN_FONT_RATIO of the user's chosen size). Past that floor the CV
+// is rendered at its natural size on two pages instead of being crushed.
+const MIN_FONT_RATIO = 0.8;
+const MAX_LEADING_CUT = 0.15; // line height shrinks at most 15%
+const MAX_GAP_CUT = 0.5;      // whitespace between blocks shrinks at most 50%
 
 interface BuildPDFOptions {
   scale?: number;
+  tightness?: number;
   // Skips pagination so `finalY` reports the true content height, used to
   // decide how much (if any) shrinking is needed to fit one page.
   measureOnly?: boolean;
 }
 
 async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', opts: BuildPDFOptions = {}) {
-  const { scale = 1, measureOnly = false } = opts;
+  const { scale = 1, tightness = 0, measureOnly = false } = opts;
   const { jsPDF } = await import('jspdf');
   const spec = SPECS[template] ?? SPECS.modern;
   const L = CV_LABELS[lang] ?? CV_LABELS.IT;
@@ -75,13 +80,20 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     return `${f} – ${t || L.present}`;
   };
 
-  // Font size and vertical spacing scale together so shrinking stays proportional.
+  // fs = font size, lh = line advance (follows the font, with tighter leading
+  // when fitting), gap = whitespace between blocks (compresses the most).
   const fs = (base: number) => Math.round(base * scale * 100) / 100;
-  const sp = (base: number) => base * scale;
+  const lh = (base: number) => base * scale * (1 - MAX_LEADING_CUT * tightness);
+  const gap = (base: number) => base * scale * (1 - MAX_GAP_CUT * tightness);
+  // Multi-line text drawn one line at a time so the advance matches lh() exactly
+  // (jsPDF's own multi-line leading would disagree with what we reserve).
+  const textLines = (lines: string[], x: number, advance: number) => {
+    for (const ln of lines) { doc.text(ln, x, y); y += advance; }
+  };
 
   const checkPage = (need = 20) => {
     if (measureOnly) return;
-    if (y > PAGE_H - sp(need)) { doc.addPage(); y = 20; }
+    if (y > PAGE_H - lh(need)) { doc.addPage(); y = 20; }
   };
 
   const setBody = (bold = false, size = 10) => {
@@ -99,7 +111,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     doc.setDrawColor(...spec.sectionColor);
     doc.setLineWidth(0.4);
     doc.line(M, y + 1.5, PAGE_W - M, y + 1.5);
-    y += sp(7);
+    y += lh(5) + gap(2.5);
     setBody();
   };
 
@@ -153,7 +165,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
 
     drawPhoto(11, 24);
 
-    y = 54;
+    y = 46 + gap(8);
   } else {
     // minimal — no background, just name + navy bottom border
     doc.setTextColor(...NAVY);
@@ -177,7 +189,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
 
     drawPhoto(6, 24);
 
-    y = 48;
+    y = 41 + gap(7);
   }
 
   // ── SUMMARY ─────────────────────────────────────────────────────────────────
@@ -185,9 +197,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     sectionTitle(L.profile);
     setBody(false, 9.5);
     doc.setTextColor(...GRAY7);
-    const lines = doc.splitTextToSize(cvData.summary, CW);
-    doc.text(lines, M, y);
-    y += lines.length * sp(5) + sp(5);
+    textLines(doc.splitTextToSize(cvData.summary, CW), M, lh(5));
+    y += gap(5);
   }
 
   // ── SKILLS ──────────────────────────────────────────────────────────────────
@@ -199,9 +210,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     sectionTitle(L.skills);
     setBody(false, 9.5);
     doc.setTextColor(...GRAY7);
-    const skillLines = doc.splitTextToSize(effectiveSkills.join(' • '), CW);
-    doc.text(skillLines, M, y);
-    y += skillLines.length * sp(5) + sp(5);
+    textLines(doc.splitTextToSize(effectiveSkills.join(' • '), CW), M, lh(5));
+    y += gap(5);
   }
 
   // ── EXPERIENCES ──────────────────────────────────────────────────────────────
@@ -217,9 +227,9 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
-      doc.text(meta, M, y + sp(5));
+      doc.text(meta, M, y + lh(5));
       const dates = dateRange(exp.from, exp.to);
-      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
+      if (dates) doc.text(dates, PAGE_W - M, y + lh(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
 
       if (template === 'minimal') {
@@ -228,7 +238,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
         doc.rect(M - 3, y - 3, 1.5, 11, 'F');
       }
 
-      y += sp(10);
+      y += lh(9.5) + gap(1.5);
 
       if (exp.desc?.trim()) {
         setBody(false, 9.5);
@@ -239,11 +249,11 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
           for (let i = 0; i < wrapped.length; i++) {
             checkPage(8);
             doc.text((i === 0 ? '• ' : '  ') + wrapped[i], M + 2, y);
-            y += sp(4.5);
+            y += lh(4.5);
           }
         }
       }
-      y += sp(4);
+      y += gap(4);
     }
   }
 
@@ -261,13 +271,13 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
       const inst = [edu.institution, edu.grade ? `${L.grade}: ${edu.grade}` : ''].filter(Boolean).join('  —  ');
-      doc.text(inst, M, y + sp(5));
+      doc.text(inst, M, y + lh(5));
       const dates = dateRange(edu.from, edu.to);
-      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
+      if (dates) doc.text(dates, PAGE_W - M, y + lh(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
-      y += sp(13);
+      y += lh(10) + gap(3);
     }
-    y += sp(2);
+    y += gap(2);
   }
 
   // ── CERTIFICATIONS ──────────────────────────────────────────────────────────
@@ -280,9 +290,9 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       doc.setTextColor(...GRAY7);
       const parts = [cert.name, cert.issuer, cert.date].filter(Boolean);
       doc.text(parts.join('  —  '), M, y);
-      y += sp(5.5);
+      y += lh(5.5);
     }
-    y += sp(2);
+    y += gap(2);
   }
 
   // ── LANGUAGES ────────────────────────────────────────────────────────────────
@@ -294,7 +304,7 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       checkPage(8);
       doc.setTextColor(...GRAY7);
       doc.text(`${cvLang.name}${cvLang.level ? '  —  ' + cvLang.level : ''}`, M, y);
-      y += sp(5.5);
+      y += lh(5.5);
     }
   }
 
@@ -311,12 +321,12 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       setBody(false, 9.5);
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
-      doc.text(meta, M, y + sp(5));
+      doc.text(meta, M, y + lh(5));
       const dates = dateRange(exp.from, exp.to);
-      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
+      if (dates) doc.text(dates, PAGE_W - M, y + lh(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
 
-      y += sp(10);
+      y += lh(9.5) + gap(1.5);
 
       if (exp.desc?.trim()) {
         setBody(false, 9.5);
@@ -327,27 +337,60 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
           for (let i = 0; i < wrapped.length; i++) {
             checkPage(8);
             doc.text((i === 0 ? '• ' : '  ') + wrapped[i], M + 2, y);
-            y += sp(4.5);
+            y += lh(4.5);
           }
         }
       }
-      y += sp(4);
+      y += gap(4);
     }
   }
 
   // ── GDPR PRIVACY CLAUSE — opt-out for candidates applying outside the EU ────
   if (cvData.includePrivacyClause !== false) {
     checkPage(18);
-    y += sp(6);
+    y += gap(6);
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(fs(7));
     doc.setTextColor(150, 150, 150);
-    const clauseLines = doc.splitTextToSize(L.privacyClause, CW);
-    doc.text(clauseLines, M, y);
-    y += clauseLines.length * sp(3.2);
+    textLines(doc.splitTextToSize(L.privacyClause, CW), M, lh(3.2));
   }
 
   return { doc, finalY: y };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finds the least compression that fits the CV on one page. Measuring is a
+// full layout pass (line wrapping changes with font size), so each step is a
+// real measurement rather than a proportional guess.
+async function fitToOnePage(cvData: CVData, template: string, lang: CvLang, baseScale: number, available: number) {
+  const height = async (scale: number, tightness: number) =>
+    (await buildPDF(cvData, template, lang, { scale, tightness, measureOnly: true })).finalY;
+  const search = async (fits: (v: number) => Promise<boolean>, lo: number, hi: number) => {
+    // smallest v in [lo, hi] for which fits(v) — assumes fits(hi) is true
+    for (let i = 0; i < 8; i++) {
+      const mid = (lo + hi) / 2;
+      if (await fits(mid)) hi = mid; else lo = mid;
+    }
+    return hi;
+  };
+
+  if (await height(baseScale, 0) <= available) return { scale: baseScale, tightness: 0 };
+
+  // Stage 1: tighten whitespace and leading at the user's font size.
+  if (await height(baseScale, 1) <= available) {
+    const tightness = await search(async t => (await height(baseScale, t)) <= available, 0, 1);
+    return { scale: baseScale, tightness };
+  }
+
+  // Stage 2: fully tightened, shrink the font as little as needed.
+  const minScale = baseScale * MIN_FONT_RATIO;
+  if (await height(minScale, 1) <= available) {
+    const k = await search(async k => (await height(baseScale - (baseScale - minScale) * k, 1)) <= available, 0, 1);
+    return { scale: baseScale - (baseScale - minScale) * k, tightness: 1 };
+  }
+
+  // Too long for one page at a readable size — natural layout over two pages.
+  return { scale: baseScale, tightness: 0 };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -378,17 +421,8 @@ export async function downloadCVAsPDF(
   // we only shrink further from there (never enlarge past it) to fit one page.
   const baseScale = cvData.fontScale ?? 1;
 
-  const { finalY } = await buildPDF(cvData, template, lang, { scale: baseScale, measureOnly: true });
-
-  // Shrink font size and spacing just enough to fit one page — but not below
-  // MIN_FIT_SCALE, past which we let the CV spill onto a genuine second page
-  // rather than making the text unreadably small.
-  const available = PAGE_H - BOTTOM_MARGIN;
-  const scale = finalY > available
-    ? Math.max(MIN_FIT_SCALE, Math.min(baseScale, baseScale * (available / finalY)))
-    : baseScale;
-
-  const { doc } = await buildPDF(cvData, template, lang, { scale });
+  const { scale, tightness } = await fitToOnePage(cvData, template, lang, baseScale, PAGE_H - BOTTOM_MARGIN);
+  const { doc } = await buildPDF(cvData, template, lang, { scale, tightness });
   const filename = name
     ? `CV_${name.replace(/\s+/g, '_')}.pdf`
     : 'CV_ProntoCurriculum.pdf';
