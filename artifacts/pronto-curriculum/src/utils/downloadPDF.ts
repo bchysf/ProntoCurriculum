@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { consumeCvEntitlement } from './entitlement';
+import { sanitizeDocText } from './pdfText';
 
 // ── exact CSS variable values from index.css ──────────────────────────────────
 const NAVY   = [11, 29, 58]   as [number, number, number]; // #0B1D3A
@@ -56,13 +57,23 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
   const spec = SPECS[template] ?? SPECS.modern;
   const L = CV_LABELS[lang] ?? CV_LABELS.IT;
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  // Every string is mapped to WinAnsi first — see pdfText.ts for why.
+  const doc = sanitizeDocText(new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }));
   const PAGE_W = 210;
   const PAGE_H = 297;
   const M = 15;
   const CW = PAGE_W - M * 2;
 
   let y = 0;
+
+  // "Mar 2020 – Present", "2020", or nothing — never a dangling " – Present".
+  const dateRange = (from?: string, to?: string) => {
+    const f = (from ?? '').trim();
+    const t = (to ?? '').trim();
+    if (!f && !t) return '';
+    if (!f) return t;
+    return `${f} – ${t || L.present}`;
+  };
 
   // Font size and vertical spacing scale together so shrinking stays proportional.
   const fs = (base: number) => Math.round(base * scale * 100) / 100;
@@ -119,9 +130,9 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
     }
     if (template === 'europass') {
       // EU stars row
-      doc.setTextColor(255, 215, 0);
-      doc.setFontSize(9);
-      doc.text('★  ★  ★  ★  ★', M, 8);
+      doc.setFillColor(255, 215, 0);
+      // ★ isn't in Helvetica's WinAnsi set, so draw the stars as dots.
+      for (let i = 0; i < 5; i++) doc.circle(M + 1 + i * 4.5, 6.8, 0.9, 'F');
       doc.setFontSize(7);
       doc.setTextColor(200, 200, 200);
       doc.text('Curriculum Vitae', M, 13);
@@ -207,7 +218,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
       doc.text(meta, M, y + sp(5));
-      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
+      const dates = dateRange(exp.from, exp.to);
+      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
 
       if (template === 'minimal') {
@@ -250,7 +262,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       doc.setTextColor(...GRAY5);
       const inst = [edu.institution, edu.grade ? `${L.grade}: ${edu.grade}` : ''].filter(Boolean).join('  —  ');
       doc.text(inst, M, y + sp(5));
-      doc.text(`${edu.from || ''} – ${edu.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
+      const dates = dateRange(edu.from, edu.to);
+      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
       y += sp(13);
     }
@@ -299,7 +312,8 @@ async function buildPDF(cvData: CVData, template: string, lang: CvLang = 'IT', o
       doc.setTextColor(...GRAY5);
       const meta = [exp.company, exp.city].filter(Boolean).join(', ');
       doc.text(meta, M, y + sp(5));
-      doc.text(`${exp.from || ''} – ${exp.to || L.present}`, PAGE_W - M, y + sp(5), { align: 'right' });
+      const dates = dateRange(exp.from, exp.to);
+      if (dates) doc.text(dates, PAGE_W - M, y + sp(5), { align: 'right' });
       doc.setTextColor(...GRAY7);
 
       y += sp(10);
